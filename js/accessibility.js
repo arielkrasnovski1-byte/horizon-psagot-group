@@ -208,6 +208,10 @@
     html.a11y-contrast-invert .a11y-toggle {
       filter: invert(1) hue-rotate(180deg);
     }
+    /* Keep the hero background photo in true colors under inverted contrast */
+    html.a11y-contrast-invert .hero::before {
+      filter: blur(5px) invert(1) hue-rotate(180deg);
+    }
 
     html.a11y-links a:not(.a11y-link):not(.a11y-btn) {
       text-decoration: underline !important;
