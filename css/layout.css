@@ -570,17 +570,21 @@
 
   .site-nav {
     position: fixed;
-    inset: 0 0 0 auto;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    left: auto;
     width: min(360px, 85vw);
     background: var(--color-navy-deep);
     flex-direction: column;
     justify-content: flex-start;
     align-items: stretch;
     padding: calc(var(--space-2xl) + var(--space-md)) var(--space-lg) var(--space-lg);
-    transform: translateX(-100%);
+    transform: translateX(100%);
     transition: transform var(--transition-base);
     box-shadow: var(--shadow-xl);
     gap: 0;
+    overflow-y: auto;
   }
 
   .site-nav[aria-hidden="false"] { transform: translateX(0); }
