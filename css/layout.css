@@ -210,10 +210,22 @@
     min-height: 0;
   }
   .hero-image-side {
-    min-height: 280px;
+    min-height: 360px;
+    background-position: center 25%;
+    position: relative;
+  }
+  .hero-image-side::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 50%, var(--color-navy-deep) 100%);
+    pointer-events: none;
   }
   .hero-text-side {
-    padding: var(--space-xl) var(--space-md);
+    padding: 0 var(--space-md) var(--space-xl);
+    margin-top: -40px;
+    position: relative;
+    z-index: 2;
     text-align: center;
   }
   .hero-inner {
