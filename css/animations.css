@@ -1,0 +1,79 @@
+/* ============================================================
+   ANIMATIONS - אנימציות עדינות בגלילה
+   ============================================================
+   הרעיון: אלמנטים מתחילים שקופים ומעט מתחת למיקומם הסופי,
+   וכאשר ה-JavaScript מזהה שהם נכנסו למסך הוא מוסיף class="is-visible"
+   שמפעיל את האנימציה החלקה.
+   ============================================================ */
+
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 800ms cubic-bezier(0.22, 1, 0.36, 1),
+              transform 800ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* השהיות הדרגתיות לרצפים של אלמנטים */
+.reveal[data-delay="1"] { transition-delay: 80ms; }
+.reveal[data-delay="2"] { transition-delay: 160ms; }
+.reveal[data-delay="3"] { transition-delay: 240ms; }
+.reveal[data-delay="4"] { transition-delay: 320ms; }
+.reveal[data-delay="5"] { transition-delay: 400ms; }
+
+
+/* === Fade-in מימין (RTL) === */
+.reveal-right {
+  opacity: 0;
+  transform: translateX(28px);
+  transition: opacity 800ms cubic-bezier(0.22, 1, 0.36, 1),
+              transform 800ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reveal-right.is-visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+
+/* === Fade-in משמאל === */
+.reveal-left {
+  opacity: 0;
+  transform: translateX(-28px);
+  transition: opacity 800ms cubic-bezier(0.22, 1, 0.36, 1),
+              transform 800ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reveal-left.is-visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+
+/* === Subtle scale-in לקלפים === */
+.reveal-scale {
+  opacity: 0;
+  transform: scale(0.96);
+  transition: opacity 700ms ease, transform 700ms ease;
+}
+
+.reveal-scale.is-visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+
+/* === Pulse עדין (לאלמנטים שצריכים להדגיש) === */
+@keyframes subtle-pulse {
+  0%, 100% { box-shadow: 0 6px 18px rgba(168, 132, 95, 0.35); }
+  50%      { box-shadow: 0 6px 28px rgba(168, 132, 95, 0.55); }
+}
+
+.pulse-attention {
+  animation: subtle-pulse 2.5s ease-in-out infinite;
+}

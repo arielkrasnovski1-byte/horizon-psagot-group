@@ -1,0 +1,31 @@
+# macOS
+.DS_Store
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# VS Code
+.vscode/
+
+# JetBrains IDEs
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment files (in case future)
+.env
+.env.local
+.env.production
+
+# Node (if used in future)
+node_modules/
+
+# Temp & backup files
+*.tmp
+*.swp
+*~

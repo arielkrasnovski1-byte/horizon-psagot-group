@@ -1,0 +1,394 @@
+/* ============================================================
+   HORIZON PSAGOT GROUP - מערכת עיצוב גלובלית (main.css)
+   ============================================================
+   הקובץ הזה מגדיר את "אבני הבניין" של כל האתר:
+   - משתני צבעים, גופנים ומרווחים (CSS Variables)
+   - איפוס בסיסי של עיצוב ברירת המחדל של הדפדפן
+   - סגנונות בסיס לטיפוגרפיה ולאלמנטים נפוצים
+   ============================================================ */
+
+/* === ייבוא גופנים מ-Google Fonts === */
+@import url('https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;500;700;900&family=Assistant:wght@300;400;500;600;700&display=swap');
+
+
+/* ============================================================
+   1. CSS VARIABLES - המקור היחיד לכל ערכי העיצוב
+   ============================================================ */
+
+:root {
+
+  /* --- צבעי המותג --- */
+  --color-navy-deep:        #0A1F3D;   /* נייבי עמוק - צבע ראשי, Header, כותרות */
+  --color-navy-mid:         #1B3258;   /* נייבי בינוני - וריאציה */
+  --color-navy-light:       #2D4A75;   /* נייבי בהיר - hover על נייבי */
+
+  --color-rose-gold:        #C9A47A;   /* רוז גולד - צבע הדגשה ראשי */
+  --color-rose-gold-light:  #E2C9A8;   /* רוז גולד בהיר - hover, גרדיאנט עליון */
+  --color-rose-gold-deep:   #A8845F;   /* רוז גולד עמוק - גרדיאנט תחתון, מצבים פעילים */
+
+  --color-cream:            #F4EFE6;   /* שמנת חם - רקע ראשי */
+  --color-cream-soft:       #FAF6F0;   /* שמנת רך - וריאציה בהירה */
+  --color-white:            #FFFFFF;   /* לבן נקי - רקעי כרטיסים וסקציות */
+
+  --color-warm-gray:        #9C8A78;   /* אפור חם - טקסט משני, כמו "GROUP" בלוגו */
+  --color-warm-gray-light:  #C7B9A8;   /* אפור חם בהיר - גבולות עדינים */
+
+  --color-charcoal:         #2B2B2B;   /* פחם - טקסט גוף ראשי */
+  --color-charcoal-soft:    #4A4A4A;   /* פחם רך - טקסט גוף משני */
+
+  /* --- צבעי מערכת --- */
+  --color-success:          #2E7D5B;
+  --color-error:             #B94A48;
+  --color-border:            rgba(10, 31, 61, 0.12);
+  --color-overlay:           rgba(10, 31, 61, 0.60);
+
+
+  /* --- גרדיאנט רוז גולד מטאלי (זהה ללוגו) --- */
+  --gradient-rose-gold: linear-gradient(
+    135deg,
+    var(--color-rose-gold-light) 0%,
+    var(--color-rose-gold) 50%,
+    var(--color-rose-gold-deep) 100%
+  );
+
+
+  /* --- גופנים --- */
+  --font-heading: 'Frank Ruhl Libre', 'David Libre', Georgia, serif;
+  --font-body:    'Assistant', 'Heebo', -apple-system, sans-serif;
+
+
+  /* --- גדלי טקסט (משתמש ב-rem - יחסי לגודל הבסיס) --- */
+  --fs-xs:    0.75rem;    /* 12px - טקסט זעיר (תאריכים, תוויות) */
+  --fs-sm:    0.875rem;   /* 14px - טקסט קטן (caption) */
+  --fs-base:  1rem;       /* 16px - טקסט גוף */
+  --fs-lg:    1.125rem;   /* 18px - טקסט גדול (lead paragraph) */
+  --fs-xl:    1.375rem;   /* 22px - H6 / כותרת משנה */
+  --fs-2xl:   1.75rem;    /* 28px - H5 */
+  --fs-3xl:   2.25rem;    /* 36px - H4 / H3 */
+  --fs-4xl:   2.75rem;    /* 44px - H2 */
+  --fs-5xl:   3.5rem;     /* 56px - H1 */
+  --fs-hero:  4.25rem;    /* 68px - hero של דף בית */
+
+
+  /* --- מרווחים (spacing scale) --- */
+  --space-3xs: 0.25rem;   /* 4px */
+  --space-2xs: 0.5rem;    /* 8px */
+  --space-xs:  0.75rem;   /* 12px */
+  --space-sm:  1rem;      /* 16px */
+  --space-md:  1.5rem;    /* 24px */
+  --space-lg:  2.5rem;    /* 40px */
+  --space-xl:  4rem;      /* 64px */
+  --space-2xl: 6rem;      /* 96px */
+  --space-3xl: 8rem;      /* 128px */
+
+
+  /* --- רוחבי מיכלים --- */
+  --container-max:    1280px;   /* רוחב מקסימלי לתוכן */
+  --container-wide:   1440px;   /* רוחב רחב לסקציות hero */
+  --container-narrow:  880px;   /* רוחב צר לטקסט קריא (אודות, מאמרים) */
+
+
+  /* --- רדיוסים (פינות מעוגלות) --- */
+  --radius-sm:   4px;
+  --radius-md:   8px;
+  --radius-lg:   16px;
+  --radius-xl:   24px;
+  --radius-full: 9999px;        /* עיגול מלא (כפתורים עגולים) */
+
+
+  /* --- צללים --- */
+  --shadow-sm: 0 1px 3px rgba(10, 31, 61, 0.06);
+  --shadow-md: 0 4px 12px rgba(10, 31, 61, 0.08);
+  --shadow-lg: 0 12px 32px rgba(10, 31, 61, 0.10);
+  --shadow-xl: 0 24px 60px rgba(10, 31, 61, 0.14);
+
+
+  /* --- מעברים (transitions) --- */
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+  --transition-slow: 400ms ease;
+
+
+  /* --- z-index scale --- */
+  --z-base:    1;
+  --z-header:  100;
+  --z-modal:   1000;
+  --z-toast:   1100;
+}
+
+
+/* ============================================================
+   2. RESET - איפוס סגנונות ברירת המחדל של הדפדפן
+   ============================================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--fs-base);
+  font-weight: 400;
+  line-height: 1.65;
+  color: var(--color-charcoal);
+  background-color: var(--color-cream);
+  direction: rtl;
+  text-align: right;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+
+/* ============================================================
+   3. TYPOGRAPHY - טיפוגרפיה בסיסית
+   ============================================================ */
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--color-navy-deep);
+  letter-spacing: -0.01em;
+  margin-bottom: var(--space-md);
+}
+
+h1 { font-size: var(--fs-5xl); font-weight: 700; }
+h2 { font-size: var(--fs-4xl); }
+h3 { font-size: var(--fs-3xl); }
+h4 { font-size: var(--fs-2xl); }
+h5 { font-size: var(--fs-xl); }
+h6 { font-size: var(--fs-lg); font-weight: 600; }
+
+p {
+  margin-bottom: var(--space-sm);
+  color: var(--color-charcoal);
+}
+
+.lead {
+  font-size: var(--fs-lg);
+  line-height: 1.7;
+  color: var(--color-charcoal-soft);
+  font-weight: 400;
+}
+
+strong, b {
+  font-weight: 700;
+  color: var(--color-navy-deep);
+}
+
+em, i {
+  font-style: italic;
+}
+
+small {
+  font-size: var(--fs-sm);
+  color: var(--color-warm-gray);
+}
+
+
+/* === קישורים === */
+a {
+  color: var(--color-navy-mid);
+  text-decoration: none;
+  transition: color var(--transition-base);
+}
+
+a:hover {
+  color: var(--color-rose-gold);
+}
+
+a:focus-visible {
+  outline: 2px solid var(--color-rose-gold);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+
+
+/* === רשימות === */
+ul, ol {
+  list-style: none;
+}
+
+.content-list {
+  list-style: disc;
+  padding-right: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+.content-list li {
+  margin-bottom: var(--space-2xs);
+}
+
+
+/* === תמונות === */
+img,
+svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+
+/* === כפתורים (איפוס בלבד - עיצוב יבוא ב-components.css) === */
+button {
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
+}
+
+
+/* === שדות טופס (איפוס בלבד) === */
+input,
+textarea,
+select {
+  font-family: inherit;
+  font-size: inherit;
+  direction: rtl;
+  text-align: right;
+}
+
+
+/* ============================================================
+   4. LAYOUT UTILITIES - מיכלים ועזרים בסיסיים
+   ============================================================ */
+
+.container {
+  width: 100%;
+  max-width: var(--container-max);
+  margin-inline: auto;
+  padding-inline: var(--space-md);
+}
+
+.container-wide {
+  width: 100%;
+  max-width: var(--container-wide);
+  margin-inline: auto;
+  padding-inline: var(--space-md);
+}
+
+.container-narrow {
+  width: 100%;
+  max-width: var(--container-narrow);
+  margin-inline: auto;
+  padding-inline: var(--space-md);
+}
+
+.section {
+  padding-block: var(--space-2xl);
+}
+
+.section-sm {
+  padding-block: var(--space-xl);
+}
+
+
+/* ============================================================
+   5. ACCESSIBILITY - נגישות
+   ============================================================ */
+
+/* טקסט מוסתר ויזואלית אבל זמין לקוראי מסך */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* קישור "דלג לתוכן" */
+.skip-link {
+  position: absolute;
+  top: -100px;
+  right: var(--space-md);
+  background: var(--color-navy-deep);
+  color: var(--color-white);
+  padding: var(--space-sm) var(--space-md);
+  z-index: var(--z-modal);
+  transition: top var(--transition-base);
+}
+
+.skip-link:focus {
+  top: var(--space-md);
+  color: var(--color-white);
+}
+
+/* פוקוס נראה לחיווי מקלדת */
+:focus-visible {
+  outline: 2px solid var(--color-rose-gold);
+  outline-offset: 3px;
+}
+
+/* כיבוד reduce-motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+
+/* ============================================================
+   6. RESPONSIVE - התאמות לנייד
+   ============================================================ */
+
+@media (max-width: 1024px) {
+  :root {
+    --fs-hero: 3.5rem;
+    --fs-5xl:  2.75rem;
+    --fs-4xl:  2.25rem;
+    --space-2xl: 4.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --fs-hero: 2.5rem;
+    --fs-5xl:  2.25rem;
+    --fs-4xl:  1.875rem;
+    --fs-3xl:  1.625rem;
+    --space-2xl: 3.5rem;
+    --space-xl:  2.5rem;
+  }
+
+  body {
+    line-height: 1.6;
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --fs-hero: 2.125rem;
+    --fs-5xl:  1.875rem;
+  }
+
+  .container,
+  .container-wide,
+  .container-narrow {
+    padding-inline: var(--space-sm);
+  }
+}
