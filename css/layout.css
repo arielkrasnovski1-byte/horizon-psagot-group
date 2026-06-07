@@ -184,27 +184,25 @@
   overflow: hidden;
 }
 
+.hero {
+  background:
+    linear-gradient(180deg, rgba(10, 31, 61, 0.42) 0%, rgba(10, 31, 61, 0.20) 35%, rgba(6, 19, 37, 0.85) 100%),
+    url('../assets/images/hero.jpg') center 25% / cover no-repeat;
+  min-height: 88vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3xl) var(--space-md);
+}
+
 .hero-text-side {
   position: relative;
   z-index: 2;
-  padding: var(--space-2xl) var(--space-md) 0;
   text-align: center;
+  width: 100%;
 }
 
-.hero-image-side {
-  position: relative;
-  min-height: 560px;
-  background: url('../assets/images/hero.jpg') center 28% / cover no-repeat;
-  margin-top: -80px;
-}
-
-.hero-image-side::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, var(--color-navy-deep) 0%, transparent 45%);
-  pointer-events: none;
-}
+.hero-image-side { display: none; }
 
 .hero-inner {
   position: relative;
@@ -213,18 +211,29 @@
   text-align: center;
 }
 
+.hero-logo {
+  display: block;
+  width: 140px;
+  height: 140px;
+  margin: 0 auto var(--space-lg);
+  border-radius: 16px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+}
+
 @media (max-width: 1024px) {
-  .hero-image-side { min-height: 460px; margin-top: -60px; }
+  .hero { min-height: 80vh; }
+  .hero-logo { width: 120px; height: 120px; }
 }
 
 @media (max-width: 768px) {
-  .hero-image-side {
-    min-height: 360px;
-    background-position: center 25%;
-    margin-top: -40px;
+  .hero {
+    min-height: 70vh;
+    padding: var(--space-2xl) var(--space-md);
   }
-  .hero-text-side {
-    padding-top: var(--space-xl);
+  .hero-logo {
+    width: 100px;
+    height: 100px;
+    margin-bottom: var(--space-md);
   }
 }
 
@@ -258,6 +267,7 @@
   margin-bottom: var(--space-md);
   letter-spacing: -0.02em;
   line-height: 1.1;
+  text-shadow: 0 4px 24px rgba(0, 0, 0, 0.65);
 }
 
 .hero h1 .accent {
@@ -271,10 +281,11 @@
 .hero-lead {
   font-size: var(--fs-lg);
   line-height: 1.75;
-  color: rgba(244, 239, 230, 0.90);
+  color: rgba(244, 239, 230, 0.95);
   margin-bottom: var(--space-lg);
   max-width: 680px;
   margin-inline: auto;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.55);
 }
 
 .hero-ctas {
