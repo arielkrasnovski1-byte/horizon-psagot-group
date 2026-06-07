@@ -305,6 +305,12 @@
   background-clip: text;
   -webkit-text-fill-color: transparent;
   display: inline-block;
+  font-weight: 800;
+  font-size: 1.08em;
+  letter-spacing: -0.015em;
+  filter: drop-shadow(0 0 24px rgba(201, 164, 122, 0.45));
+  padding-block: 0.05em;
+  margin-top: 0.15em;
 }
 
 .hero-lead {
