@@ -1550,9 +1550,11 @@
   .lang-toggle {
     color: var(--color-cream);
     border-color: rgba(244, 239, 230, 0.3);
-    margin: var(--space-md) 0 0;
+    margin: var(--space-sm) 0 0;
     justify-content: center;
     width: 100%;
+    min-height: 36px;
+    font-size: 0.75rem;
   }
   .lang-toggle:hover {
     color: var(--color-navy-deep);
