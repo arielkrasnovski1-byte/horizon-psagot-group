@@ -1,0 +1,58 @@
+/* ============================================================
+   ENGLISH (LTR) overrides — included on every /en/ page
+   ============================================================ */
+
+body { direction: ltr; text-align: left; }
+
+.footer-tagline { max-width: 320px; }
+
+/* Service / detail / audience list bullets reverse to left side */
+.service-card-list li,
+.service-detail-col ul li,
+.audience-block ul li {
+  padding-right: 0;
+  padding-left: var(--space-md);
+}
+.service-card-list li::before,
+.service-detail-col ul li::before,
+.audience-block ul li::before {
+  right: auto;
+  left: 0;
+}
+
+/* Card CTA arrow flips */
+.service-card-cta::after { content: '→'; }
+.service-card:hover .service-card-cta::after { transform: translateX(4px); }
+.blog-card-cta::after { content: '→'; }
+.blog-card:hover .blog-card-cta::after { transform: translateX(4px); }
+
+/* Disclaimer border on the other side */
+.footer-disclaimer { border-right: none; border-left: 3px solid var(--color-rose-gold); }
+
+/* Active nav indicator flip */
+.nav-link::after { right: auto; left: 0; transform-origin: left; }
+
+/* Mobile menu slides from the right in LTR */
+@media (max-width: 960px) {
+  .site-nav {
+    inset: 0 auto 0 0;
+    transform: translateX(-100%);
+  }
+  .site-nav[aria-hidden="false"] { transform: translateX(0); }
+}
+
+/* Article body — left-aligned lists */
+.article-body ul,
+.article-body ol {
+  padding-inline-start: var(--space-lg);
+}
+.article-body blockquote {
+  border-right: none;
+  border-left: 4px solid var(--color-rose-gold);
+}
+
+/* FAQ — match LTR */
+.faq-question::after { /* + icon stays */ }
+
+/* Service detail header in LTR */
+.service-detail-grid { direction: ltr; }
