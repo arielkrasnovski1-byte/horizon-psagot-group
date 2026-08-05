@@ -64,7 +64,7 @@ async function boot() {
     $('stat-total').textContent = allLeads.length;
     $('stat-new').textContent = allLeads.filter((l) => (l.status || 'new') === 'new').length;
     $('stat-closed').textContent = allLeads.filter((l) => l.status === 'closed').length;
-    $('stat-month').textContent = allLeads.filter((l) => l.createdAt?.toDate && l.createdAt.toDate() >= monthStart).length;
+    $('stat-month').textContent = allLeads.filter((l) => { const d = toDateObj(l.createdAt); return d && d >= monthStart; }).length;
   }
   $('filters').addEventListener('click', (e) => {
     const b = e.target.closest('.filter-btn'); if (!b) return;
@@ -72,7 +72,14 @@ async function boot() {
     document.querySelectorAll('.filter-btn').forEach((x) => x.classList.toggle('active', x === b));
     renderLeads();
   });
-  function fmtDate(ts) { if (!ts?.toDate) return '—'; const d = ts.toDate(); const p = (n) => ('0' + n).slice(-2); return `${p(d.getDate())}/${p(d.getMonth()+1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`; }
+  // תומך ב-Firestore Timestamp, מחרוזת ISO, או מספר (לגמישות מול Make/פייסבוק)
+  function toDateObj(ts) {
+    if (!ts) return null;
+    if (ts.toDate) return ts.toDate();
+    const d = new Date(ts);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  function fmtDate(ts) { const d = toDateObj(ts); if (!d) return '—'; const p = (n) => ('0' + n).slice(-2); return `${p(d.getDate())}/${p(d.getMonth()+1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`; }
   function phoneIntl(p) { let d = String(p || '').replace(/\D/g, ''); if (d.startsWith('0')) d = '972' + d.slice(1); return d; }
   function renderLeads() {
     let rows = allLeads;
