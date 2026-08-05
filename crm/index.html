@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>ניהול — הורייזון פסגות גרופ</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/logo/favicon-32.png">
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/crm.css">
+</head>
+<body class="crm-body">
+
+  <!-- ===== התחברות ===== -->
+  <div class="login-wrap" id="login-view">
+    <form class="login-card" id="login-form">
+      <img class="brand-logo" src="/assets/logo/logo-mark.png" alt="הורייזון פסגות גרופ" width="56" height="56">
+      <h1>מערכת ניהול</h1>
+      <p>לידים · עסקאות · מאמרים — כניסה לצוות בלבד</p>
+      <div class="field">
+        <label for="email">אימייל</label>
+        <input id="email" name="email" type="email" required autocomplete="username" placeholder="you@example.com">
+      </div>
+      <div class="field">
+        <label for="password">סיסמה</label>
+        <input id="password" name="password" type="password" required autocomplete="current-password" placeholder="••••••••">
+      </div>
+      <button type="submit" class="crm-btn">התחברות</button>
+      <div class="login-error" id="login-error"></div>
+    </form>
+  </div>
+
+  <!-- ===== פאנל ===== -->
+  <div id="app-view" hidden>
+    <header class="crm-topbar">
+      <div class="brand">
+        <img src="/assets/logo/logo-mark.png" alt="" width="34" height="34">
+        <b>הורייזון פסגות</b> <span style="opacity:.6">· ניהול</span>
+      </div>
+      <div class="user">
+        <span id="user-email"></span>
+        <button class="logout" id="logout-btn">יציאה</button>
+      </div>
+    </header>
+
+    <nav class="crm-tabs">
+      <button class="crm-tab active" data-tab="leads">לידים</button>
+      <button class="crm-tab" data-tab="deals">עסקאות</button>
+      <button class="crm-tab" data-tab="articles">מאמרים</button>
+    </nav>
+
+    <main class="crm-main">
+
+      <!-- ===== טאב לידים ===== -->
+      <section class="tab-panel" id="panel-leads">
+        <div class="stat-row">
+          <div class="stat-tile"><div class="n" id="stat-total">0</div><div class="l">סה״כ פניות</div></div>
+          <div class="stat-tile"><div class="n accent" id="stat-new">0</div><div class="l">חדשות (לא טופלו)</div></div>
+          <div class="stat-tile"><div class="n" id="stat-month">0</div><div class="l">החודש</div></div>
+          <div class="stat-tile"><div class="n" id="stat-closed">0</div><div class="l">נסגרו</div></div>
+        </div>
+        <div class="filters" id="filters">
+          <button class="filter-btn active" data-filter="all">הכל</button>
+          <button class="filter-btn" data-filter="new">חדשות</button>
+          <button class="filter-btn" data-filter="contacted">בטיפול</button>
+          <button class="filter-btn" data-filter="closed">נסגרו</button>
+          <button class="filter-btn" data-filter="website">מהאתר</button>
+          <button class="filter-btn" data-filter="facebook">מפייסבוק</button>
+        </div>
+        <div class="leads-table-wrap">
+          <table class="leads">
+            <thead><tr><th>תאריך</th><th>שם</th><th>יצירת קשר</th><th>קהל / נושא</th><th>מקור</th><th>סטטוס</th><th></th></tr></thead>
+            <tbody id="leads-body"><tr><td colspan="7" class="empty-state">טוען…</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ===== טאב עסקאות ===== -->
+      <section class="tab-panel" id="panel-deals" hidden>
+        <div class="panel-head">
+          <h2>עסקאות לדוגמה</h2>
+          <button class="crm-btn" style="width:auto" id="add-deal">+ עסקה חדשה</button>
+        </div>
+        <div class="editor-grid" id="deals-grid"><p class="empty-state">טוען…</p></div>
+      </section>
+
+      <!-- ===== טאב מאמרים ===== -->
+      <section class="tab-panel" id="panel-articles" hidden>
+        <div class="panel-head">
+          <h2>מאמרים</h2>
+          <button class="crm-btn" style="width:auto" id="add-article">+ מאמר חדש</button>
+        </div>
+        <div class="editor-grid" id="articles-grid"><p class="empty-state">בקרוב — בשלב הבא נחבר גם ניהול מאמרים.</p></div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ===== מסך הגדרה ===== -->
+  <div class="login-wrap" id="setup-view" hidden>
+    <div class="login-card">
+      <img class="brand-logo" src="/assets/logo/logo-mark.png" alt="" width="56" height="56">
+      <h1>כמעט מוכן</h1>
+      <p style="line-height:1.7">כדי להפעיל את המערכת צריך לחבר פרויקט Firebase.<br>מלאו את הפרטים בקובץ <b>js/firebase-config.js</b> לפי המדריך ב-<b>CRM-SETUP.md</b>, ורעננו.</p>
+    </div>
+  </div>
+
+  <!-- ===== מודל עריכה (משותף) ===== -->
+  <div class="modal-overlay" id="modal" hidden>
+    <div class="modal">
+      <h3 id="modal-title">עריכה</h3>
+      <form id="modal-form"></form>
+      <div class="modal-actions">
+        <button class="crm-btn" style="width:auto" id="modal-save">שמירה</button>
+        <button class="btn-ghost" id="modal-cancel">ביטול</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/js/crm.js"></script>
+</body>
+</html>

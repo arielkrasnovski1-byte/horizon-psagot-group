@@ -104,7 +104,7 @@
           <li><a class="nav-link is-active" href="/">בית</a></li>
           <li><a class="nav-link" href="/about/">אודות</a></li>
           <li><a class="nav-link" href="/financial/">ליווי פיננסי-עסקי</a></li>
-          <li><a class="nav-link" href="/real-estate/">נדל"ן והשקעות</a></li>
+          <li><a class="nav-link" href="/real-estate/">נדל"ן והשקעות</a></li><li><a class="nav-link" href="/deals/">עסקאות</a></li>
           <li><a class="nav-link" href="/solutions/">הפתרונות שלך</a></li>
           <li><a class="nav-link" href="/knowledge/">מרכז המידע</a></li>
           <li><a class="nav-link" href="/team/">צוות</a></li>
@@ -595,5 +595,19 @@
   <script src="/js/main.js" defer></script>
 
   <script src="/js/accessibility.js" defer></script>
+
+  <!-- Netlify Identity — הפניית משתמש מוזמן/מחובר לפאנל הניהול -->
+  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+  <script>
+    if (window.netlifyIdentity) {
+      window.netlifyIdentity.on('init', function (user) {
+        if (!user) {
+          window.netlifyIdentity.on('login', function () {
+            document.location.href = '/admin/';
+          });
+        }
+      });
+    }
+  </script>
 </body>
 </html>

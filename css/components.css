@@ -1560,3 +1560,43 @@
     color: var(--color-navy-deep);
   }
 }
+
+
+/* ============================================================
+   DEALS — עסקאות לדוגמה (מרחיב את .blog-card)
+   ============================================================ */
+.deal-card { cursor: default; }
+
+.deal-facts {
+  margin-top: auto;
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--color-border);
+  display: grid;
+  gap: var(--space-2xs);
+}
+.deal-facts > div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  font-size: 0.875rem;
+}
+.deal-facts dt {
+  color: var(--color-warm-gray);
+  font-weight: 600;
+}
+.deal-facts dd {
+  color: var(--color-navy-deep);
+  font-weight: 700;
+  margin: 0;
+  text-align: end;
+}
+
+.deals-empty {
+  text-align: center;
+  color: var(--color-charcoal-soft);
+  font-size: var(--fs-md);
+  padding: var(--space-2xl) 0;
+}
+
+/* רשת עסקאות רחבה מעט יותר מרשת הבלוג */
+.deals-grid.blog-grid { max-width: 1080px; }

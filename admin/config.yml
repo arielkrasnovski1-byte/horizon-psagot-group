@@ -1,0 +1,50 @@
+backend:
+  name: git-gateway
+  branch: main
+
+# שפת ממשק הפאנל
+locale: 'he'
+
+# תיקיית יעד לתמונות שמעלים בפאנל
+media_folder: "assets/images/deals"
+public_folder: "/assets/images/deals"
+
+# הודעת commit ידידותית כשמוסיפים/עורכים עסקה
+site_url: https://horizonpsagotgroup.com
+display_url: https://horizonpsagotgroup.com
+
+collections:
+  - name: "content"
+    label: "תוכן האתר"
+    files:
+      - name: "deals"
+        label: "עסקאות לדוגמה"
+        file: "data/deals.json"
+        description: "הוספה, עריכה, מחיקה ושינוי סדר של העסקאות שמופיעות בעמוד 'עסקאות לדוגמה'."
+        fields:
+          - label: "עסקאות"
+            label_singular: "עסקה"
+            name: "deals"
+            widget: "list"
+            summary: "{{fields.title_he}}"
+            fields:
+              - { label: "כותרת (עברית)", name: "title_he", widget: "string" }
+              - { label: "Title (English)", name: "title_en", widget: "string", required: false }
+              - { label: "תיאור (עברית)", name: "desc_he", widget: "text" }
+              - { label: "Description (English)", name: "desc_en", widget: "text", required: false }
+              - label: "קטגוריה (עברית)"
+                name: "category_he"
+                widget: "select"
+                required: false
+                options:
+                  - "נדל\"ן והשקעות"
+                  - "נדל\"ן בחו\"ל"
+                  - "התחדשות עירונית"
+                  - "ליווי פיננסי"
+                  - "מימון ומשכנתאות"
+                  - "ליווי עסקי"
+              - { label: "Category (English)", name: "category_en", widget: "string", required: false, hint: "לדוגמה: Real Estate, Overseas Real Estate, Financial Advisory" }
+              - { label: "מיקום", name: "location", widget: "string", required: false, hint: "לדוגמה: תל אביב / סלוניקי, יוון" }
+              - { label: "היקף / סכום", name: "amount", widget: "string", required: false, hint: "לדוגמה: ₪1,450,000" }
+              - { label: "שנה", name: "year", widget: "string", required: false, hint: "לדוגמה: 2025" }
+              - { label: "תמונה", name: "image", widget: "image", required: false, hint: "גררו תמונה או בחרו קובץ. מומלץ יחס לגובה." }

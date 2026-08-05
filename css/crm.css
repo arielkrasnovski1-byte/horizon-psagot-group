@@ -1,0 +1,161 @@
+/* ============================================================
+   הורייזון פסגות גרופ — crm.css  (מערכת ניהול לידים)
+   עיצוב בהיר תואם-אתר (נייבי / רוז-גולד / שמנת)
+   נטען אחרי main.css כדי לרשת את משתני העיצוב.
+   ============================================================ */
+
+.crm-body { min-height: 100vh; display: flex; flex-direction: column; background: var(--color-cream); }
+
+/* ---- מסך התחברות ---- */
+.login-wrap { flex: 1; display: grid; place-items: center; padding: var(--space-lg); }
+.login-card {
+  width: 100%; max-width: 400px;
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-xl) var(--space-lg);
+  text-align: center;
+}
+.login-card .brand-logo { width: 56px; height: 56px; margin: 0 auto var(--space-md); }
+.login-card h1 { font-size: var(--fs-2xl); color: var(--color-navy-deep); margin-bottom: var(--space-2xs); }
+.login-card p { color: var(--color-warm-gray); font-size: var(--fs-sm); margin-bottom: var(--space-lg); }
+.login-card .field { text-align: right; margin-bottom: var(--space-md); }
+.login-card label { display: block; font-size: var(--fs-sm); font-weight: 600; color: var(--color-navy-deep); margin-bottom: var(--space-2xs); }
+.login-card input {
+  width: 100%; padding: 0.7em 1em;
+  border: 1px solid var(--color-border); border-radius: var(--radius-md);
+  background: var(--color-cream-soft); color: var(--color-charcoal);
+}
+.login-card input:focus { outline: none; border-color: var(--color-rose-gold); box-shadow: 0 0 0 3px rgba(201,164,122,0.2); }
+.login-error { color: var(--color-error); font-size: var(--fs-sm); margin-top: var(--space-sm); min-height: 1.2em; }
+
+/* כפתור התחברות (עצמאי, בלי תלות ב-components.css) */
+.crm-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 100%; font-family: var(--font-body); font-weight: 700; font-size: var(--fs-base);
+  color: var(--color-white); background: var(--gradient-rose-gold);
+  border: none; border-radius: var(--radius-full); padding: 0.85em 1.5em;
+  cursor: pointer; transition: transform .2s, box-shadow .2s; box-shadow: var(--shadow-md);
+}
+.crm-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-lg); }
+
+/* ---- סרגל עליון ---- */
+.crm-topbar {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-md);
+  padding: var(--space-sm) var(--space-lg);
+  background: var(--color-navy-deep); color: var(--color-white);
+  position: sticky; top: 0; z-index: 100;
+}
+.crm-topbar .brand { display: flex; align-items: center; gap: 10px; }
+.crm-topbar .brand img { height: 34px; width: auto; }
+.crm-topbar .brand b { color: var(--color-white); font-family: var(--font-heading); }
+.crm-topbar .user { display: flex; align-items: center; gap: var(--space-sm); font-size: var(--fs-sm); color: rgba(255,255,255,0.7); }
+.crm-topbar .logout {
+  font-size: var(--fs-sm); font-weight: 600; color: var(--color-white);
+  border: 1px solid rgba(255,255,255,0.3); border-radius: var(--radius-full);
+  padding: 5px 14px; transition: all .2s;
+}
+.crm-topbar .logout:hover { background: rgba(255,255,255,0.12); color: var(--color-white); }
+
+/* ---- טאבים ---- */
+.crm-tabs { display: flex; gap: var(--space-2xs); padding: 0 var(--space-lg); background: var(--color-navy-deep); }
+.crm-tab {
+  font-size: var(--fs-sm); font-weight: 700; color: rgba(255,255,255,0.6);
+  background: none; border: none; padding: var(--space-sm) var(--space-md);
+  border-bottom: 3px solid transparent; cursor: pointer; transition: all .2s;
+}
+.crm-tab:hover { color: var(--color-white); }
+.crm-tab.active { color: var(--color-white); border-bottom-color: var(--color-rose-gold); }
+.tab-panel[hidden] { display: none; }
+
+/* ---- אזור ראשי ---- */
+.crm-main { flex: 1; padding: var(--space-lg); max-width: 1280px; margin-inline: auto; width: 100%; }
+
+/* ---- כותרת אזור + כפתור הוספה ---- */
+.panel-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); margin-bottom: var(--space-md); flex-wrap: wrap; }
+.panel-head h2 { font-family: var(--font-heading); color: var(--color-navy-deep); font-size: var(--fs-2xl); margin: 0; }
+
+/* ---- כרטיסי עריכה (עסקאות/מאמרים) ---- */
+.editor-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: var(--space-md); }
+.editor-card {
+  background: var(--color-white); border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg); padding: var(--space-md); box-shadow: var(--shadow-sm);
+  display: flex; flex-direction: column; gap: var(--space-2xs);
+}
+.editor-card .ec-cat { font-size: var(--fs-xs); font-weight: 700; color: var(--color-rose-gold-deep); }
+.editor-card .ec-title { font-family: var(--font-heading); color: var(--color-navy-deep); font-size: var(--fs-lg); }
+.editor-card .ec-meta { font-size: var(--fs-xs); color: var(--color-warm-gray); }
+.editor-card .ec-img { width: 100%; height: 120px; object-fit: cover; border-radius: var(--radius-md); margin-bottom: var(--space-2xs); background: var(--color-cream-soft); }
+.editor-card .ec-actions { display: flex; gap: 6px; margin-top: auto; padding-top: var(--space-sm); }
+
+/* ---- מודל עריכה ---- */
+.modal-overlay { position: fixed; inset: 0; background: rgba(10,31,61,0.55); display: grid; place-items: center; padding: var(--space-md); z-index: 1000; }
+.modal-overlay[hidden] { display: none; }
+.modal {
+  background: var(--color-white); border-radius: var(--radius-lg); box-shadow: var(--shadow-xl);
+  width: 100%; max-width: 640px; max-height: 90vh; overflow-y: auto; padding: var(--space-lg);
+}
+.modal h3 { font-family: var(--font-heading); color: var(--color-navy-deep); margin-bottom: var(--space-md); }
+.modal .field { margin-bottom: var(--space-sm); }
+.modal .field label { display: block; font-size: var(--fs-sm); font-weight: 600; color: var(--color-navy-deep); margin-bottom: 4px; }
+.modal .field input, .modal .field textarea, .modal .field select {
+  width: 100%; padding: 0.6em 0.8em; border: 1px solid var(--color-border);
+  border-radius: var(--radius-md); background: var(--color-cream-soft); color: var(--color-charcoal);
+}
+.modal .field textarea { min-height: 80px; resize: vertical; }
+.modal .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-sm); }
+.modal-actions { display: flex; gap: var(--space-sm); justify-content: flex-start; margin-top: var(--space-md); }
+.btn-ghost { background: none; border: 1px solid var(--color-border); color: var(--color-charcoal-soft); border-radius: var(--radius-full); padding: 0.6em 1.2em; font-weight: 600; cursor: pointer; }
+.field-hint { font-size: var(--fs-xs); color: var(--color-warm-gray); margin-top: 3px; }
+
+@media (max-width: 560px) { .modal .field-row { grid-template-columns: 1fr; } }
+
+/* ---- כרטיסי סטטיסטיקה ---- */
+.stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--space-md); margin-bottom: var(--space-lg); }
+.stat-tile { background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-md) var(--space-lg); box-shadow: var(--shadow-sm); }
+.stat-tile .n { font-family: var(--font-heading); font-size: var(--fs-3xl); font-weight: 700; color: var(--color-navy-deep); line-height: 1; }
+.stat-tile .n.accent { color: var(--color-rose-gold-deep); }
+.stat-tile .l { font-size: var(--fs-sm); color: var(--color-warm-gray); margin-top: 6px; }
+
+/* ---- פילטרים ---- */
+.filters { display: flex; flex-wrap: wrap; gap: var(--space-2xs); margin-bottom: var(--space-md); }
+.filter-btn {
+  font-size: var(--fs-sm); font-weight: 600; padding: 7px 14px;
+  border-radius: var(--radius-full); border: 1px solid var(--color-border);
+  color: var(--color-charcoal-soft); background: var(--color-white); cursor: pointer; transition: all .2s;
+}
+.filter-btn:hover { border-color: var(--color-rose-gold); }
+.filter-btn.active { background: var(--color-navy-deep); color: var(--color-white); border-color: var(--color-navy-deep); }
+
+/* ---- טבלת לידים ---- */
+.leads-table-wrap { background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius-lg); overflow-x: auto; box-shadow: var(--shadow-sm); }
+table.leads { width: 100%; border-collapse: collapse; min-width: 820px; }
+table.leads th, table.leads td { text-align: right; padding: var(--space-sm) var(--space-md); border-bottom: 1px solid var(--color-border); font-size: var(--fs-sm); vertical-align: middle; }
+table.leads th { color: var(--color-warm-gray); font-weight: 600; font-size: var(--fs-xs); }
+table.leads tr:last-child td { border-bottom: none; }
+table.leads tbody tr:hover td { background: var(--color-cream-soft); }
+.lead-name { font-weight: 700; color: var(--color-navy-deep); }
+.lead-sub { font-weight: 400; color: var(--color-warm-gray); font-size: var(--fs-xs); max-width: 240px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lead-contact a { color: var(--color-charcoal-soft); display: block; direction: ltr; text-align: right; }
+.lead-contact a:hover { color: var(--color-rose-gold-deep); }
+.lead-date { font-family: var(--font-body); color: var(--color-warm-gray); font-size: var(--fs-xs); direction: ltr; white-space: nowrap; }
+
+.src-badge { font-size: var(--fs-xs); font-weight: 600; padding: 3px 9px; border-radius: var(--radius-full); }
+.src-website { color: var(--color-navy-mid); background: rgba(27,50,88,0.1); }
+.src-facebook { color: #1877F2; background: rgba(24,119,242,0.1); }
+
+.status-select { font-size: var(--fs-sm); font-weight: 600; padding: 5px 10px; border-radius: var(--radius-full); border: 1px solid var(--color-border); background: var(--color-white); color: var(--color-charcoal); cursor: pointer; }
+.status-select.new { border-color: var(--color-rose-gold); color: var(--color-rose-gold-deep); }
+.status-select.contacted { border-color: var(--color-navy-mid); color: var(--color-navy-mid); }
+.status-select.closed { border-color: var(--color-warm-gray); color: var(--color-warm-gray); }
+
+.row-actions { display: flex; gap: 6px; }
+.icon-btn { width: 32px; height: 32px; display: grid; place-items: center; border-radius: var(--radius-sm); border: 1px solid var(--color-border); color: var(--color-warm-gray); background: var(--color-white); cursor: pointer; transition: all .2s; }
+.icon-btn:hover { color: var(--color-navy-deep); border-color: var(--color-rose-gold); }
+.icon-btn.danger:hover { color: var(--color-error); border-color: var(--color-error); }
+.icon-btn svg { width: 16px; height: 16px; }
+
+.empty-state { padding: var(--space-2xl); text-align: center; color: var(--color-warm-gray); }
+
+@media (max-width: 600px) { .crm-main { padding: var(--space-md); } .crm-topbar { padding: var(--space-sm) var(--space-md); } }

@@ -40,6 +40,31 @@
       : 'אירעה שגיאה בשליחה. נסו שוב, או צרו קשר בטלפון או בוואטסאפ.',
   };
 
+  // כתיבת הפנייה ל-CRM (Firestore) — לא חוסמת; נכשלת בשקט אם Firebase לא מוגדר
+  async function captureToCRM() {
+    try {
+      const cfg = await import('/js/firebase-config.js');
+      if (!cfg.isConfigured) return;
+      const [{ initializeApp }, { getFirestore, collection, addDoc, serverTimestamp }] = await Promise.all([
+        import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'),
+        import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js'),
+      ]);
+      const app = initializeApp(cfg.firebaseConfig);
+      const db = getFirestore(app);
+      const v = (id) => { const el = form.querySelector('#' + id); return el ? (el.value || '').trim() : ''; };
+      await addDoc(collection(db, 'leads'), {
+        name: v('name'), phone: v('phone'), email: v('email'),
+        audience: v('audience'), topic: v('topic'), hasAsset: v('asset'),
+        message: v('message'),
+        source: 'website', status: 'new', notes: '',
+        lang: document.documentElement.lang === 'en' ? 'en' : 'he',
+        createdAt: serverTimestamp(),
+      });
+    } catch (err) {
+      if (window.console) console.warn('CRM capture skipped:', err);
+    }
+  }
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -103,6 +128,7 @@
       const data = await response.json();
 
       if (data.success) {
+        captureToCRM();               // כתיבה ל-CRM (לא חוסמת — לא מפריעה למייל)
         formWrap.classList.add('is-submitted');
         formWrap.scrollIntoView({ behavior: 'smooth', block: 'center' });
       } else {

@@ -5,6 +5,7 @@
   <url><loc>https://horizonpsagotgroup.com/about/</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://horizonpsagotgroup.com/financial/</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
   <url><loc>https://horizonpsagotgroup.com/real-estate/</loc><changefreq>monthly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://horizonpsagotgroup.com/deals/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://horizonpsagotgroup.com/solutions/</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://horizonpsagotgroup.com/team/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
   <url><loc>https://horizonpsagotgroup.com/testimonials/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
@@ -19,6 +20,7 @@
   <url><loc>https://horizonpsagotgroup.com/en/about/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
   <url><loc>https://horizonpsagotgroup.com/en/financial/</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://horizonpsagotgroup.com/en/real-estate/</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://horizonpsagotgroup.com/en/deals/</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
   <url><loc>https://horizonpsagotgroup.com/en/solutions/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
   <url><loc>https://horizonpsagotgroup.com/en/team/</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc>https://horizonpsagotgroup.com/en/testimonials/</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>

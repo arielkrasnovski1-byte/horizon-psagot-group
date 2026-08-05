@@ -1,0 +1,28 @@
+{
+  "deals": [
+    {
+      "title_he": "רכישת דירה להשקעה ביוון",
+      "title_en": "Investment Apartment Purchase in Greece",
+      "desc_he": "ליווי מלא לרכישת דירה בסלוניקי — איתור הנכס, בדיקת כדאיות, ליווי משפטי ומיסוי, וניהול הנכס מרחוק להשכרה.",
+      "desc_en": "End-to-end support for an apartment purchase in Thessaloniki — sourcing, feasibility, legal and tax guidance, and remote rental management.",
+      "category_he": "נדל\"ן בחו\"ל",
+      "category_en": "Overseas Real Estate",
+      "location": "סלוניקי, יוון",
+      "amount": "₪620,000",
+      "year": "2025",
+      "image": "/assets/images/blog-greece.jpg"
+    },
+    {
+      "title_he": "מבנה מימון למסורב משכנתא",
+      "title_en": "Financing Structure for a Declined Mortgage",
+      "desc_he": "לקוח שסורב בשני בנקים — בנינו מבנה מימון חלופי תוך שבועות והובלנו לאישור משכנתא לרכישת דירה ראשונה.",
+      "desc_en": "A client declined by two banks — we built an alternative financing structure within weeks and secured mortgage approval for a first home.",
+      "category_he": "ליווי פיננסי",
+      "category_en": "Financial Advisory",
+      "location": "ראשון לציון",
+      "amount": "₪1,450,000",
+      "year": "2025",
+      "image": "/assets/images/blog-tama38.jpg"
+    }
+  ]
+}
