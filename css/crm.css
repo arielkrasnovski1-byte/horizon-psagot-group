@@ -6,6 +6,9 @@
 
 .crm-body { min-height: 100vh; display: flex; flex-direction: column; background: var(--color-cream); }
 
+/* חשוב: מבטיח שתכונת hidden באמת מסתירה — גם אלמנטים עם display:grid/flex */
+[hidden] { display: none !important; }
+
 /* ---- מסך התחברות ---- */
 .login-wrap { flex: 1; display: grid; place-items: center; padding: var(--space-lg); }
 .login-card {
