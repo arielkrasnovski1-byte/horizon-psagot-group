@@ -2,61 +2,60 @@
 
 מטרה: כשמישהו ממלא טופס במודעת לידים בפייסבוק → הליד נכתב אוטומטית ל-Firestore → מופיע בטבלת הלידים ב-`/crm` עם תגית "פייסבוק".
 
-זמן הקמה: ~20 דקות, חד-פעמי.
+> **שיטה:** כתיבה ישירה ל-Firestore דרך ה-API הציבורי (בדיוק כמו שהטופס באתר עושה).
+> **לא צריך Service Account** — כך שאין בעיה עם המדיניות הארגונית של Google.
+
+זמן הקמה: ~15 דקות, חד-פעמי.
 
 ---
 
-## חלק א' — מפתח שירות מ-Firebase (Service Account)
+## חלק א' — תרחיש (Scenario) ב-Make.com
 
-> ⚠️ **חשוב מאוד:** המפתח הזה הוא **סוד אמיתי** (בניגוד למפתח ה-Web שכבר יש לנו).
-> **אסור** להעלות אותו ל-GitHub, לשלוח במייל, או להדביק באתר. הוא נכנס **רק** ל-Make.
-
-1. ב-Firebase Console → גלגל שיניים ⚙️ → **Project settings**
-2. טאב **Service accounts**
-3. לחצו **Generate new private key** → **Generate key**
-4. יירד קובץ **JSON** למחשב — שמרו אותו במקום בטוח. זה מה שנעלה ל-Make.
-
----
-
-## חלק ב' — תרחיש (Scenario) ב-Make.com
-
-1. היכנסו ל-https://make.com (הרשמה חינם) → **Create a new scenario**.
+היכנסו ל-https://make.com (הרשמה חינם) → **Create a new scenario**.
 
 ### מודול 1 — טריגר מפייסבוק
-2. הוסיפו מודול: **Facebook Lead Ads** → **Watch Leads**.
-3. חברו את חשבון הפייסבוק (עם הרשאות אדמין לדף העסקי).
-4. בחרו את **הדף** ואת **טופס הלידים** שממנו יגיעו הלידים.
+1. הוסיפו מודול: **Facebook Lead Ads** → **Watch Leads**.
+2. חברו את חשבון הפייסבוק (הרשאות אדמין לדף העסקי).
+3. בחרו את **הדף** ואת **טופס הלידים** שממנו יגיעו הלידים.
 
-### מודול 2 — כתיבה ל-Firestore
-5. הוסיפו מודול: **Google Cloud Firestore** → **Create a Document**.
-6. ב-Connection → **Add** → בחרו חיבור עם **Service Account** → העלו את קובץ ה-JSON מחלק א'.
-7. הגדרות:
-   - **Project ID:** `horizon-psagot-group-ccbe6`
-   - **Database:** `(default)`
-   - **Collection:** `leads`
-8. **מיפוי השדות** (Fields) — הוסיפו את אלה, וגררו מהמודול של פייסבוק את הערכים המתאימים:
+### מודול 2 — כתיבה ל-Firestore (מודול HTTP)
+4. הוסיפו מודול: **HTTP** → **Make a request**.
+5. הגדירו כך:
 
-   | שדה (Key) | סוג | ערך |
-   |---|---|---|
-   | `name` | String | שם מלא מהטופס |
-   | `phone` | String | טלפון מהטופס |
-   | `email` | String | אימייל מהטופס (אם יש) |
-   | `source` | String | `facebook` (קבוע) |
-   | `status` | String | `new` (קבוע) |
-   | `notes` | String | (השאירו ריק) |
-   | `createdAt` | **Timestamp** | `now` (הזמן הנוכחי) |
-
-   > חשוב: ה-`createdAt` צריך להיות מסוג **Timestamp** עם ערך `now`, כדי שהתאריך יוצג נכון בטבלה.
+   - **URL:**
+     ```
+     https://firestore.googleapis.com/v1/projects/horizon-psagot-group-ccbe6/databases/(default)/documents/leads?key=AIzaSyDcVepmWtFaSLhHylQIuxvoHTZWdSyOAsk
+     ```
+   - **Method:** `POST`
+   - **Headers:** הוסיפו כותרת אחת:
+     - Name: `Content-Type` · Value: `application/json`
+   - **Body type:** `Raw` · **Content type:** `JSON (application/json)`
+   - **Request content (גוף הבקשה):** הדביקו את זה, והחליפו את `{{...}}` בשדות שגררתם מהמודול של פייסבוק:
+     ```json
+     {
+       "fields": {
+         "name":      { "stringValue": "{{שם מהטופס}}" },
+         "phone":     { "stringValue": "{{טלפון מהטופס}}" },
+         "email":     { "stringValue": "{{אימייל מהטופס}}" },
+         "source":    { "stringValue": "facebook" },
+         "status":    { "stringValue": "new" },
+         "notes":     { "stringValue": "" },
+         "createdAt": { "timestampValue": "{{formatDate(now; \"YYYY-MM-DDTHH:mm:ss[Z]\"; \"UTC\")}}" }
+       }
+     }
+     ```
+     > הערה: את `{{שם מהטופס}}` / `{{טלפון מהטופס}}` / `{{אימייל מהטופס}}` מחליפים ע"י גרירת השדה המתאים מהמודול של פייסבוק (Make מציג רשימת שדות). את `source`, `status`, `notes`, `createdAt` משאירים כמו שהם.
 
 ### הפעלה
-9. לחצו **Run once** לבדיקה (אפשר להשתמש בכלי הבדיקה של פייסבוק: *Lead Ads Testing Tool*).
-10. ודאו שהליד הופיע בטבלת הלידים ב-`/crm` עם תגית "פייסבוק".
-11. הפעילו את התרחיש (**Scheduling → ON**). Make יבדוק לידים חדשים כל כמה דקות אוטומטית.
+6. לחצו **Run once** לבדיקה (אפשר להשתמש ב-*Meta Lead Ads Testing Tool* כדי לשלוח ליד דמה).
+7. ודאו שהליד הופיע בטבלת הלידים ב-`/crm` עם תגית **"פייסבוק"**.
+8. הפעילו את התרחיש (**Scheduling → ON**). Make יבדוק לידים חדשים אוטומטית כל כמה דקות.
 
 ---
 
 ## הערות
-- **מפתח ה-Service Account** = סוד. אם הוא דלף — אפשר לבטל אותו ב-Firebase (Service accounts → Manage keys) וליצור חדש.
-- לידים מהאתר ומפייסבוק נוחתים באותה טבלה; מבדילים ביניהם לפי תגית **מקור** (אתר / פייסבוק).
-- אם הלידים מגיעים כ-DM/תגובות (ולא כטופס לידים) — אין לזה אוטומציה; רק טופס לידים של מודעה נתמך.
+- מפתח ה-Web שבכתובת הוא **ציבורי ומכוון** (אותו מפתח שכבר באתר); האבטחה נאכפת ע"י כללי ה-Firestore.
+- לידים מהאתר ומפייסבוק נוחתים באותה טבלה; מבדילים לפי תגית **מקור** (אתר / פייסבוק).
+- רק **טופס לידים של מודעה** נתמך. לידים שמגיעים כ-DM/תגובות — לא ניתנים לאוטומציה (מגבלת Meta).
+- אם תרצו למנוע ספאם בעתיד — אפשר להוסיף שכבת הגנה, אבל בשלב זה הסיכון זהה לזה של הטופס באתר (נמוך).
 - המסלול החינמי של Make מספיק בדרך כלל (בדקו את מכסת הפעולות החודשית).
