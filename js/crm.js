@@ -54,8 +54,11 @@ async function boot() {
   let allLeads = [], leadFilter = 'all';
 
   function listenLeads() {
-    fs.onSnapshot(fs.query(fs.collection(db, 'leads'), fs.orderBy('createdAt', 'desc')), (snap) => {
-      allLeads = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    // בלי orderBy בשאילתה — ממיינים בצד הלקוח לפי תאריך מפוענח,
+    // כך שלידים מהאתר (Timestamp) ומפייסבוק (מחרוזת) מסתדרים יחד נכון.
+    fs.onSnapshot(fs.collection(db, 'leads'), (snap) => {
+      allLeads = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => (toDateObj(b.createdAt)?.getTime() || 0) - (toDateObj(a.createdAt)?.getTime() || 0));
       renderLeadStats(); renderLeads();
     }, (err) => { console.warn(err); $('leads-body').innerHTML = '<tr><td colspan="7" class="empty-state">שגיאה בטעינה. בדקו כללי אבטחה.</td></tr>'; });
   }
