@@ -11,7 +11,7 @@
     return '<article class="team-card reveal"><span class="team-accent" aria-hidden="true"></span>' +
       '<h3>' + esc(role) + '</h3><p class="team-bio">' + esc(bio) + '</p></article>';
   }
-  function render(items) { if (items && items.length) grid.innerHTML = items.map(card).join(''); }
+  function render(items) { if (items && items.length) { grid.innerHTML = items.map(card).join(''); grid.querySelectorAll('.reveal').forEach(function (el) { el.classList.add('is-visible'); }); } }
   function loadJson() { fetch('/data/team.json', { cache: 'no-cache' }).then(function (r) { return r.json(); }).then(function (d) { render((d && d.team) || []); }).catch(function () {}); }
   (async function () {
     try {

@@ -22,7 +22,7 @@
       '</div></div>';
   }
 
-  function render(items) { if (items && items.length) grid.innerHTML = items.map(card).join(''); }
+  function render(items) { if (items && items.length) { grid.innerHTML = items.map(card).join(''); grid.querySelectorAll('.reveal').forEach(function (el) { el.classList.add('is-visible'); }); } }
 
   function loadJson() {
     fetch('/data/testimonials.json', { cache: 'no-cache' })

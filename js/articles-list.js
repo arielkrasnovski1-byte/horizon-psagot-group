@@ -20,7 +20,7 @@
       '<h3>' + esc(title) + '</h3><p>' + esc(exc) + '</p></div></a>';
   }
   // מרנדר רק כשיש מאמרים אמיתיים ב-Firestore; אחרת משאיר את הכרטיסים הסטטיים הקיימים
-  function render(items) { if (items && items.length) grid.innerHTML = items.map(card).join(''); }
+  function render(items) { if (items && items.length) { grid.innerHTML = items.map(card).join(''); grid.querySelectorAll('.reveal').forEach(function (el) { el.classList.add('is-visible'); }); } }
   (async function () {
     try {
       var cfg = await import('/js/firebase-config.js');

@@ -27,6 +27,7 @@
       });
     });
     list.innerHTML = html;
+    list.querySelectorAll('.reveal').forEach(function(el){el.classList.add('is-visible');});
   }
   function loadJson() { fetch('/data/faq.json', { cache: 'no-cache' }).then(function (r) { return r.json(); }).then(function (d) { render((d && d.faq) || []); }).catch(function () {}); }
   (async function () {
