@@ -1,0 +1,76 @@
+{
+  "testimonials": [
+    {
+      "quote_he": "הגעתי להורייזון פסגות גרופ אחרי שני בנקים סירבו לי למשכנתא. תוך כמה שבועות הם בנו לי מבנה מימון שאיש לא חשב עליו. שווה כל שקל של הליווי.",
+      "quote_en": "Placeholder content: I came to Horizon Psagot Group after two banks rejected me for a mortgage. Within a few weeks they built a financing structure nobody else had considered. Worth every shekel of the engagement.",
+      "name": "אריאל כ׳",
+      "role_he": "משקיע פרטי, ת\"א",
+      "role_en": "Private Investor, Tel Aviv",
+      "initials": "א.כ",
+      "order": 0
+    },
+    {
+      "quote_he": "בליווי של חצי שנה עברנו מתזרים שלילי לתזרים חיובי, סגרנו חובות ישנים והתחלנו לצמוח. הצוות פשוט הבין את כל המורכבות של העסק שלי במקום אחד.",
+      "quote_en": "Placeholder content: Over a six-month engagement we moved from negative to positive cash flow, closed old debts, and started to grow. The team simply understood the entire complexity of my business in one place.",
+      "name": "רון ש׳",
+      "role_he": "בעל עסק, מרכז",
+      "role_en": "Business Owner, Central Israel",
+      "initials": "ר.ש",
+      "order": 1
+    },
+    {
+      "quote_he": "כיזם נדל\"ן בפרויקט פינוי-בינוי הצלחתי לסיים תהליך של 4 שנים בלי לקבל פצע ולמרות שינוי רגולציה באמצע. הראייה המשולבת שלהם הצילה אותי לא פעם אחת.",
+      "quote_en": "Placeholder content: As a real estate developer on a demolish-rebuild project, I completed a four-year process without injury — and despite a regulatory change in the middle. Their integrated vision saved me more than once.",
+      "name": "יוסי ל׳",
+      "role_he": "יזם נדל\"ן, צפון",
+      "role_en": "Real Estate Developer, Northern Israel",
+      "initials": "י.ל",
+      "order": 2
+    },
+    {
+      "quote_he": "רכשנו דירה ראשונה בגיל 45 אחרי שכל מי שדיברנו איתו אמר שזה לא אפשרי בגלל הסיטואציה שלנו. הם מצאו פתרון מימון יצירתי ועזרו לנו לעבור את כל התהליך.",
+      "quote_en": "Placeholder content: We bought a first home at 45 after everyone we spoke with said it wasn't possible given our situation. They found a creative financing solution and walked us through the entire process.",
+      "name": "מיכל ב׳",
+      "role_he": "משפחה, ירושלים",
+      "role_en": "Family, Jerusalem",
+      "initials": "מ.ב",
+      "order": 3
+    },
+    {
+      "quote_he": "השקעתי בנדל\"ן בקפריסין בליוויהם המקצועי. כל ההיבטים המשפטיים והמיסויים נבחנו, וקיבלתי גם את האזרחות שרציתי. ליווי שווה זהב למשקיע ישראלי בחו\"ל.",
+      "quote_en": "Placeholder content: I invested in real estate in Cyprus under their full professional guidance. All legal and tax aspects were addressed, and I also obtained the citizenship I wanted. Invaluable accompaniment for an Israeli investor abroad.",
+      "name": "דניאל ע׳",
+      "role_he": "משקיע בינלאומי",
+      "role_en": "International Investor",
+      "initials": "ד.ע",
+      "order": 4
+    },
+    {
+      "quote_he": "עזרו לי לסגור עסק שלא הצליח בצורה מסודרת, להגיע להסדר עם נושים, ובינתיים גם לתכנן את העסק הבא. הם לא רק \"סוגרים עיניים על חוב\" — הם בונים יחד אסטרטגיה ארוכת טווח.",
+      "quote_en": "Placeholder content: They helped me close an unsuccessful business in an orderly way, reach a settlement with creditors, and meanwhile plan the next business. They don't just \"look the other way on debt\" — they build a long-term strategy together with you.",
+      "name": "עידן ר׳",
+      "role_he": "יזם, דרום",
+      "role_en": "Entrepreneur, Southern Israel",
+      "initials": "ע.ר",
+      "order": 5
+    },
+    {
+      "quote_he": "כנציגת ועד דיירים בפרויקט תמ\"א 38, הצוות של הורייזון פסגות גרופ עזר לנו לנהל מו\"מ מורכב מול היזם בצורה חכמה וזהירה — והשגנו תנאים שלא חלמנו עליהם.",
+      "quote_en": "Placeholder content: As a tenant representative on a TAMA 38 project, the Horizon Psagot Group team helped us negotiate a complex deal with the developer wisely and carefully — and we achieved terms we hadn't dreamed of.",
+      "name": "נועה ח׳",
+      "role_he": "נציגת דיירים, גבעתיים",
+      "role_en": "Tenant Representative, Givatayim",
+      "initials": "נ.ח",
+      "order": 6
+    },
+    {
+      "quote_he": "ההבראה הפיננסית שעברנו בליווי של הורייזון פסגות גרופ הצילה את העסק שלנו. תכנית פעולה ברורה, מעקב צמוד, ותוצאות מדידות בתוך חצי שנה.",
+      "quote_en": "Placeholder content: The financial recovery we went through with the guidance of Horizon Psagot Group saved our business. A clear action plan, close monitoring, and measurable results within half a year.",
+      "name": "דוד מ׳",
+      "role_he": "בעל עסק, רעננה",
+      "role_en": "Business Owner, Ra'anana",
+      "initials": "ד.מ",
+      "order": 7
+    }
+  ]
+}

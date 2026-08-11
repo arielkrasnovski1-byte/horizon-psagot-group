@@ -53,7 +53,7 @@ async function boot() {
     if (user) {
       currentEmail = user.email;
       $('login-view').hidden = true; $('app-view').hidden = false; $('user-email').textContent = user.email;
-      listenLeads(); listenDeals();
+      listenLeads(); listenDeals(); listenTestimonials();
     } else { $('app-view').hidden = true; $('login-view').hidden = false; }
   });
 
@@ -61,7 +61,7 @@ async function boot() {
   document.querySelectorAll('.crm-tab').forEach((tab) => {
     tab.addEventListener('click', () => {
       document.querySelectorAll('.crm-tab').forEach((t) => t.classList.toggle('active', t === tab));
-      ['leads', 'deals', 'articles'].forEach((k) => { $('panel-' + k).hidden = (k !== tab.dataset.tab); });
+      ['leads', 'deals', 'testimonials', 'articles'].forEach((k) => { $('panel-' + k).hidden = (k !== tab.dataset.tab); });
     });
   });
 
@@ -284,4 +284,67 @@ async function boot() {
   function closeModal() { $('modal').hidden = true; $('modal-form').innerHTML = ''; }
   $('modal-cancel').addEventListener('click', closeModal);
   $('modal').addEventListener('click', (e) => { if (e.target === $('modal')) closeModal(); });
+
+  /* ============================================================
+     המלצות לקוחות
+     ============================================================ */
+  const TESTI_FIELDS = [
+    { k: 'quote_he', l: 'ציטוט (עברית)', t: 'textarea' },
+    { k: 'quote_en', l: 'Quote (English)', t: 'textarea' },
+    { k: 'name', l: 'שם', t: 'text' },
+    { k: 'role_he', l: 'תפקיד (עברית)', t: 'text', hint: 'לדוגמה: משקיע פרטי, ת"א' },
+    { k: 'role_en', l: 'Role (English)', t: 'text' },
+    { k: 'initials', l: 'ראשי תיבות', t: 'text', hint: 'לדוגמה: א.כ' },
+  ];
+  let allTesti = [];
+  function listenTestimonials() {
+    fs.onSnapshot(fs.query(fs.collection(db, 'testimonials'), fs.orderBy('order', 'asc')), (snap) => {
+      allTesti = snap.docs.map((d) => ({ id: d.id, ...d.data() })); renderTestimonials();
+    }, (err) => { console.warn(err); $('testimonials-grid').innerHTML = '<p class="empty-state">שגיאה בטעינה.</p>'; });
+  }
+  function renderTestimonials() {
+    const grid = $('testimonials-grid');
+    if (!allTesti.length) {
+      grid.innerHTML = '<div class="empty-state"><p>אין המלצות במערכת עדיין.</p><button class="crm-btn" style="width:auto;margin-top:12px" id="seed-testi">ייבוא ההמלצות הקיימות מהאתר</button></div>';
+      const sb = $('seed-testi');
+      if (sb) sb.addEventListener('click', async () => {
+        sb.disabled = true; sb.textContent = 'מייבא…';
+        try {
+          const r = await fetch('/data/testimonials.json', { cache: 'no-cache' }); const data = await r.json(); const items = (data && data.testimonials) || [];
+          for (let i = 0; i < items.length; i++) await fs.addDoc(fs.collection(db, 'testimonials'), { ...items[i], order: i });
+          alert('יובאו ' + items.length + ' המלצות בהצלחה.');
+        } catch (err) { alert('שגיאה בייבוא: ' + err.message); sb.disabled = false; sb.textContent = 'ייבוא ההמלצות הקיימות מהאתר'; }
+      });
+      return;
+    }
+    grid.innerHTML = allTesti.map((t) => `<div class="editor-card">`+
+      `<span class="ec-cat">${esc(t.initials || '')}</span><span class="ec-title">${esc(t.name || '(ללא שם)')}</span>`+
+      `<span class="ec-meta">${esc(t.role_he || '')}</span>`+
+      `<p style="font-size:var(--fs-sm);color:var(--color-charcoal-soft);margin:0">${esc((t.quote_he || '').slice(0, 90))}…</p>`+
+      `<div class="ec-actions"><button class="crm-btn" style="width:auto;font-size:.85rem;padding:.5em 1em" data-edit-testi="${t.id}">עריכה</button>`+
+      `<button class="icon-btn danger" data-del-testi="${t.id}" title="מחיקה"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button></div></div>`).join('');
+    grid.querySelectorAll('[data-edit-testi]').forEach((b) => b.addEventListener('click', () => openTestiModal(allTesti.find((x) => x.id === b.dataset.editTesti))));
+    grid.querySelectorAll('[data-del-testi]').forEach((b) => b.addEventListener('click', () => { if (confirm('למחוק את ההמלצה?')) fs.deleteDoc(fs.doc(db,'testimonials',b.dataset.delTesti)); }));
+  }
+  $('add-testimonial').addEventListener('click', () => openTestiModal(null));
+  function openTestiModal(item) {
+    const editing = !!item;
+    $('modal-title').textContent = editing ? 'עריכת המלצה' : 'המלצה חדשה';
+    $('modal-form').innerHTML = TESTI_FIELDS.map((f) => {
+      const v = editing ? (item[f.k] || '') : '';
+      const input = f.t === 'textarea' ? `<textarea data-k="${f.k}">${esc(v)}</textarea>` : `<input type="text" data-k="${f.k}" value="${esc(v)}">`;
+      return `<div class="field"><label>${f.l}</label>${input}${f.hint?`<div class="field-hint">${f.hint}</div>`:''}</div>`;
+    }).join('');
+    $('modal').hidden = false;
+    $('modal-save').onclick = async () => {
+      const data = {}; $('modal-form').querySelectorAll('[data-k]').forEach((el) => { data[el.dataset.k] = el.value.trim(); });
+      $('modal-save').disabled = true;
+      try {
+        if (editing) await fs.updateDoc(fs.doc(db, 'testimonials', item.id), data);
+        else await fs.addDoc(fs.collection(db, 'testimonials'), { ...data, order: allTesti.length });
+        closeModal();
+      } catch (err) { alert('שגיאה בשמירה: ' + err.message); }
+      $('modal-save').disabled = false;
+    };
+  }
 }
