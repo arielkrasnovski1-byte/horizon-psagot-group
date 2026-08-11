@@ -1,0 +1,32 @@
+{
+  "team": [
+    {
+      "role_he": "מייסד ומנכ\"ל",
+      "bio_he": "ייסד את הורייזון פסגות גרופ מתוך תפיסה שאתגרים כלכליים מורכבים מחייבים גישה משולבת. מנהיג את החזון של החברה, את הליווי האסטרטגי של הלקוחות, ואת קשרי השותפים המקצועיים.",
+      "role_en": "Founder &amp; CEO",
+      "bio_en": "Founded Horizon Psagot Group from the conviction that complex economic challenges require an integrated approach. Leads the firm's vision, strategic guidance for clients, and key partner relationships.",
+      "order": 0
+    },
+    {
+      "role_he": "שותף · ראש תחום נדל\"ן",
+      "bio_he": "מוביל את תחום הנדל\"ן וההשקעות בארץ ובחו\"ל. ניסיון משמעותי בליווי משקיעים פרטיים, יזמי נדל\"ן ופרויקטי התחדשות עירונית — מאיתור הזדמנויות, דרך ניתוח כדאיות, ועד מימוש בפועל.",
+      "role_en": "Partner · Head of Real Estate",
+      "bio_en": "Leads the real estate and investment practice in Israel and abroad. Significant experience guiding private investors, real estate developers, and urban renewal projects — from sourcing opportunities through feasibility analysis to execution.",
+      "order": 1
+    },
+    {
+      "role_he": "שותף · ראש תחום פיננסי",
+      "bio_he": "מוביל את תחומי המימון, ההבראה הפיננסית וניהול החוב. מומחה בבניית פתרונות יצירתיים גם במצבים מורכבים — כולל ללקוחות שנדחו במערכת הבנקאית הסטנדרטית או בעלי היסטוריה אשראית מורכבת.",
+      "role_en": "Partner · Head of Finance",
+      "bio_en": "Leads the financing, financial recovery, and debt management practices. Specializes in building creative solutions even in complex situations — including for clients rejected by mainstream banking or with a complex credit history.",
+      "order": 2
+    },
+    {
+      "role_he": "שמאי מקרקעין",
+      "bio_he": "שמאי מקרקעין מוסמך בתוך הצוות. מספק הערכות שווי לנכסים ולפרויקטים, סקירות שוק ובדיקות כדאיות. נוכחות מקצועית-שמאית פנימית מבטיחה שכל החלטת השקעה או רכישה נשענת על ניתוח שווי בלתי תלוי.",
+      "role_en": "Real Estate Appraiser",
+      "bio_en": "A certified real estate appraiser on the in-house team. Provides asset and project valuations, market surveys, and feasibility studies. In-house appraisal expertise ensures every investment or acquisition decision rests on independent valuation analysis.",
+      "order": 3
+    }
+  ]
+}

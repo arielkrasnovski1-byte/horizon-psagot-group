@@ -53,7 +53,7 @@ async function boot() {
     if (user) {
       currentEmail = user.email;
       $('login-view').hidden = true; $('app-view').hidden = false; $('user-email').textContent = user.email;
-      listenLeads(); listenDeals(); listenTestimonials();
+      listenLeads(); listenDeals(); listenTestimonials(); teamCol.listen(); faqCol.listen();
     } else { $('app-view').hidden = true; $('login-view').hidden = false; }
   });
 
@@ -61,7 +61,7 @@ async function boot() {
   document.querySelectorAll('.crm-tab').forEach((tab) => {
     tab.addEventListener('click', () => {
       document.querySelectorAll('.crm-tab').forEach((t) => t.classList.toggle('active', t === tab));
-      ['leads', 'deals', 'testimonials', 'articles'].forEach((k) => { $('panel-' + k).hidden = (k !== tab.dataset.tab); });
+      ['leads', 'deals', 'testimonials', 'team', 'faq', 'articles'].forEach((k) => { $('panel-' + k).hidden = (k !== tab.dataset.tab); });
     });
   });
 
@@ -347,4 +347,90 @@ async function boot() {
       $('modal-save').disabled = false;
     };
   }
+
+  /* ============================================================
+     מנוע גנרי לניהול תוכן (צוות / שאלות נפוצות / ...)
+     ============================================================ */
+  function contentCollection(o) {
+    let items = [];
+    function listen() {
+      fs.onSnapshot(fs.query(fs.collection(db, o.name), fs.orderBy('order', 'asc')), (snap) => {
+        items = snap.docs.map((d) => ({ id: d.id, ...d.data() })); render();
+      }, (err) => { console.warn(err); $(o.gridId).innerHTML = '<p class="empty-state">שגיאה בטעינה.</p>'; });
+    }
+    function render() {
+      const grid = $(o.gridId);
+      if (!items.length) {
+        grid.innerHTML = `<div class="empty-state"><p>אין ${o.labelPlural} במערכת עדיין.</p><button class="crm-btn" style="width:auto;margin-top:12px" id="seed-${o.name}">ייבוא ה${o.labelPlural} הקיימים מהאתר</button></div>`;
+        const sb = $('seed-' + o.name);
+        if (sb) sb.addEventListener('click', async () => {
+          sb.disabled = true; sb.textContent = 'מייבא…';
+          try {
+            const r = await fetch(o.seedPath, { cache: 'no-cache' }); const data = await r.json(); const arr = (data && data[o.seedKey]) || [];
+            for (let i = 0; i < arr.length; i++) await fs.addDoc(fs.collection(db, o.name), { ...arr[i], order: i });
+            alert('יובאו ' + arr.length + ' פריטים בהצלחה.');
+          } catch (err) { alert('שגיאה בייבוא: ' + err.message); sb.disabled = false; sb.textContent = 'ייבוא ה' + o.labelPlural + ' הקיימים מהאתר'; }
+        });
+        return;
+      }
+      grid.innerHTML = items.map(o.card).join('');
+      grid.querySelectorAll('[data-edit]').forEach((b) => b.addEventListener('click', () => openModal(items.find((x) => x.id === b.dataset.edit))));
+      grid.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', () => { if (confirm('למחוק פריט זה?')) fs.deleteDoc(fs.doc(db, o.name, b.dataset.del)); }));
+    }
+    function openModal(item) {
+      const editing = !!item;
+      $('modal-title').textContent = editing ? ('עריכת ' + o.labelSingular) : (o.labelSingular + ' חדש');
+      $('modal-form').innerHTML = o.fields.map((f) => {
+        const v = editing ? (item[f.k] || '') : '';
+        const inp = f.t === 'textarea' ? `<textarea data-k="${f.k}">${esc(v)}</textarea>` : `<input type="text" data-k="${f.k}" value="${esc(v)}">`;
+        return `<div class="field"><label>${f.l}</label>${inp}${f.hint?`<div class="field-hint">${f.hint}</div>`:''}</div>`;
+      }).join('');
+      $('modal').hidden = false;
+      $('modal-save').onclick = async () => {
+        const data = {}; $('modal-form').querySelectorAll('[data-k]').forEach((el) => { data[el.dataset.k] = el.value.trim(); });
+        $('modal-save').disabled = true;
+        try {
+          if (editing) await fs.updateDoc(fs.doc(db, o.name, item.id), data);
+          else await fs.addDoc(fs.collection(db, o.name), { ...data, order: items.length });
+          closeModal();
+        } catch (err) { alert('שגיאה בשמירה: ' + err.message); }
+        $('modal-save').disabled = false;
+      };
+    }
+    $(o.addBtnId).addEventListener('click', () => openModal(null));
+    return { listen };
+  }
+
+  const teamCol = contentCollection({
+    name: 'team', gridId: 'team-grid-panel', addBtnId: 'add-team',
+    labelSingular: 'איש צוות', labelPlural: 'אנשי צוות', seedPath: '/data/team.json', seedKey: 'team',
+    fields: [
+      { k: 'role_he', l: 'תפקיד (עברית)', t: 'text', hint: 'לדוגמה: שותף · ראש תחום נדל"ן' },
+      { k: 'role_en', l: 'Role (English)', t: 'text' },
+      { k: 'bio_he', l: 'ביו (עברית)', t: 'textarea' },
+      { k: 'bio_en', l: 'Bio (English)', t: 'textarea' },
+    ],
+    card: (t) => `<div class="editor-card"><span class="ec-title">${esc(t.role_he || '(ללא תפקיד)')}</span>`+
+      `<p style="font-size:var(--fs-sm);color:var(--color-charcoal-soft);margin:0">${esc((t.bio_he || '').slice(0, 110))}…</p>`+
+      `<div class="ec-actions"><button class="crm-btn" style="width:auto;font-size:.85rem;padding:.5em 1em" data-edit="${t.id}">עריכה</button>`+
+      `<button class="icon-btn danger" data-del="${t.id}" title="מחיקה"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button></div></div>`,
+  });
+
+  const faqCol = contentCollection({
+    name: 'faq', gridId: 'faq-grid-panel', addBtnId: 'add-faq',
+    labelSingular: 'שאלה', labelPlural: 'שאלות', seedPath: '/data/faq.json', seedKey: 'faq',
+    fields: [
+      { k: 'category_he', l: 'קטגוריה (עברית)', t: 'text', hint: 'לדוגמה: מימון ומשכנתאות' },
+      { k: 'category_en', l: 'Category (English)', t: 'text' },
+      { k: 'question_he', l: 'שאלה (עברית)', t: 'text' },
+      { k: 'question_en', l: 'Question (English)', t: 'text' },
+      { k: 'answer_he', l: 'תשובה (עברית)', t: 'textarea' },
+      { k: 'answer_en', l: 'Answer (English)', t: 'textarea' },
+    ],
+    card: (f) => `<div class="editor-card"><span class="ec-cat">${esc(f.category_he || '')}</span>`+
+      `<span class="ec-title" style="font-size:var(--fs-base)">${esc(f.question_he || '(ללא שאלה)')}</span>`+
+      `<p style="font-size:var(--fs-sm);color:var(--color-charcoal-soft);margin:0">${esc((f.answer_he || '').slice(0, 90))}…</p>`+
+      `<div class="ec-actions"><button class="crm-btn" style="width:auto;font-size:.85rem;padding:.5em 1em" data-edit="${f.id}">עריכה</button>`+
+      `<button class="icon-btn danger" data-del="${f.id}" title="מחיקה"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button></div></div>`,
+  });
 }

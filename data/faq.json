@@ -1,0 +1,112 @@
+{
+  "faq": [
+    {
+      "category_he": "כללי",
+      "category_en": "General",
+      "question_he": "מה הופך אתכם לשונים מיועצים אחרים?",
+      "question_en": "What makes you different from other advisors?",
+      "answer_he": "הגישה המשולבת. במקום שתצטרכו לעבוד עם יועץ משכנתאות, רואה חשבון, עורך דין ומתווך נדל\"ן בנפרד — אנחנו עוזרים לראות את כל התמונה ולתאם בין כל הגורמים. ההמלצה שלנו מבוססת על ניתוח של כל הממדים יחד.",
+      "answer_en": "The integrated approach. Instead of working separately with a mortgage advisor, an accountant, an attorney and a real estate broker — we help you see the full picture and coordinate among all parties. Our recommendation is based on a joint analysis of all dimensions.",
+      "order": 0
+    },
+    {
+      "category_he": "כללי",
+      "category_en": "General",
+      "question_he": "האם אתם מנהלים כספי לקוחות?",
+      "question_en": "Do you manage client funds?",
+      "answer_he": "לא. אנחנו אינם מוסד פיננסי, ואנחנו לא מנהלים כספי לקוחות. תפקידנו ללוות, לנתח, לקשר ולייעץ — לא לבצע פעולות פיננסיות בעצמנו. כל הפעולות מתבצעות ישירות מולכם או דרך גורמים מורשים.",
+      "answer_en": "No. We are not a financial institution, and we do not manage client funds. Our role is to accompany, analyze, connect, and advise — not to execute financial transactions ourselves. All transactions are performed directly with you or through authorized parties.",
+      "order": 1
+    },
+    {
+      "category_he": "כללי",
+      "category_en": "General",
+      "question_he": "איך נראית שיחת ייעוץ ראשונית?",
+      "question_en": "What does an initial consultation look like?",
+      "answer_he": "שיחה של 30 דקות, ללא עלות ולל התחייבות. נכיר אתכם, נשמע על הצורך, ונציע כיוון פעולה ראשוני. אם נמצא שאנחנו הגורם המתאים — נציע המשך תהליך. אם לא — לפעמים פשוט נציע גורם אחר שעשוי להתאים יותר.",
+      "answer_en": "A 30-minute conversation, at no cost and with no obligation. We'll get to know you, hear about your need, and propose an initial direction. If we determine we're the right fit — we'll propose a follow-up engagement. If not — sometimes we'll simply suggest another party who may be a better fit.",
+      "order": 2
+    },
+    {
+      "category_he": "כללי",
+      "category_en": "General",
+      "question_he": "איך גובים אצלכם?",
+      "question_en": "How do you charge?",
+      "answer_he": "מודל התשלום נקבע לפי סוג הליווי. בליווי פרויקטים — לפי שעות עבודה או שכר טרחה קבוע. במימון — לפעמים יש עמלת הצלחה. בכל מקרה, כל המודל מוצג ומאושר מראש בשקיפות מלאה לפני תחילת העבודה.",
+      "answer_en": "The payment model depends on the type of engagement. For project guidance — hourly fees or a fixed retainer. For financing — sometimes a success fee. In every case, the full model is presented and approved up front with full transparency before work begins.",
+      "order": 3
+    },
+    {
+      "category_he": "מימון ומשכנתאות",
+      "category_en": "Financing &amp; Mortgages",
+      "question_he": "מה זה BDI שלילי וכיצד אתם עוזרים?",
+      "question_en": "What is negative BDI and how do you help?",
+      "answer_he": "BDI הוא מאגר נתוני האשראי הצרכני בישראל. דירוג שלילי משמעו היסטוריית אשראית בעייתית — חובות שלא שולמו, החזרים שלא בוצעו וכדומה. אנחנו בונים עבור לקוחות במצב הזה פתרונות מימון יצירתיים — בנקאיים וחוץ-בנקאיים — ולעיתים גם תכנית להבראת הדירוג עצמו.",
+      "answer_en": "BDI is the Israeli consumer credit data registry. A negative rating means a problematic credit history — unpaid debts, missed payments, etc. For clients in this situation we build creative financing solutions — bank and non-bank — and sometimes a plan to recover the rating itself.",
+      "order": 4
+    },
+    {
+      "category_he": "מימון ומשכנתאות",
+      "category_en": "Financing &amp; Mortgages",
+      "question_he": "סורבתי במשכנתא בבנק. האם יש סיכוי?",
+      "question_en": "I was rejected for a mortgage at the bank. Is there any chance?",
+      "answer_he": "בהחלט. סירוב במערכת הבנקאית הסטנדרטית לא אומר שאין פתרון. קיימים גופי מימון חוץ-בנקאיים, פתרונות יצירתיים של מבני שותפות ועוד. שלב ראשון הוא להבין מדוע סורבתם — ולמצוא את המסלול שכן יעבוד.",
+      "answer_en": "Absolutely. Rejection by the standard banking system does not mean there's no solution. There are non-bank financing parties, creative partnership structures and more. The first step is understanding why you were rejected — and finding the path that will work.",
+      "order": 5
+    },
+    {
+      "category_he": "מימון ומשכנתאות",
+      "category_en": "Financing &amp; Mortgages",
+      "question_he": "מה כולל ליווי בבחירת משכנתא?",
+      "question_en": "What does mortgage selection guidance include?",
+      "answer_he": "ניתוח הצורך והיכולת ההחזר, השוואת הצעות בין הבנקים, בניית תמהיל המשכנתא הנכון (פריים / קצועה / צמודה), ליווי במשא ומתן מול הבנק, ושיקול מימון חוץ-בנקאי כשנדרש.",
+      "answer_en": "Analyzing the need and repayment capacity, comparing offers between banks, building the right mortgage mix (Prime / fixed / linked), guiding the negotiation with the bank, and considering non-bank financing when needed.",
+      "order": 6
+    },
+    {
+      "category_he": "נדל\"ן והשקעות",
+      "category_en": "Real Estate &amp; Investments",
+      "question_he": "מה ההבדל בין השקעה בנדל\"ן בארץ ובחו\"ל?",
+      "question_en": "What is the difference between investing in real estate in Israel vs. abroad?",
+      "answer_he": "נדל\"ן בארץ — שוק מוכר, חיבור רגולטורי נוח, אבל מחירי כניסה גבוהים ומיסוי דחוף. נדל\"ן בחו\"ל — מחירי כניסה לעיתים נמוכים יותר, אופציה לויזה / אזרחות, אבל מורכבות מיסוי בינלאומית וניהול מרחוק. ההחלטה תלויה בפרופיל המשקיע, ההון הזמין והמטרות.",
+      "answer_en": "Real estate in Israel — a familiar market, comfortable regulatory connection, but high entry prices and immediate tax. Real estate abroad — sometimes lower entry prices, the option of a visa / citizenship, but more complex international taxation and remote management. The decision depends on the investor's profile, available capital and goals.",
+      "order": 7
+    },
+    {
+      "category_he": "נדל\"ן והשקעות",
+      "category_en": "Real Estate &amp; Investments",
+      "question_he": "איך פועלת תכנית \"Golden Visa\" ביוון?",
+      "question_en": "How does the \"Golden Visa\" program in Greece work?",
+      "answer_he": "משקיע זר שרוכש נדל\"ן ביוון בערך מינימלי (נכון להיום: כ-500K-800K אירו באזורים שונים) זכאי בתמורה לאשרת שהייה במדינה, וכך לכל האיחוד האירופי. זאת תכנית פופולרית למשקיעים שמחפשים גם נכס, גם תשואה וגם נגישות לאיחוד. נשמח לתאם פגישה ולפרט עדכניות.",
+      "answer_en": "A foreign investor purchasing real estate in Greece for a minimum amount (currently around 500K-800K euros depending on the region) is eligible in return for a residence visa in the country, and thus to the entire European Union. This is a popular program for investors seeking a property, a yield, and EU access. We'd be happy to set up a meeting with current details.",
+      "order": 8
+    },
+    {
+      "category_he": "נדל\"ן והשקעות",
+      "category_en": "Real Estate &amp; Investments",
+      "question_he": "מה ההבדל בין פינוי-בינוי לתמ\"א 38?",
+      "question_en": "What is the difference between demolish-rebuild and TAMA 38?",
+      "answer_he": "פינוי-בינוי — הריסה מוחלטת ובנייה חדשה, בדרך כלל לפרויקטים גדולים של מספר מבנים. תמ\"א 38 — חיזוק או חיזוק והרחבה של מבנה קיים, יעיל למבנים בודדים. שני המסלולים מציעים דירה חדשה לדיירים ללא עלות, אבל שונים בלוחות הזמנים, המורכבות וההיתכנות.",
+      "answer_en": "Demolish-rebuild — complete demolition and new construction, typically for larger projects of multiple buildings. TAMA 38 — reinforcement or reinforcement-and-expansion of an existing building, efficient for individual buildings. Both paths offer a new apartment to tenants at no cost, but differ in timelines, complexity and feasibility.",
+      "order": 9
+    },
+    {
+      "category_he": "משפט וליווי",
+      "category_en": "Law &amp; Engagement",
+      "question_he": "האם אתם נותנים ייעוץ משפטי?",
+      "question_en": "Do you provide legal advice?",
+      "answer_he": "לא ישירות. ייעוץ משפטי מבוצע על ידי עורכי דין מורשים בלבד. אנחנו עובדים בשיתוף פעולה עם עורכי דין חיצוניים שאנחנו עובדים איתם שנים, ויודעים לחבר אתכם לעורך הדין המתאים לצורך הספציפי (נדל\"ן, חוזים, משפחה, פלילי וכו').",
+      "answer_en": "Not directly. Legal advice is provided only by licensed attorneys. We work in partnership with external attorneys we have worked with for years, and know to connect you with the right attorney for the specific need (real estate, contracts, family, criminal, etc.).",
+      "order": 10
+    },
+    {
+      "category_he": "משפט וליווי",
+      "category_en": "Law &amp; Engagement",
+      "question_he": "מה קורה במצב של פשיטת רגל?",
+      "question_en": "What happens in an insolvency situation?",
+      "answer_he": "זה אחד התחומים שבהם הליווי שלנו רלוונטי במיוחד. אנחנו עוזרים לאבחן את המצב הפיננסי, לבחון אלטרנטיבות (הסדר חוב, הקפאת הליכים), ולליווי צמוד מול עו\"ד פש\"ר חיצוני אם זה המסלול הנכון. המטרה — לצאת מהמצב בצורה הטובה ביותר אפשרית לעתיד.",
+      "answer_en": "This is one of the areas in which our guidance is especially relevant. We help diagnose the financial situation, examine alternatives (debt arrangement, stay of proceedings), and provide close accompaniment with an external insolvency attorney if that's the right path. The goal — to exit the situation in the best possible way for the future.",
+      "order": 11
+    }
+  ]
+}
