@@ -162,15 +162,27 @@ table.leads tbody tr:hover td { background: var(--color-cream-soft); }
 .empty-state { padding: var(--space-2xl); text-align: center; color: var(--color-warm-gray); }
 
 /* ---- סרגל כלים ללידים (חיפוש/תאריכים/ייצוא) ---- */
-.lead-toolbar { display: flex; flex-wrap: wrap; gap: var(--space-sm); align-items: center; margin-bottom: var(--space-sm); }
-.lead-search { flex: 1; min-width: 220px; padding: 0.6em 1em; border: 1px solid var(--color-border); border-radius: var(--radius-full); background: var(--color-white); color: var(--color-charcoal); }
-.lead-search:focus { outline: none; border-color: var(--color-rose-gold); }
-.date-range { display: flex; gap: var(--space-2xs); }
+.lead-toolbar { display: flex; flex-wrap: wrap; gap: var(--space-sm); align-items: center; margin-bottom: var(--space-md); }
+.lead-search {
+  flex: 1 1 260px; height: 44px; padding: 0 2.8em 0 1.1em;
+  border: 1px solid var(--color-border); border-radius: var(--radius-full);
+  background: var(--color-white) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='%239C8A78' stroke-width='2' stroke-linecap='round'><circle cx='8' cy='8' r='6'/><path d='M17 17l-4-4'/></svg>") no-repeat right 14px center;
+  color: var(--color-charcoal); font-size: var(--fs-base);
+}
+.lead-search:focus { outline: none; border-color: var(--color-rose-gold); box-shadow: 0 0 0 3px rgba(201,164,122,0.15); }
+.date-range { display: flex; align-items: center; gap: var(--space-2xs); height: 44px; padding: 0 var(--space-sm); background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius-full); }
 .date-range label { display: flex; align-items: center; gap: 4px; font-size: var(--fs-sm); color: var(--color-warm-gray); }
-.date-range input { border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 0.4em 0.6em; background: var(--color-white); color: var(--color-charcoal); }
+.date-range input { border: none; background: none; color: var(--color-charcoal); font-size: var(--fs-sm); padding: 2px; font-family: var(--font-body); }
+.date-range input:focus { outline: none; }
+#export-csv { height: 44px; border-radius: var(--radius-full); white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; border-color: var(--color-rose-gold); color: var(--color-rose-gold-deep); font-weight: 600; }
+#export-csv:hover { background: rgba(201,164,122,0.08); }
 
 /* ---- שורת ליד לחיצה + נקודת פולו-אפ ---- */
-.lead-row { cursor: pointer; }
+.lead-row { cursor: pointer; transition: background var(--transition-base); }
+tbody tr.lead-row:hover td { background: var(--color-cream-soft); }
+.lead-row td:last-child { position: relative; }
+.lead-row .open-hint { color: var(--color-warm-gray); font-size: var(--fs-xs); opacity: 0; transition: opacity .2s; }
+.lead-row:hover .open-hint { opacity: 1; }
 .fu-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--color-error); vertical-align: middle; margin-inline-start: 6px; }
 
 /* ---- כרטיס ליד ---- */
