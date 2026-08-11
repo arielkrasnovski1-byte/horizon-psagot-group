@@ -53,7 +53,7 @@ async function boot() {
     if (user) {
       currentEmail = user.email;
       $('login-view').hidden = true; $('app-view').hidden = false; $('user-email').textContent = user.email;
-      listenLeads(); listenDeals(); listenTestimonials(); teamCol.listen(); faqCol.listen();
+      listenLeads(); listenDeals(); listenTestimonials(); teamCol.listen(); faqCol.listen(); articlesCol.listen();
     } else { $('app-view').hidden = true; $('login-view').hidden = false; }
   });
 
@@ -432,5 +432,31 @@ async function boot() {
       `<p style="font-size:var(--fs-sm);color:var(--color-charcoal-soft);margin:0">${esc((f.answer_he || '').slice(0, 90))}…</p>`+
       `<div class="ec-actions"><button class="crm-btn" style="width:auto;font-size:.85rem;padding:.5em 1em" data-edit="${f.id}">עריכה</button>`+
       `<button class="icon-btn danger" data-del="${f.id}" title="מחיקה"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button></div></div>`,
+  });
+
+  const articlesCol = contentCollection({
+    name: 'articles', gridId: 'articles-grid', addBtnId: 'add-article',
+    labelSingular: 'מאמר', labelPlural: 'מאמרים', seedPath: '/data/articles.json', seedKey: 'articles',
+    fields: [
+      { k: 'title_he', l: 'כותרת (עברית)', t: 'text' },
+      { k: 'title_en', l: 'Title (English)', t: 'text' },
+      { k: 'category_he', l: 'קטגוריה (עברית)', t: 'text', hint: 'לדוגמה: מימון' },
+      { k: 'category_en', l: 'Category (English)', t: 'text' },
+      { k: 'date', l: 'תאריך', t: 'text', hint: 'לדוגמה: 15.04.2026' },
+      { k: 'read_he', l: 'זמן קריאה (עברית)', t: 'text', hint: "לדוגמה: 5 דק' קריאה" },
+      { k: 'read_en', l: 'Read time (English)', t: 'text', hint: 'e.g. 5 min read' },
+      { k: 'image', l: 'נתיב תמונה', t: 'text', hint: '/assets/images/blog-xxx.jpg' },
+      { k: 'excerpt_he', l: 'תקציר (עברית)', t: 'textarea' },
+      { k: 'excerpt_en', l: 'Excerpt (English)', t: 'textarea' },
+      { k: 'body_he', l: 'גוף המאמר (עברית)', t: 'textarea', hint: 'טקסט רגיל — שורה ריקה מפרידה בין פסקאות. אפשר גם HTML.' },
+      { k: 'body_en', l: 'Article body (English)', t: 'textarea' },
+    ],
+    card: (a) => `<div class="editor-card">`+
+      (a.image ? `<img class="ec-img" src="${esc(a.image)}" alt="" onerror="this.style.display='none'">` : '')+
+      `<span class="ec-cat">${esc(a.category_he || '')} · ${esc(a.date || '')}</span>`+
+      `<span class="ec-title" style="font-size:var(--fs-base)">${esc(a.title_he || '(ללא כותרת)')}</span>`+
+      `<p style="font-size:var(--fs-sm);color:var(--color-charcoal-soft);margin:0">${esc((a.excerpt_he || '').slice(0, 90))}…</p>`+
+      `<div class="ec-actions"><button class="crm-btn" style="width:auto;font-size:.85rem;padding:.5em 1em" data-edit="${a.id}">עריכה</button>`+
+      `<button class="icon-btn danger" data-del="${a.id}" title="מחיקה"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button></div></div>`,
   });
 }
