@@ -57,8 +57,18 @@
           <div class="stat-tile"><div class="n" id="stat-total">0</div><div class="l">סה״כ פניות</div></div>
           <div class="stat-tile"><div class="n accent" id="stat-new">0</div><div class="l">חדשות (לא טופלו)</div></div>
           <div class="stat-tile"><div class="n" id="stat-month">0</div><div class="l">החודש</div></div>
-          <div class="stat-tile"><div class="n" id="stat-closed">0</div><div class="l">נסגרו</div></div>
+          <div class="stat-tile"><div class="n" id="stat-followup">0</div><div class="l">ממתינות לפולו-אפ</div></div>
         </div>
+
+        <div class="lead-toolbar">
+          <input type="search" id="lead-search" class="lead-search" placeholder="חיפוש לפי שם / טלפון / אימייל…">
+          <div class="date-range">
+            <label>מ־<input type="date" id="date-from"></label>
+            <label>עד<input type="date" id="date-to"></label>
+          </div>
+          <button class="btn-ghost" id="export-csv">⬇ ייצוא ל-Excel</button>
+        </div>
+
         <div class="filters" id="filters">
           <button class="filter-btn active" data-filter="all">הכל</button>
           <button class="filter-btn" data-filter="new">חדשות</button>
@@ -66,11 +76,14 @@
           <button class="filter-btn" data-filter="closed">נסגרו</button>
           <button class="filter-btn" data-filter="website">מהאתר</button>
           <button class="filter-btn" data-filter="facebook">מפייסבוק</button>
+          <button class="filter-btn" data-filter="mine">שלי</button>
+          <button class="filter-btn" data-filter="followup">פולו-אפ היום</button>
         </div>
+
         <div class="leads-table-wrap">
           <table class="leads">
-            <thead><tr><th>תאריך</th><th>שם</th><th>יצירת קשר</th><th>קהל / נושא</th><th>מקור</th><th>סטטוס</th><th></th></tr></thead>
-            <tbody id="leads-body"><tr><td colspan="7" class="empty-state">טוען…</td></tr></tbody>
+            <thead><tr><th>תאריך</th><th>שם</th><th>יצירת קשר</th><th>קהל / נושא</th><th>מקור</th><th>מטופל ע״י</th><th>סטטוס</th><th></th></tr></thead>
+            <tbody id="leads-body"><tr><td colspan="8" class="empty-state">טוען…</td></tr></tbody>
           </table>
         </div>
       </section>
@@ -90,7 +103,7 @@
           <h2>מאמרים</h2>
           <button class="crm-btn" style="width:auto" id="add-article">+ מאמר חדש</button>
         </div>
-        <div class="editor-grid" id="articles-grid"><p class="empty-state">בקרוב — בשלב הבא נחבר גם ניהול מאמרים.</p></div>
+        <div class="editor-grid" id="articles-grid"><p class="empty-state">בגל הבא נחבר גם ניהול מאמרים מלא.</p></div>
       </section>
 
     </main>
@@ -105,7 +118,7 @@
     </div>
   </div>
 
-  <!-- ===== מודל עריכה (משותף) ===== -->
+  <!-- ===== מודל עריכה (עסקאות/מאמרים) ===== -->
   <div class="modal-overlay" id="modal" hidden>
     <div class="modal">
       <h3 id="modal-title">עריכה</h3>
@@ -113,6 +126,45 @@
       <div class="modal-actions">
         <button class="crm-btn" style="width:auto" id="modal-save">שמירה</button>
         <button class="btn-ghost" id="modal-cancel">ביטול</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== כרטיס ליד ===== -->
+  <div class="modal-overlay" id="lead-modal" hidden>
+    <div class="modal lead-card">
+      <div class="lead-card-head">
+        <div>
+          <h3 id="lc-name">—</h3>
+          <div class="lc-sub" id="lc-sub"></div>
+        </div>
+        <button class="icon-btn" id="lc-close" title="סגירה">✕</button>
+      </div>
+
+      <div class="lc-quick" id="lc-quick"></div>
+
+      <div class="lc-grid">
+        <div class="field"><label>סטטוס</label><select id="lc-status" class="status-select"></select></div>
+        <div class="field"><label>מטופל ע״י</label>
+          <div class="assign-row">
+            <input type="text" id="lc-assigned" placeholder="אימייל / שם">
+            <button class="btn-ghost" id="lc-assign-me" type="button">קח לטיפול</button>
+          </div>
+        </div>
+        <div class="field"><label>תזכורת פולו-אפ</label><input type="date" id="lc-followup"></div>
+      </div>
+
+      <div class="field"><label>הערות</label><textarea id="lc-notes" placeholder="הערות פנימיות…"></textarea></div>
+
+      <div class="lc-activity">
+        <h4>היסטוריית פעילות</h4>
+        <ul id="lc-activity-list"><li class="lc-empty">אין פעילות עדיין.</li></ul>
+      </div>
+
+      <div class="modal-actions">
+        <button class="crm-btn" style="width:auto" id="lc-save">שמירה</button>
+        <button class="btn-ghost" id="lc-delete" style="color:var(--color-error)">מחיקה</button>
+        <button class="btn-ghost" id="lc-cancel">סגירה</button>
       </div>
     </div>
   </div>

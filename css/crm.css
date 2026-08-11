@@ -161,4 +161,36 @@ table.leads tbody tr:hover td { background: var(--color-cream-soft); }
 
 .empty-state { padding: var(--space-2xl); text-align: center; color: var(--color-warm-gray); }
 
-@media (max-width: 600px) { .crm-main { padding: var(--space-md); } .crm-topbar { padding: var(--space-sm) var(--space-md); } }
+/* ---- סרגל כלים ללידים (חיפוש/תאריכים/ייצוא) ---- */
+.lead-toolbar { display: flex; flex-wrap: wrap; gap: var(--space-sm); align-items: center; margin-bottom: var(--space-sm); }
+.lead-search { flex: 1; min-width: 220px; padding: 0.6em 1em; border: 1px solid var(--color-border); border-radius: var(--radius-full); background: var(--color-white); color: var(--color-charcoal); }
+.lead-search:focus { outline: none; border-color: var(--color-rose-gold); }
+.date-range { display: flex; gap: var(--space-2xs); }
+.date-range label { display: flex; align-items: center; gap: 4px; font-size: var(--fs-sm); color: var(--color-warm-gray); }
+.date-range input { border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 0.4em 0.6em; background: var(--color-white); color: var(--color-charcoal); }
+
+/* ---- שורת ליד לחיצה + נקודת פולו-אפ ---- */
+.lead-row { cursor: pointer; }
+.fu-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--color-error); vertical-align: middle; margin-inline-start: 6px; }
+
+/* ---- כרטיס ליד ---- */
+.lead-card { max-width: 620px; }
+.lead-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-md); margin-bottom: var(--space-sm); }
+.lead-card-head h3 { font-family: var(--font-heading); color: var(--color-navy-deep); margin: 0; }
+.lc-sub { font-size: var(--fs-sm); color: var(--color-warm-gray); margin-top: 4px; }
+.lc-quick { display: flex; flex-wrap: wrap; gap: var(--space-2xs); margin-bottom: var(--space-md); }
+.lc-quick .crm-btn, .lc-quick .btn-ghost { font-size: var(--fs-sm); padding: 0.5em 1em; direction: ltr; }
+.lc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-sm); margin-bottom: var(--space-sm); }
+.lc-grid .field:first-child { grid-column: 1 / -1; }
+.assign-row { display: flex; gap: 6px; }
+.assign-row input { flex: 1; }
+.assign-row .btn-ghost { white-space: nowrap; padding: 0.4em 0.8em; font-size: var(--fs-sm); }
+.lc-activity { margin-top: var(--space-md); }
+.lc-activity h4 { font-size: var(--fs-sm); color: var(--color-navy-deep); margin-bottom: var(--space-2xs); }
+.lc-activity ul { max-height: 180px; overflow-y: auto; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-2xs); }
+.lc-activity li { font-size: var(--fs-sm); color: var(--color-charcoal-soft); padding: 4px 6px; border-bottom: 1px solid var(--color-border); }
+.lc-activity li:last-child { border-bottom: none; }
+.lc-activity li.lc-empty { color: var(--color-warm-gray); border: none; }
+.act-when { font-size: var(--fs-xs); color: var(--color-warm-gray); font-family: var(--font-body); }
+
+@media (max-width: 600px) { .crm-main { padding: var(--space-md); } .crm-topbar { padding: var(--space-sm) var(--space-md); } .lc-grid { grid-template-columns: 1fr; } }
