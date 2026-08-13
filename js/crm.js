@@ -75,6 +75,8 @@ async function boot() {
   let teamUsers = [], allUsers = [], currentRole = 'agent';
   const ROLES = { owner: 'בעלים', manager: 'מנהל', agent: 'נציג' };
   const normRole = (r) => (r === 'owner' || r === 'manager' || r === 'agent') ? r : 'agent';
+  // שם תצוגה של מטפל לפי המייל — מהשם שהוגדר, אחרת החלק שלפני ה-@
+  const displayName = (email) => { if (!email) return ''; const u = allUsers.find((x) => x.email === email); return (u && u.name) ? u.name : email.split('@')[0]; };
 
   /* רשימת בעלי גישה — לבחירת מטפל, סינון וניהול משתמשים + הרשאות */
   function listenUsers() {
@@ -94,6 +96,7 @@ async function boot() {
       // אם הטאב הפעיל הוסתר — חוזרים ללידים
       const active = document.querySelector('.crm-tab.active');
       if (active && active.hidden) document.querySelector('.crm-tab[data-tab="leads"]').click();
+      $('user-email').textContent = displayName(currentEmail);
       populateUserFilter();
       renderUsers(ownerExists, isOwner);
     }, (err) => console.warn('users listener', err));
@@ -107,7 +110,10 @@ async function boot() {
       const roleCell = (isOwner && !isSelf)
         ? `<select class="status-select" data-role-uid="${u.uid}">${Object.keys(ROLES).map((k) => `<option value="${k}"${role === k ? ' selected' : ''}>${ROLES[k]}</option>`).join('')}</select>`
         : (role === 'owner' ? `<span class="src-badge src-manual">${ROLES[role]}</span>` : ROLES[role]);
-      return `<tr><td class="lead-name">${esc(u.name || (u.email || '').split('@')[0])}</td>`+
+      const nameCell = isOwner
+        ? `<input class="name-edit" data-name-uid="${u.uid}" value="${esc(u.name || '')}" placeholder="${esc((u.email || '').split('@')[0])}">`
+        : esc(u.name || (u.email || '').split('@')[0]);
+      return `<tr><td class="lead-name">${nameCell}</td>`+
         `<td class="lead-contact" style="direction:ltr;text-align:right">${esc(u.email || '')}</td>`+
         `<td>${roleCell}</td>`+
         `<td class="lead-date">${u.lastSeen ? fmtDate(u.lastSeen) : '—'}</td>`+
@@ -123,6 +129,7 @@ async function boot() {
       catch (err) { alert('שגיאה: ' + err.message); }
     }));
     body.querySelectorAll('[data-role-uid]').forEach((s) => s.addEventListener('change', () => fs.updateDoc(fs.doc(db, 'crm_users', s.dataset.roleUid), { role: s.value })));
+    body.querySelectorAll('[data-name-uid]').forEach((inp) => inp.addEventListener('change', () => fs.updateDoc(fs.doc(db, 'crm_users', inp.dataset.nameUid), { name: inp.value.trim() })));
     body.querySelectorAll('[data-del-user]').forEach((b) => b.addEventListener('click', () => {
       if (confirm('להסיר את המשתמש מהרשימה?\n(לחסימת התחברות מלאה — יש למחוק אותו גם ב-Firebase Console → Authentication)')) fs.deleteDoc(fs.doc(db, 'crm_users', b.dataset.delUser));
     }));
@@ -160,11 +167,11 @@ async function boot() {
   });
   function userOptions(selected) {
     const extra = (selected && !teamUsers.includes(selected)) ? `<option value="${esc(selected)}">${esc(selected)}</option>` : '';
-    return '<option value="">— לא הוקצה —</option>' + teamUsers.map((e) => `<option value="${esc(e)}"${e === selected ? ' selected' : ''}>${esc(e.split('@')[0])}</option>`).join('') + extra;
+    return '<option value="">— לא הוקצה —</option>' + teamUsers.map((e) => `<option value="${esc(e)}"${e === selected ? ' selected' : ''}>${esc(displayName(e))}</option>`).join('') + extra;
   }
   function populateUserFilter() {
     const fu = $('filter-user'); if (!fu) return; const cur = fu.value;
-    fu.innerHTML = '<option value="">כל המטפלים</option>' + teamUsers.map((e) => `<option value="${esc(e)}">${esc(e.split('@')[0])}</option>`).join('');
+    fu.innerHTML = '<option value="">כל המטפלים</option>' + teamUsers.map((e) => `<option value="${esc(e)}">${esc(displayName(e))}</option>`).join('');
     fu.value = cur;
   }
   $('filter-user').addEventListener('change', (e) => { userFilter = e.target.value; renderLeads(); });
@@ -227,7 +234,7 @@ async function boot() {
       const src = srcBadge(l.source || 'website');
       const opts = STATUS_KEYS.filter((k)=>k!=='in_progress').map((k)=>`<option value="${k}"${(l.status||'new')===k?' selected':''}>${STATUS[k].he}</option>`).join('');
       const topic = [l.audience, l.topic].filter(Boolean).join(' · ') || '—';
-      const assigned = l.assignedTo ? esc(l.assignedTo.split('@')[0]) : '<span style="color:var(--color-warm-gray)">—</span>';
+      const assigned = l.assignedTo ? esc(displayName(l.assignedTo)) : '<span style="color:var(--color-warm-gray)">—</span>';
       const fu = isFollowUpDue(l) ? ' <span class="fu-dot" title="ממתין לפולו-אפ"></span>' : '';
       return `<tr data-lead="${l.id}" class="lead-row">`+
         `<td class="lead-date">${fmtDate(l.createdAt)}</td>`+
@@ -276,7 +283,7 @@ async function boot() {
     const list = $('lc-activity-list');
     if (!act.length) { list.innerHTML = '<li class="lc-empty">אין פעילות עדיין.</li>'; return; }
     list.innerHTML = act.slice().reverse().map((a) =>
-      `<li><span class="act-when">${fmtDate(a.at)}</span> <b>${esc((a.by||'').split('@')[0])}</b> — ${esc(a.action)}</li>`).join('');
+      `<li><span class="act-when">${fmtDate(a.at)}</span> <b>${esc(displayName(a.by))}</b> — ${esc(a.action)}</li>`).join('');
   }
   $('lc-assign-me').addEventListener('click', () => { $('lc-assigned').value = currentEmail; });
   $('lc-close').addEventListener('click', () => $('lead-modal').hidden = true);
@@ -295,7 +302,7 @@ async function boot() {
       act.push({ at: nowISO(), by: currentEmail, action: 'שינה סטטוס ל: ' + (STATUS[newStatus]?.he || newStatus) });
       if (newStatus === 'closed') { updates.closedBy = currentEmail; updates.closedAt = nowISO(); }
     }
-    if (newAssigned !== (l.assignedTo || '')) act.push({ at: nowISO(), by: currentEmail, action: newAssigned ? ('הקצה ל: ' + newAssigned.split('@')[0]) : 'ביטל הקצאה' });
+    if (newAssigned !== (l.assignedTo || '')) act.push({ at: nowISO(), by: currentEmail, action: newAssigned ? ('הקצה ל: ' + displayName(newAssigned)) : 'ביטל הקצאה' });
     if (newNotes !== (l.notes || '')) act.push({ at: nowISO(), by: currentEmail, action: 'עדכן הערות' });
     if (newFollow !== (l.followUpAt || '')) act.push({ at: nowISO(), by: currentEmail, action: newFollow ? ('קבע פולו-אפ ל: ' + newFollow) : 'הסיר פולו-אפ' });
     updates.activity = act;

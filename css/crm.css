@@ -177,6 +177,9 @@ table.leads tbody tr:hover td { background: var(--color-cream-soft); }
 .user-filter { height: 44px; border: 1px solid var(--color-border); border-radius: var(--radius-full); background: var(--color-white); color: var(--color-charcoal); padding: 0 1em; font-size: var(--fs-sm); cursor: pointer; }
 .user-filter:focus { outline: none; border-color: var(--color-rose-gold); }
 .src-badge.src-manual { color: var(--color-rose-gold-deep); background: rgba(201,164,122,.14); }
+.name-edit { border: 1px solid transparent; background: transparent; color: var(--color-navy-deep); font-weight: 700; font-family: var(--font-body); font-size: var(--fs-sm); padding: 5px 7px; border-radius: var(--radius-sm); width: 100%; max-width: 170px; }
+.name-edit:hover { border-color: var(--color-border); }
+.name-edit:focus { outline: none; border-color: var(--color-rose-gold); background: var(--color-cream-soft); }
 #export-csv { height: 44px; border-radius: var(--radius-full); white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; border-color: var(--color-rose-gold); color: var(--color-rose-gold-deep); font-weight: 600; }
 #export-csv:hover { background: rgba(201,164,122,0.08); }
 
