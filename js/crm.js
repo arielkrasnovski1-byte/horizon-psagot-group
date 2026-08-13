@@ -72,18 +72,28 @@ async function boot() {
      לידים
      ============================================================ */
   let allLeads = [], leadFilter = 'all', searchQ = '', userFilter = '';
-  let teamUsers = [], allUsers = [], currentRole = 'member';
+  let teamUsers = [], allUsers = [], currentRole = 'agent';
+  const ROLES = { owner: 'בעלים', manager: 'מנהל', agent: 'נציג' };
+  const normRole = (r) => (r === 'owner' || r === 'manager' || r === 'agent') ? r : 'agent';
 
-  /* רשימת בעלי גישה — לבחירת מטפל, סינון וניהול משתמשים */
+  /* רשימת בעלי גישה — לבחירת מטפל, סינון וניהול משתמשים + הרשאות */
   function listenUsers() {
     fs.onSnapshot(fs.collection(db, 'crm_users'), (snap) => {
       allUsers = snap.docs.map((d) => ({ uid: d.id, ...d.data() }));
       teamUsers = allUsers.map((u) => u.email).filter(Boolean).sort();
       const me = allUsers.find((u) => u.uid === currentUid);
-      currentRole = (me && me.role) || 'member';
+      currentRole = normRole(me && me.role);
       const ownerExists = allUsers.some((u) => u.role === 'owner');
       const isOwner = currentRole === 'owner';
-      $('tab-users').hidden = !(isOwner || !ownerExists);   // מציג את הטאב לבעלים, או לכולם אם עוד אין בעלים
+      const canContent = isOwner || currentRole === 'manager' || !ownerExists;
+      // חשיפת טאבים לפי תפקיד: נציג=לידים בלבד · מנהל=+תוכן · בעלים=+משתמשים
+      ['deals', 'testimonials', 'team', 'faq', 'articles'].forEach((k) => {
+        const btn = document.querySelector('.crm-tab[data-tab="' + k + '"]'); if (btn) btn.hidden = !canContent;
+      });
+      $('tab-users').hidden = !(isOwner || !ownerExists);
+      // אם הטאב הפעיל הוסתר — חוזרים ללידים
+      const active = document.querySelector('.crm-tab.active');
+      if (active && active.hidden) document.querySelector('.crm-tab[data-tab="leads"]').click();
       populateUserFilter();
       renderUsers(ownerExists, isOwner);
     }, (err) => console.warn('users listener', err));
@@ -92,12 +102,18 @@ async function boot() {
     $('owner-claim').hidden = ownerExists;
     const body = $('users-body');
     if (!allUsers.length) { body.innerHTML = '<tr><td colspan="5" class="empty-state">אין משתמשים.</td></tr>'; return; }
-    body.innerHTML = allUsers.map((u) => `<tr>`+
-      `<td class="lead-name">${esc(u.name || (u.email || '').split('@')[0])}</td>`+
-      `<td class="lead-contact" style="direction:ltr;text-align:right">${esc(u.email || '')}</td>`+
-      `<td>${u.role === 'owner' ? '<span class="src-badge src-manual">בעלים</span>' : 'חבר צוות'}</td>`+
-      `<td class="lead-date">${u.lastSeen ? fmtDate(u.lastSeen) : '—'}</td>`+
-      `<td>${(isOwner && u.uid !== currentUid) ? `<button class="icon-btn danger" data-del-user="${u.uid}" title="הסרה"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>` : ''}</td></tr>`).join('');
+    body.innerHTML = allUsers.map((u) => {
+      const role = normRole(u.role); const isSelf = u.uid === currentUid;
+      const roleCell = (isOwner && !isSelf)
+        ? `<select class="status-select" data-role-uid="${u.uid}">${Object.keys(ROLES).map((k) => `<option value="${k}"${role === k ? ' selected' : ''}>${ROLES[k]}</option>`).join('')}</select>`
+        : (role === 'owner' ? `<span class="src-badge src-manual">${ROLES[role]}</span>` : ROLES[role]);
+      return `<tr><td class="lead-name">${esc(u.name || (u.email || '').split('@')[0])}</td>`+
+        `<td class="lead-contact" style="direction:ltr;text-align:right">${esc(u.email || '')}</td>`+
+        `<td>${roleCell}</td>`+
+        `<td class="lead-date">${u.lastSeen ? fmtDate(u.lastSeen) : '—'}</td>`+
+        `<td>${(isOwner && !isSelf) ? `<button class="icon-btn danger" data-del-user="${u.uid}" title="הסרה"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>` : ''}</td></tr>`;
+    }).join('');
+    body.querySelectorAll('[data-role-uid]').forEach((s) => s.addEventListener('change', () => fs.updateDoc(fs.doc(db, 'crm_users', s.dataset.roleUid), { role: s.value })));
     body.querySelectorAll('[data-del-user]').forEach((b) => b.addEventListener('click', () => {
       if (confirm('להסיר את המשתמש מהרשימה?\n(לחסימת התחברות מלאה — יש למחוק אותו גם ב-Firebase Console → Authentication)')) fs.deleteDoc(fs.doc(db, 'crm_users', b.dataset.delUser));
     }));
@@ -111,7 +127,7 @@ async function boot() {
       '<div class="field"><label>שם</label><input type="text" data-k="name"></div>'+
       '<div class="field"><label>אימייל</label><input type="email" data-k="email" autocomplete="off"></div>'+
       '<div class="field"><label>סיסמה (לפחות 6 תווים)</label><input type="text" data-k="password"></div>'+
-      '<div class="field"><label>תפקיד</label><select data-k="role"><option value="member">חבר צוות</option><option value="owner">בעלים</option></select></div>';
+      '<div class="field"><label>תפקיד</label><select data-k="role"><option value="agent">נציג — לידים בלבד</option><option value="manager">מנהל — לידים + תוכן</option><option value="owner">בעלים — הכל</option></select></div>';
     $('modal').hidden = false;
     $('modal-save').onclick = async () => {
       const g = (k) => { const el = $('modal-form').querySelector('[data-k="' + k + '"]'); return el ? el.value.trim() : ''; };
