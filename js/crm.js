@@ -53,6 +53,9 @@ async function boot() {
     if (user) {
       currentEmail = user.email;
       $('login-view').hidden = true; $('app-view').hidden = false; $('user-email').textContent = user.email;
+      // רישום המשתמש לרשימת בעלי הגישה (לצורך הקצאה/סינון)
+      fs.setDoc(fs.doc(db, 'crm_users', user.uid), { email: user.email, lastSeen: nowISO() }, { merge: true }).catch(() => {});
+      listenUsers();
       listenLeads(); listenDeals(); listenTestimonials(); teamCol.listen(); faqCol.listen(); articlesCol.listen();
     } else { $('app-view').hidden = true; $('login-view').hidden = false; }
   });
@@ -68,7 +71,26 @@ async function boot() {
   /* ============================================================
      לידים
      ============================================================ */
-  let allLeads = [], leadFilter = 'all', searchQ = '';
+  let allLeads = [], leadFilter = 'all', searchQ = '', userFilter = '';
+  let teamUsers = [];
+
+  /* רשימת בעלי גישה — לבחירת מטפל וסינון */
+  function listenUsers() {
+    fs.onSnapshot(fs.collection(db, 'crm_users'), (snap) => {
+      teamUsers = snap.docs.map((d) => d.data().email).filter(Boolean).sort();
+      populateUserFilter();
+    }, (err) => console.warn('users listener', err));
+  }
+  function userOptions(selected) {
+    const extra = (selected && !teamUsers.includes(selected)) ? `<option value="${esc(selected)}">${esc(selected)}</option>` : '';
+    return '<option value="">— לא הוקצה —</option>' + teamUsers.map((e) => `<option value="${esc(e)}"${e === selected ? ' selected' : ''}>${esc(e.split('@')[0])}</option>`).join('') + extra;
+  }
+  function populateUserFilter() {
+    const fu = $('filter-user'); if (!fu) return; const cur = fu.value;
+    fu.innerHTML = '<option value="">כל המטפלים</option>' + teamUsers.map((e) => `<option value="${esc(e)}">${esc(e.split('@')[0])}</option>`).join('');
+    fu.value = cur;
+  }
+  $('filter-user').addEventListener('change', (e) => { userFilter = e.target.value; renderLeads(); });
 
   function listenLeads() {
     fs.onSnapshot(fs.collection(db, 'leads'), (snap) => {
@@ -110,7 +132,13 @@ async function boot() {
     const from = $('date-from').value, to = $('date-to').value;
     if (from) rows = rows.filter((l) => fmtDay(l.createdAt) >= from);
     if (to) rows = rows.filter((l) => fmtDay(l.createdAt) <= to);
+    if (userFilter) rows = rows.filter((l) => (l.assignedTo || '') === userFilter);
     return rows;
+  }
+  function srcBadge(source) {
+    if (source === 'facebook') return '<span class="src-badge src-facebook">פייסבוק</span>';
+    if (source === 'manual') return '<span class="src-badge src-manual">ידני</span>';
+    return '<span class="src-badge src-website">אתר</span>';
   }
 
   function renderLeads() {
@@ -119,7 +147,7 @@ async function boot() {
     if (!rows.length) { body.innerHTML = '<tr><td colspan="8" class="empty-state">אין פניות להצגה.</td></tr>'; return; }
     body.innerHTML = rows.map((l) => {
       const st = STATUS[l.status||'new'] || STATUS.new;
-      const src = (l.source||'website')==='facebook' ? '<span class="src-badge src-facebook">פייסבוק</span>' : '<span class="src-badge src-website">אתר</span>';
+      const src = srcBadge(l.source || 'website');
       const opts = STATUS_KEYS.filter((k)=>k!=='in_progress').map((k)=>`<option value="${k}"${(l.status||'new')===k?' selected':''}>${STATUS[k].he}</option>`).join('');
       const topic = [l.audience, l.topic].filter(Boolean).join(' · ') || '—';
       const assigned = l.assignedTo ? esc(l.assignedTo.split('@')[0]) : '<span style="color:var(--color-warm-gray)">—</span>';
@@ -152,13 +180,15 @@ async function boot() {
   function openLeadModal(lead) {
     if (!lead) return; currentLead = lead;
     $('lc-name').textContent = lead.name || '—';
-    $('lc-sub').innerHTML = [fmtDate(lead.createdAt), (lead.source||'website')==='facebook'?'פייסבוק':'אתר', [lead.audience,lead.topic].filter(Boolean).join(' · ')].filter(Boolean).map(esc).join(' · ');
+    const srcTxt = lead.source === 'facebook' ? 'פייסבוק' : lead.source === 'manual' ? 'ידני' : 'אתר';
+    $('lc-sub').innerHTML = [fmtDate(lead.createdAt), srcTxt, [lead.audience,lead.topic].filter(Boolean).join(' · ')].filter(Boolean).map(esc).join(' · ');
     $('lc-quick').innerHTML =
       `<a class="crm-btn" style="width:auto" href="https://wa.me/${phoneIntl(lead.phone)}" target="_blank" rel="noopener">וואטסאפ</a>`+
       `<a class="btn-ghost" href="tel:${esc(lead.phone)}">${esc(lead.phone)}</a>`+
       (lead.email?`<a class="btn-ghost" href="mailto:${esc(lead.email)}">${esc(lead.email)}</a>`:'');
     $('lc-status').innerHTML = STATUS_KEYS.filter((k)=>k!=='in_progress').map((k)=>`<option value="${k}"${(lead.status||'new')===k?' selected':''}>${STATUS[k].he}</option>`).join('');
     $('lc-status').className = 'status-select ' + (STATUS[lead.status||'new']?.cls||'new');
+    $('lc-assigned').innerHTML = userOptions(lead.assignedTo || '');
     $('lc-assigned').value = lead.assignedTo || '';
     $('lc-followup').value = lead.followUpAt || '';
     $('lc-notes').value = lead.notes || '';
@@ -205,7 +235,7 @@ async function boot() {
     const csvRows = [head];
     rows.forEach((l) => csvRows.push([
       fmtDate(l.createdAt), l.name||'', l.phone||'', l.email||'', l.audience||'', l.topic||'',
-      (l.source||'website')==='facebook'?'פייסבוק':'אתר', STATUS[l.status||'new']?.he||'', l.assignedTo||'', l.followUpAt||'', (l.notes||'').replace(/\n/g,' ')
+      l.source==='facebook'?'פייסבוק':l.source==='manual'?'ידני':'אתר', STATUS[l.status||'new']?.he||'', l.assignedTo||'', l.followUpAt||'', (l.notes||'').replace(/\n/g,' ')
     ]));
     const csv = '﻿' + csvRows.map((r) => r.map((c) => '"' + String(c).replace(/"/g,'""') + '"').join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -213,6 +243,32 @@ async function boot() {
     const a = document.createElement('a');
     a.href = url; a.download = 'leads-' + todayStr() + '.csv'; a.click();
     URL.revokeObjectURL(url);
+  });
+
+  /* ---------- הוספת לקוח ידנית ---------- */
+  $('add-lead').addEventListener('click', () => {
+    $('modal-title').textContent = 'לקוח חדש';
+    const F = [
+      { k: 'name', l: 'שם מלא', t: 'text' }, { k: 'phone', l: 'טלפון', t: 'text' },
+      { k: 'email', l: 'אימייל', t: 'text' }, { k: 'audience', l: 'קהל יעד', t: 'text' },
+      { k: 'topic', l: 'נושא / סיבת פנייה', t: 'text' }, { k: 'message', l: 'הערה', t: 'textarea' },
+    ];
+    $('modal-form').innerHTML = F.map((f) => `<div class="field"><label>${f.l}</label>${f.t === 'textarea' ? `<textarea data-k="${f.k}"></textarea>` : `<input type="text" data-k="${f.k}">`}</div>`).join('');
+    $('modal').hidden = false;
+    $('modal-save').onclick = async () => {
+      const d = {}; $('modal-form').querySelectorAll('[data-k]').forEach((el) => { d[el.dataset.k] = el.value.trim(); });
+      if (!d.name || !d.phone) { alert('שם וטלפון הם שדות חובה.'); return; }
+      $('modal-save').disabled = true;
+      try {
+        await fs.addDoc(fs.collection(db, 'leads'), {
+          ...d, source: 'manual', status: 'new', notes: '', assignedTo: '', lang: 'he',
+          activity: [{ by: currentEmail, at: nowISO(), action: 'נוצר ידנית' }],
+          createdAt: fs.serverTimestamp(),
+        });
+        closeModal();
+      } catch (err) { alert('שגיאה: ' + err.message); }
+      $('modal-save').disabled = false;
+    };
   });
 
   /* ============================================================
@@ -398,11 +454,32 @@ async function boot() {
       };
     }
     $(o.addBtnId).addEventListener('click', () => openModal(null));
+
+    // ייבוא/סנכרון מהאתר — מוסיף רק פריטים שחסרים (לפי מפתח), בלי כפילויות
+    if (o.syncBtnId && $(o.syncBtnId)) {
+      $(o.syncBtnId).addEventListener('click', async (e) => {
+        const btn = e.currentTarget, orig = btn.textContent; btn.disabled = true; btn.textContent = 'מייבא…';
+        try {
+          const r = await fetch(o.seedPath, { cache: 'no-cache' });
+          const data = await r.json(); const arr = (data && data[o.seedKey]) || [];
+          const have = new Set(items.map((x) => String(x[o.dedupKey] || '').trim()));
+          let added = 0;
+          for (let i = 0; i < arr.length; i++) {
+            const key = String(arr[i][o.dedupKey] || '').trim();
+            if (have.has(key)) continue;
+            await fs.addDoc(fs.collection(db, o.name), { ...arr[i], order: items.length + added });
+            added++;
+          }
+          alert(added ? ('נוספו ' + added + ' פריטים חדשים.') : 'הכל כבר מעודכן — אין מה לייבא.');
+        } catch (err) { alert('שגיאה בייבוא: ' + err.message); }
+        btn.disabled = false; btn.textContent = orig;
+      });
+    }
     return { listen };
   }
 
   const teamCol = contentCollection({
-    name: 'team', gridId: 'team-grid-panel', addBtnId: 'add-team',
+    name: 'team', gridId: 'team-grid-panel', addBtnId: 'add-team', syncBtnId: 'sync-team', dedupKey: 'role_he',
     labelSingular: 'איש צוות', labelPlural: 'אנשי צוות', seedPath: '/data/team.json', seedKey: 'team',
     fields: [
       { k: 'role_he', l: 'תפקיד (עברית)', t: 'text', hint: 'לדוגמה: שותף · ראש תחום נדל"ן' },
@@ -417,7 +494,7 @@ async function boot() {
   });
 
   const faqCol = contentCollection({
-    name: 'faq', gridId: 'faq-grid-panel', addBtnId: 'add-faq',
+    name: 'faq', gridId: 'faq-grid-panel', addBtnId: 'add-faq', syncBtnId: 'sync-faq', dedupKey: 'question_he',
     labelSingular: 'שאלה', labelPlural: 'שאלות', seedPath: '/data/faq.json', seedKey: 'faq',
     fields: [
       { k: 'category_he', l: 'קטגוריה (עברית)', t: 'text', hint: 'לדוגמה: מימון ומשכנתאות' },
@@ -435,7 +512,7 @@ async function boot() {
   });
 
   const articlesCol = contentCollection({
-    name: 'articles', gridId: 'articles-grid', addBtnId: 'add-article',
+    name: 'articles', gridId: 'articles-grid', addBtnId: 'add-article', syncBtnId: 'sync-articles', dedupKey: 'title_he',
     labelSingular: 'מאמר', labelPlural: 'מאמרים', seedPath: '/data/articles.json', seedKey: 'articles',
     fields: [
       { k: 'title_he', l: 'כותרת (עברית)', t: 'text' },

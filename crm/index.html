@@ -56,6 +56,10 @@
 
       <!-- ===== טאב לידים ===== -->
       <section class="tab-panel" id="panel-leads">
+        <div class="panel-head">
+          <h2>לידים ולקוחות</h2>
+          <button class="crm-btn" style="width:auto" id="add-lead">+ לקוח חדש</button>
+        </div>
         <div class="stat-row">
           <div class="stat-tile"><div class="n" id="stat-total">0</div><div class="l">סה״כ פניות</div></div>
           <div class="stat-tile"><div class="n accent" id="stat-new">0</div><div class="l">חדשות (לא טופלו)</div></div>
@@ -69,6 +73,7 @@
             <label>מ־<input type="date" id="date-from"></label>
             <label>עד<input type="date" id="date-to"></label>
           </div>
+          <select id="filter-user" class="user-filter"><option value="">כל המטפלים</option></select>
           <button class="btn-ghost" id="export-csv">⬇ ייצוא ל-Excel</button>
         </div>
 
@@ -113,7 +118,10 @@
       <section class="tab-panel" id="panel-team" hidden>
         <div class="panel-head">
           <h2>צוות</h2>
-          <button class="crm-btn" style="width:auto" id="add-team">+ איש צוות</button>
+          <div style="display:flex;gap:.5rem">
+            <button class="btn-ghost" style="width:auto" id="sync-team">⟳ ייבוא מהאתר</button>
+            <button class="crm-btn" style="width:auto" id="add-team">+ איש צוות</button>
+          </div>
         </div>
         <div class="editor-grid" id="team-grid-panel"><p class="empty-state">טוען…</p></div>
       </section>
@@ -122,7 +130,10 @@
       <section class="tab-panel" id="panel-faq" hidden>
         <div class="panel-head">
           <h2>שאלות נפוצות</h2>
-          <button class="crm-btn" style="width:auto" id="add-faq">+ שאלה חדשה</button>
+          <div style="display:flex;gap:.5rem">
+            <button class="btn-ghost" style="width:auto" id="sync-faq">⟳ ייבוא מהאתר</button>
+            <button class="crm-btn" style="width:auto" id="add-faq">+ שאלה חדשה</button>
+          </div>
         </div>
         <div class="editor-grid" id="faq-grid-panel"><p class="empty-state">טוען…</p></div>
       </section>
@@ -131,9 +142,12 @@
       <section class="tab-panel" id="panel-articles" hidden>
         <div class="panel-head">
           <h2>מאמרים</h2>
-          <button class="crm-btn" style="width:auto" id="add-article">+ מאמר חדש</button>
+          <div style="display:flex;gap:.5rem">
+            <button class="btn-ghost" style="width:auto" id="sync-articles">⟳ ייבוא מהאתר</button>
+            <button class="crm-btn" style="width:auto" id="add-article">+ מאמר חדש</button>
+          </div>
         </div>
-        <div class="editor-grid" id="articles-grid"><p class="empty-state">בגל הבא נחבר גם ניהול מאמרים מלא.</p></div>
+        <div class="editor-grid" id="articles-grid"><p class="empty-state">טוען…</p></div>
       </section>
 
     </main>
@@ -177,7 +191,7 @@
         <div class="field"><label>סטטוס</label><select id="lc-status" class="status-select"></select></div>
         <div class="field"><label>מטופל ע״י</label>
           <div class="assign-row">
-            <input type="text" id="lc-assigned" placeholder="אימייל / שם">
+            <select id="lc-assigned"><option value="">— לא הוקצה —</option></select>
             <button class="btn-ghost" id="lc-assign-me" type="button">קח לטיפול</button>
           </div>
         </div>
