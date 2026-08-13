@@ -149,9 +149,21 @@ table.leads tbody tr:hover td { background: var(--color-cream-soft); }
 .src-facebook { color: #1877F2; background: rgba(24,119,242,0.1); }
 
 .status-select { font-size: var(--fs-sm); font-weight: 600; padding: 5px 10px; border-radius: var(--radius-full); border: 1px solid var(--color-border); background: var(--color-white); color: var(--color-charcoal); cursor: pointer; }
-.status-select.new { border-color: var(--color-rose-gold); color: var(--color-rose-gold-deep); }
-.status-select.contacted { border-color: var(--color-navy-mid); color: var(--color-navy-mid); }
-.status-select.closed { border-color: var(--color-warm-gray); color: var(--color-warm-gray); }
+/* צבעי רמזור לסטטוס: חדש=ירוק · בטיפול=צהוב · נסגר=אדום */
+.status-select.new      { border-color: #2E9E5B; color: #23794A; background: rgba(46,158,91,0.09); font-weight: 700; }
+.status-select.contacted{ border-color: #D6A419; color: #96700F; background: rgba(214,164,25,0.13); font-weight: 700; }
+.status-select.closed   { border-color: #C0392B; color: #A5291D; background: rgba(192,57,43,0.09); font-weight: 700; }
+
+/* נקודת צבע ליד השם לפי סטטוס: חדש=ירוק · בטיפול=צהוב · נסגר=אדום */
+.lead-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-inline-end: 8px; vertical-align: middle; background: var(--color-warm-gray-light); }
+tr.lead-row.ls-new       .lead-dot { background: #2E9E5B; }
+tr.lead-row.ls-contacted .lead-dot { background: #D6A419; }
+tr.lead-row.ls-closed    .lead-dot { background: #C0392B; }
+/* פס עדין בצד השורה (חיזוק ויזואלי) */
+table.leads tr.lead-row td:first-child { box-shadow: inset -4px 0 0 transparent; }
+tr.lead-row.ls-new       td:first-child { box-shadow: inset -4px 0 0 #2E9E5B; }
+tr.lead-row.ls-contacted td:first-child { box-shadow: inset -4px 0 0 #D6A419; }
+tr.lead-row.ls-closed    td:first-child { box-shadow: inset -4px 0 0 #C0392B; }
 
 .row-actions { display: flex; gap: 6px; }
 .icon-btn { width: 32px; height: 32px; display: grid; place-items: center; border-radius: var(--radius-sm); border: 1px solid var(--color-border); color: var(--color-warm-gray); background: var(--color-white); cursor: pointer; transition: all .2s; }

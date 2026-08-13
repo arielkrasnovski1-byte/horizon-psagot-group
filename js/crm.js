@@ -236,9 +236,9 @@ async function boot() {
       const topic = [l.audience, l.topic].filter(Boolean).join(' · ') || '—';
       const assigned = l.assignedTo ? esc(displayName(l.assignedTo)) : '<span style="color:var(--color-warm-gray)">—</span>';
       const fu = isFollowUpDue(l) ? ' <span class="fu-dot" title="ממתין לפולו-אפ"></span>' : '';
-      return `<tr data-lead="${l.id}" class="lead-row">`+
+      return `<tr data-lead="${l.id}" class="lead-row ls-${st.cls}">`+
         `<td class="lead-date">${fmtDate(l.createdAt)}</td>`+
-        `<td><div class="lead-name">${esc(l.name)}${fu}</div>${l.message?`<div class="lead-sub">${esc(l.message)}</div>`:''}</td>`+
+        `<td><div class="lead-name"><span class="lead-dot"></span>${esc(l.name)}${fu}</div>${l.message?`<div class="lead-sub">${esc(l.message)}</div>`:''}</td>`+
         `<td class="lead-contact"><a href="tel:${esc(l.phone)}" onclick="event.stopPropagation()">${esc(l.phone)}</a>${l.email?`<a href="mailto:${esc(l.email)}" onclick="event.stopPropagation()">${esc(l.email)}</a>`:''}</td>`+
         `<td>${esc(topic)}</td><td>${src}</td><td>${assigned}</td>`+
         `<td><select class="status-select ${st.cls}" data-id="${l.id}" onclick="event.stopPropagation()">${opts}</select></td>`+
