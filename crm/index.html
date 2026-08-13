@@ -50,6 +50,7 @@
       <button class="crm-tab" data-tab="team">צוות</button>
       <button class="crm-tab" data-tab="faq">שאלות נפוצות</button>
       <button class="crm-tab" data-tab="articles">מאמרים</button>
+      <button class="crm-tab" data-tab="users" id="tab-users" hidden>משתמשים</button>
     </nav>
 
     <main class="crm-main">
@@ -148,6 +149,24 @@
           </div>
         </div>
         <div class="editor-grid" id="articles-grid"><p class="empty-state">טוען…</p></div>
+      </section>
+
+      <!-- ===== טאב משתמשים ===== -->
+      <section class="tab-panel" id="panel-users" hidden>
+        <div class="panel-head">
+          <h2>משתמשים והרשאות</h2>
+          <button class="crm-btn" style="width:auto" id="add-user">+ משתמש חדש</button>
+        </div>
+        <div id="owner-claim" hidden style="background:var(--color-white);border:1px solid var(--color-rose-gold);border-radius:var(--radius-lg);padding:var(--space-md);margin-bottom:var(--space-md)">
+          <p style="margin:0 0 .6rem">עדיין לא הוגדר בעלים למערכת. הגדר את עצמך כבעלים כדי לנהל משתמשים.</p>
+          <button class="crm-btn" style="width:auto" id="claim-owner">הגדר אותי כבעלים</button>
+        </div>
+        <div class="leads-table-wrap">
+          <table class="leads">
+            <thead><tr><th>שם</th><th>אימייל</th><th>תפקיד</th><th>כניסה אחרונה</th><th></th></tr></thead>
+            <tbody id="users-body"><tr><td colspan="5" class="empty-state">טוען…</td></tr></tbody>
+          </table>
+        </div>
       </section>
 
     </main>

@@ -12,7 +12,7 @@ if (!isConfigured) { $('login-view').hidden = true; $('setup-view').hidden = fal
 else boot();
 
 async function boot() {
-  const [{ initializeApp }, auth, fs] = await Promise.all([
+  const [{ initializeApp, deleteApp }, auth, fs] = await Promise.all([
     import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'),
     import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js'),
     import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js')
@@ -20,7 +20,7 @@ async function boot() {
   const app = initializeApp(firebaseConfig);
   const authInstance = auth.getAuth(app);
   const db = fs.getFirestore(app);
-  let currentEmail = '';
+  let currentEmail = '', currentUid = '';
 
   const STATUS = {
     new:        { he: 'חדש',      cls: 'new' },
@@ -51,7 +51,7 @@ async function boot() {
   $('logout-btn').addEventListener('click', () => auth.signOut(authInstance));
   auth.onAuthStateChanged(authInstance, (user) => {
     if (user) {
-      currentEmail = user.email;
+      currentEmail = user.email; currentUid = user.uid;
       $('login-view').hidden = true; $('app-view').hidden = false; $('user-email').textContent = user.email;
       // רישום המשתמש לרשימת בעלי הגישה (לצורך הקצאה/סינון)
       fs.setDoc(fs.doc(db, 'crm_users', user.uid), { email: user.email, lastSeen: nowISO() }, { merge: true }).catch(() => {});
@@ -64,7 +64,7 @@ async function boot() {
   document.querySelectorAll('.crm-tab').forEach((tab) => {
     tab.addEventListener('click', () => {
       document.querySelectorAll('.crm-tab').forEach((t) => t.classList.toggle('active', t === tab));
-      ['leads', 'deals', 'testimonials', 'team', 'faq', 'articles'].forEach((k) => { $('panel-' + k).hidden = (k !== tab.dataset.tab); });
+      ['leads', 'deals', 'testimonials', 'team', 'faq', 'articles', 'users'].forEach((k) => { $('panel-' + k).hidden = (k !== tab.dataset.tab); });
     });
   });
 
@@ -72,15 +72,67 @@ async function boot() {
      לידים
      ============================================================ */
   let allLeads = [], leadFilter = 'all', searchQ = '', userFilter = '';
-  let teamUsers = [];
+  let teamUsers = [], allUsers = [], currentRole = 'member';
 
-  /* רשימת בעלי גישה — לבחירת מטפל וסינון */
+  /* רשימת בעלי גישה — לבחירת מטפל, סינון וניהול משתמשים */
   function listenUsers() {
     fs.onSnapshot(fs.collection(db, 'crm_users'), (snap) => {
-      teamUsers = snap.docs.map((d) => d.data().email).filter(Boolean).sort();
+      allUsers = snap.docs.map((d) => ({ uid: d.id, ...d.data() }));
+      teamUsers = allUsers.map((u) => u.email).filter(Boolean).sort();
+      const me = allUsers.find((u) => u.uid === currentUid);
+      currentRole = (me && me.role) || 'member';
+      const ownerExists = allUsers.some((u) => u.role === 'owner');
+      const isOwner = currentRole === 'owner';
+      $('tab-users').hidden = !(isOwner || !ownerExists);   // מציג את הטאב לבעלים, או לכולם אם עוד אין בעלים
       populateUserFilter();
+      renderUsers(ownerExists, isOwner);
     }, (err) => console.warn('users listener', err));
   }
+  function renderUsers(ownerExists, isOwner) {
+    $('owner-claim').hidden = ownerExists;
+    const body = $('users-body');
+    if (!allUsers.length) { body.innerHTML = '<tr><td colspan="5" class="empty-state">אין משתמשים.</td></tr>'; return; }
+    body.innerHTML = allUsers.map((u) => `<tr>`+
+      `<td class="lead-name">${esc(u.name || (u.email || '').split('@')[0])}</td>`+
+      `<td class="lead-contact" style="direction:ltr;text-align:right">${esc(u.email || '')}</td>`+
+      `<td>${u.role === 'owner' ? '<span class="src-badge src-manual">בעלים</span>' : 'חבר צוות'}</td>`+
+      `<td class="lead-date">${u.lastSeen ? fmtDate(u.lastSeen) : '—'}</td>`+
+      `<td>${(isOwner && u.uid !== currentUid) ? `<button class="icon-btn danger" data-del-user="${u.uid}" title="הסרה"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>` : ''}</td></tr>`).join('');
+    body.querySelectorAll('[data-del-user]').forEach((b) => b.addEventListener('click', () => {
+      if (confirm('להסיר את המשתמש מהרשימה?\n(לחסימת התחברות מלאה — יש למחוק אותו גם ב-Firebase Console → Authentication)')) fs.deleteDoc(fs.doc(db, 'crm_users', b.dataset.delUser));
+    }));
+  }
+  $('claim-owner').addEventListener('click', async () => {
+    await fs.setDoc(fs.doc(db, 'crm_users', currentUid), { email: currentEmail, role: 'owner', lastSeen: nowISO() }, { merge: true });
+  });
+  $('add-user').addEventListener('click', () => {
+    $('modal-title').textContent = 'משתמש חדש';
+    $('modal-form').innerHTML =
+      '<div class="field"><label>שם</label><input type="text" data-k="name"></div>'+
+      '<div class="field"><label>אימייל</label><input type="email" data-k="email" autocomplete="off"></div>'+
+      '<div class="field"><label>סיסמה (לפחות 6 תווים)</label><input type="text" data-k="password"></div>'+
+      '<div class="field"><label>תפקיד</label><select data-k="role"><option value="member">חבר צוות</option><option value="owner">בעלים</option></select></div>';
+    $('modal').hidden = false;
+    $('modal-save').onclick = async () => {
+      const g = (k) => { const el = $('modal-form').querySelector('[data-k="' + k + '"]'); return el ? el.value.trim() : ''; };
+      const email = g('email'), password = g('password'), name = g('name'), role = g('role');
+      if (!email || password.length < 6) { alert('נדרש אימייל תקין וסיסמה בת 6 תווים לפחות.'); return; }
+      $('modal-save').disabled = true;
+      try {
+        const secApp = initializeApp(firebaseConfig, 'sec-' + new Date().getTime());
+        const secAuth = auth.getAuth(secApp);
+        const cred = await auth.createUserWithEmailAndPassword(secAuth, email, password);
+        await fs.setDoc(fs.doc(db, 'crm_users', cred.user.uid), { email, name, role, lastSeen: nowISO() });
+        await auth.signOut(secAuth);
+        await deleteApp(secApp);
+        closeModal();
+        alert('המשתמש נוצר בהצלחה. הוא יכול להתחבר עם האימייל והסיסמה שהגדרת.');
+      } catch (err) {
+        alert('שגיאה: ' + (err.code === 'auth/email-already-in-use' ? 'האימייל כבר רשום.' : err.code === 'auth/weak-password' ? 'הסיסמה חלשה מדי.' : err.message));
+      }
+      $('modal-save').disabled = false;
+    };
+  });
   function userOptions(selected) {
     const extra = (selected && !teamUsers.includes(selected)) ? `<option value="${esc(selected)}">${esc(selected)}</option>` : '';
     return '<option value="">— לא הוקצה —</option>' + teamUsers.map((e) => `<option value="${esc(e)}"${e === selected ? ' selected' : ''}>${esc(e.split('@')[0])}</option>`).join('') + extra;
