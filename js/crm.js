@@ -248,12 +248,22 @@ async function boot() {
   /* ---------- הוספת לקוח ידנית ---------- */
   $('add-lead').addEventListener('click', () => {
     $('modal-title').textContent = 'לקוח חדש';
+    const AUDIENCE = ['משקיע פרטי', 'יזם נדל"ן', 'משפחה / יחיד', 'בעל עסק / חברה', 'זקוק למבנה מימון', 'אחר'];
+    const TOPIC = ['מימון ומשכנתאות', 'הבראה פיננסית', 'ניהול חוב', 'ייעוץ עסקי ואסטרטגיה', 'נדל"ן בישראל', 'נדל"ן בחו"ל', 'התחדשות עירונית', 'אחר'];
     const F = [
       { k: 'name', l: 'שם מלא', t: 'text' }, { k: 'phone', l: 'טלפון', t: 'text' },
-      { k: 'email', l: 'אימייל', t: 'text' }, { k: 'audience', l: 'קהל יעד', t: 'text' },
-      { k: 'topic', l: 'נושא / סיבת פנייה', t: 'text' }, { k: 'message', l: 'הערה', t: 'textarea' },
+      { k: 'email', l: 'אימייל', t: 'text' },
+      { k: 'audience', l: 'קהל יעד', t: 'select', opts: AUDIENCE },
+      { k: 'topic', l: 'נושא / סיבת פנייה', t: 'select', opts: TOPIC },
+      { k: 'message', l: 'הערה', t: 'textarea' },
     ];
-    $('modal-form').innerHTML = F.map((f) => `<div class="field"><label>${f.l}</label>${f.t === 'textarea' ? `<textarea data-k="${f.k}"></textarea>` : `<input type="text" data-k="${f.k}">`}</div>`).join('');
+    $('modal-form').innerHTML = F.map((f) => {
+      let inp;
+      if (f.t === 'textarea') inp = `<textarea data-k="${f.k}"></textarea>`;
+      else if (f.t === 'select') inp = `<select data-k="${f.k}"><option value="">— בחרו —</option>${f.opts.map((o) => `<option value="${esc(o)}">${esc(o)}</option>`).join('')}</select>`;
+      else inp = `<input type="text" data-k="${f.k}">`;
+      return `<div class="field"><label>${f.l}</label>${inp}</div>`;
+    }).join('');
     $('modal').hidden = false;
     $('modal-save').onclick = async () => {
       const d = {}; $('modal-form').querySelectorAll('[data-k]').forEach((el) => { d[el.dataset.k] = el.value.trim(); });
