@@ -111,8 +111,17 @@ async function boot() {
         `<td class="lead-contact" style="direction:ltr;text-align:right">${esc(u.email || '')}</td>`+
         `<td>${roleCell}</td>`+
         `<td class="lead-date">${u.lastSeen ? fmtDate(u.lastSeen) : '—'}</td>`+
-        `<td>${(isOwner && !isSelf) ? `<button class="icon-btn danger" data-del-user="${u.uid}" title="הסרה"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>` : ''}</td></tr>`;
+        `<td><div class="row-actions">`+
+          `${isOwner ? `<button class="icon-btn" data-reset="${esc(u.email || '')}" title="איפוס סיסמה (שליחת מייל)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></button>` : ''}`+
+          `${(isOwner && !isSelf) ? `<button class="icon-btn danger" data-del-user="${u.uid}" title="הסרה"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>` : ''}`+
+        `</div></td></tr>`;
     }).join('');
+    body.querySelectorAll('[data-reset]').forEach((b) => b.addEventListener('click', async () => {
+      const email = b.dataset.reset; if (!email) return;
+      if (!confirm('לשלוח מייל לאיפוס סיסמה אל:\n' + email + ' ?')) return;
+      try { await auth.sendPasswordResetEmail(authInstance, email); alert('נשלח מייל איפוס סיסמה אל ' + email + '.\nהמשתמש יבחר סיסמה חדשה דרך הקישור במייל.'); }
+      catch (err) { alert('שגיאה: ' + err.message); }
+    }));
     body.querySelectorAll('[data-role-uid]').forEach((s) => s.addEventListener('change', () => fs.updateDoc(fs.doc(db, 'crm_users', s.dataset.roleUid), { role: s.value })));
     body.querySelectorAll('[data-del-user]').forEach((b) => b.addEventListener('click', () => {
       if (confirm('להסיר את המשתמש מהרשימה?\n(לחסימת התחברות מלאה — יש למחוק אותו גם ב-Firebase Console → Authentication)')) fs.deleteDoc(fs.doc(db, 'crm_users', b.dataset.delUser));
