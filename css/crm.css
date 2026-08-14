@@ -201,7 +201,8 @@ tbody tr.lead-row:hover td { background: var(--color-cream-soft); }
 .lead-row td:last-child { position: relative; }
 .lead-row .open-hint { color: var(--color-warm-gray); font-size: var(--fs-xs); opacity: 0; transition: opacity .2s; }
 .lead-row:hover .open-hint { opacity: 1; }
-.fu-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--color-error); vertical-align: middle; margin-inline-start: 6px; }
+.fu-clock { display: inline-flex; align-items: center; vertical-align: middle; margin-inline-start: 6px; color: #DB7A28; }
+.fu-clock svg { width: 15px; height: 15px; }
 
 /* ---- כרטיס ליד ---- */
 .lead-card { max-width: 620px; }

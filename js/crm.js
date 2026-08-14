@@ -235,7 +235,7 @@ async function boot() {
       const opts = STATUS_KEYS.filter((k)=>k!=='in_progress').map((k)=>`<option value="${k}"${(l.status||'new')===k?' selected':''}>${STATUS[k].he}</option>`).join('');
       const topic = [l.audience, l.topic].filter(Boolean).join(' · ') || '—';
       const assigned = l.assignedTo ? esc(displayName(l.assignedTo)) : '<span style="color:var(--color-warm-gray)">—</span>';
-      const fu = isFollowUpDue(l) ? ' <span class="fu-dot" title="ממתין לפולו-אפ"></span>' : '';
+      const fu = isFollowUpDue(l) ? ' <span class="fu-clock" title="ממתין לפולו-אפ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg></span>' : '';
       return `<tr data-lead="${l.id}" class="lead-row ls-${st.cls}">`+
         `<td class="lead-date">${fmtDate(l.createdAt)}</td>`+
         `<td><div class="lead-name"><span class="lead-dot"></span>${esc(l.name)}${fu}</div>${l.message?`<div class="lead-sub">${esc(l.message)}</div>`:''}</td>`+
