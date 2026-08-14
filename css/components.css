@@ -913,6 +913,19 @@
   margin-top: var(--space-3xs);
 }
 
+/* תיבת סיכום שגיאות מעל כפתור השליחה */
+.form-summary {
+  background: rgba(185, 74, 72, 0.08);
+  border: 1px solid var(--color-error);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-md);
+  margin-bottom: var(--space-md);
+  color: var(--color-error);
+}
+.form-summary strong { display: block; color: var(--color-error); font-size: var(--fs-sm); margin-bottom: var(--space-3xs); }
+.form-summary ul { list-style: disc; padding-inline-start: var(--space-md); margin: 0; }
+.form-summary li { font-size: var(--fs-sm); margin: 2px 0; }
+
 .form-field.has-error .form-error { display: block; }
 .form-field.has-error input,
 .form-field.has-error textarea,
