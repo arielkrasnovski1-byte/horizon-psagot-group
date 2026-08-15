@@ -8,10 +8,10 @@
   var base = isEn ? '/en/article/' : '/article/';
   function esc(s) { return String(s == null ? '' : s).replace(/[<>&"]/g, function (c) { return { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]; }); }
   function card(a) {
-    var title = isEn ? (a.title_en || a.title_he) : a.title_he;
-    var cat = isEn ? (a.category_en || a.category_he) : a.category_he;
-    var read = isEn ? (a.read_en || a.read_he) : a.read_he;
-    var exc = isEn ? (a.excerpt_en || a.excerpt_he) : a.excerpt_he;
+    var title = isEn ? (a.title_en || a.title_he) : (a.title_he || a.title_en);
+    var cat = isEn ? (a.category_en || a.category_he) : (a.category_he || a.category_en);
+    var read = isEn ? (a.read_en || a.read_he) : (a.read_he || a.read_en);
+    var exc = isEn ? (a.excerpt_en || a.excerpt_he) : (a.excerpt_he || a.excerpt_en);
     var href = a.id ? (base + '?id=' + encodeURIComponent(a.id)) : base;
     return '<a href="' + href + '" class="blog-card reveal">' +
       (a.image ? '<div class="blog-card-image" aria-hidden="true"><img src="' + esc(a.image) + '" alt="" loading="lazy"></div>' : '') +

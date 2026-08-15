@@ -6,7 +6,7 @@
 import { firebaseConfig, isConfigured } from '/js/firebase-config.js';
 
 const $ = (id) => document.getElementById(id);
-const esc = (s) => String(s == null ? '' : s).replace(/[<>&"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]));
+const esc = (s) => String(s == null ? '' : s).replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]));
 
 if (!isConfigured) { $('login-view').hidden = true; $('setup-view').hidden = false; }
 else boot();
@@ -49,15 +49,22 @@ async function boot() {
     }
   });
   $('logout-btn').addEventListener('click', () => auth.signOut(authInstance));
+
+  // ניהול מנויי onSnapshot — כדי לנתק בהתנתקות ולא לצבור כפילויות בהתחברות חוזרת
+  let unsubs = [];
+  const track = (unsub) => { if (typeof unsub === 'function') unsubs.push(unsub); return unsub; };
+  const detachAll = () => { unsubs.forEach((u) => { try { u(); } catch (e) {} }); unsubs = []; };
+
   auth.onAuthStateChanged(authInstance, (user) => {
     if (user) {
+      detachAll();
       currentEmail = user.email; currentUid = user.uid;
       $('login-view').hidden = true; $('app-view').hidden = false; $('user-email').textContent = user.email;
       // רישום המשתמש לרשימת בעלי הגישה (לצורך הקצאה/סינון)
       fs.setDoc(fs.doc(db, 'crm_users', user.uid), { email: user.email, lastSeen: nowISO() }, { merge: true }).catch(() => {});
       listenUsers();
       listenLeads(); listenDeals(); listenTestimonials(); teamCol.listen(); faqCol.listen(); articlesCol.listen();
-    } else { $('app-view').hidden = true; $('login-view').hidden = false; }
+    } else { detachAll(); $('app-view').hidden = true; $('login-view').hidden = false; }
   });
 
   /* ---------- טאבים ---------- */
@@ -80,7 +87,7 @@ async function boot() {
 
   /* רשימת בעלי גישה — לבחירת מטפל, סינון וניהול משתמשים + הרשאות */
   function listenUsers() {
-    fs.onSnapshot(fs.collection(db, 'crm_users'), (snap) => {
+    track(fs.onSnapshot(fs.collection(db, 'crm_users'), (snap) => {
       allUsers = snap.docs.map((d) => ({ uid: d.id, ...d.data() }));
       teamUsers = allUsers.map((u) => u.email).filter(Boolean).sort();
       const me = allUsers.find((u) => u.uid === currentUid);
@@ -99,7 +106,8 @@ async function boot() {
       $('user-email').textContent = displayName(currentEmail);
       populateUserFilter();
       renderUsers(ownerExists, isOwner);
-    }, (err) => console.warn('users listener', err));
+      renderLeads();   // רענון שמות המטפלים בטבלה כשרשימת המשתמשים נטענת/משתנה
+    }, (err) => console.warn('users listener', err)));
   }
   function renderUsers(ownerExists, isOwner) {
     $('owner-claim').hidden = ownerExists;
@@ -113,11 +121,11 @@ async function boot() {
       const nameCell = isOwner
         ? `<input class="name-edit" data-name-uid="${u.uid}" value="${esc(u.name || '')}" placeholder="${esc((u.email || '').split('@')[0])}">`
         : esc(u.name || (u.email || '').split('@')[0]);
-      return `<tr><td class="lead-name">${nameCell}</td>`+
-        `<td class="lead-contact" style="direction:ltr;text-align:right">${esc(u.email || '')}</td>`+
-        `<td>${roleCell}</td>`+
-        `<td class="lead-date">${u.lastSeen ? fmtDate(u.lastSeen) : '—'}</td>`+
-        `<td><div class="row-actions">`+
+      return `<tr class="user-row"><td class="lead-name-cell" data-label="שם">${nameCell}</td>`+
+        `<td class="lead-contact" data-label="אימייל" style="direction:ltr;text-align:right">${esc(u.email || '')}</td>`+
+        `<td data-label="תפקיד">${roleCell}</td>`+
+        `<td class="lead-date" data-label="כניסה אחרונה">${u.lastSeen ? fmtDate(u.lastSeen) : '—'}</td>`+
+        `<td class="actions-cell"><div class="row-actions">`+
           `${isOwner ? `<button class="icon-btn" data-reset="${esc(u.email || '')}" title="איפוס סיסמה (שליחת מייל)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></button>` : ''}`+
           `${(isOwner && !isSelf) ? `<button class="icon-btn danger" data-del-user="${u.uid}" title="הסרה"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>` : ''}`+
         `</div></td></tr>`;
@@ -177,11 +185,11 @@ async function boot() {
   $('filter-user').addEventListener('change', (e) => { userFilter = e.target.value; renderLeads(); });
 
   function listenLeads() {
-    fs.onSnapshot(fs.collection(db, 'leads'), (snap) => {
+    track(fs.onSnapshot(fs.collection(db, 'leads'), (snap) => {
       allLeads = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
         .sort((a, b) => (toDateObj(b.createdAt)?.getTime() || 0) - (toDateObj(a.createdAt)?.getTime() || 0));
       renderLeadStats(); renderLeads();
-    }, (err) => { console.warn(err); $('leads-body').innerHTML = '<tr><td colspan="8" class="empty-state">שגיאה בטעינה. בדקו כללי אבטחה.</td></tr>'; });
+    }, (err) => { console.warn(err); $('leads-body').innerHTML = '<tr><td colspan="8" class="empty-state">שגיאה בטעינה. בדקו כללי אבטחה.</td></tr>'; }));
   }
 
   function isFollowUpDue(l) { return l.followUpAt && l.followUpAt <= todayStr() && l.status !== 'closed'; }
@@ -237,12 +245,12 @@ async function boot() {
       const assigned = l.assignedTo ? esc(displayName(l.assignedTo)) : '<span style="color:var(--color-warm-gray)">—</span>';
       const fu = isFollowUpDue(l) ? ' <span class="fu-clock" title="ממתין לפולו-אפ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg></span>' : '';
       return `<tr data-lead="${l.id}" class="lead-row ls-${st.cls}">`+
-        `<td class="lead-date">${fmtDate(l.createdAt)}</td>`+
-        `<td><div class="lead-name"><span class="lead-dot"></span>${esc(l.name)}${fu}</div>${l.message?`<div class="lead-sub">${esc(l.message)}</div>`:''}</td>`+
-        `<td class="lead-contact"><a href="tel:${esc(l.phone)}" onclick="event.stopPropagation()">${esc(l.phone)}</a>${l.email?`<a href="mailto:${esc(l.email)}" onclick="event.stopPropagation()">${esc(l.email)}</a>`:''}</td>`+
-        `<td>${esc(topic)}</td><td>${src}</td><td>${assigned}</td>`+
-        `<td><select class="status-select ${st.cls}" data-id="${l.id}" onclick="event.stopPropagation()">${opts}</select></td>`+
-        `<td><div class="row-actions"><span class="open-hint">פרטים ›</span><a class="icon-btn" href="https://wa.me/${phoneIntl(l.phone)}" target="_blank" rel="noopener" title="וואטסאפ" onclick="event.stopPropagation()"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2z"/></svg></a></div></td></tr>`;
+        `<td class="lead-date" data-label="תאריך">${fmtDate(l.createdAt)}</td>`+
+        `<td class="lead-name-cell" data-label="שם"><div class="lead-name"><span class="lead-dot"></span>${esc(l.name)}${fu}</div>${l.message?`<div class="lead-sub">${esc(l.message)}</div>`:''}</td>`+
+        `<td class="lead-contact" data-label="יצירת קשר"><a href="tel:${esc(l.phone)}" onclick="event.stopPropagation()">${esc(l.phone)}</a>${l.email?`<a href="mailto:${esc(l.email)}" onclick="event.stopPropagation()">${esc(l.email)}</a>`:''}</td>`+
+        `<td data-label="קהל / נושא">${esc(topic)}</td><td data-label="מקור">${src}</td><td data-label="מטופל ע״י">${assigned}</td>`+
+        `<td data-label="סטטוס"><select class="status-select ${st.cls}" data-id="${l.id}" onclick="event.stopPropagation()">${opts}</select></td>`+
+        `<td class="actions-cell"><div class="row-actions"><span class="open-hint">פרטים ›</span><a class="icon-btn" href="https://wa.me/${phoneIntl(l.phone)}" target="_blank" rel="noopener" title="וואטסאפ" onclick="event.stopPropagation()"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2z"/></svg></a></div></td></tr>`;
     }).join('');
     body.querySelectorAll('.status-select').forEach((s) => s.addEventListener('change', () => changeStatus(s.dataset.id, s.value)));
     body.querySelectorAll('.lead-row').forEach((r) => r.addEventListener('click', () => openLeadModal(allLeads.find((x) => x.id === r.dataset.lead))));
@@ -321,7 +329,9 @@ async function boot() {
       fmtDate(l.createdAt), l.name||'', l.phone||'', l.email||'', l.audience||'', l.topic||'',
       l.source==='facebook'?'פייסבוק':l.source==='manual'?'ידני':'אתר', STATUS[l.status||'new']?.he||'', l.assignedTo||'', l.followUpAt||'', (l.notes||'').replace(/\n/g,' ')
     ]));
-    const csv = '﻿' + csvRows.map((r) => r.map((c) => '"' + String(c).replace(/"/g,'""') + '"').join(',')).join('\n');
+    // מונע הזרקת נוסחאות ל-Excel: תא שמתחיל ב- = + - @ מקבל גרש מגן
+    const safe = (c) => { let s = String(c == null ? '' : c); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return s.replace(/"/g, '""'); };
+    const csv = '﻿' + csvRows.map((r) => r.map((c) => '"' + safe(c) + '"').join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -382,9 +392,9 @@ async function boot() {
   ];
   let allDeals = [];
   function listenDeals() {
-    fs.onSnapshot(fs.query(fs.collection(db, 'deals'), fs.orderBy('order', 'asc')), (snap) => {
+    track(fs.onSnapshot(fs.query(fs.collection(db, 'deals'), fs.orderBy('order', 'asc')), (snap) => {
       allDeals = snap.docs.map((d) => ({ id: d.id, ...d.data() })); renderDeals();
-    }, (err) => { console.warn(err); $('deals-grid').innerHTML = '<p class="empty-state">שגיאה בטעינה.</p>'; });
+    }, (err) => { console.warn(err); $('deals-grid').innerHTML = '<p class="empty-state">שגיאה בטעינה.</p>'; }));
   }
   function renderDeals() {
     const grid = $('deals-grid');
@@ -448,9 +458,9 @@ async function boot() {
   ];
   let allTesti = [];
   function listenTestimonials() {
-    fs.onSnapshot(fs.query(fs.collection(db, 'testimonials'), fs.orderBy('order', 'asc')), (snap) => {
+    track(fs.onSnapshot(fs.query(fs.collection(db, 'testimonials'), fs.orderBy('order', 'asc')), (snap) => {
       allTesti = snap.docs.map((d) => ({ id: d.id, ...d.data() })); renderTestimonials();
-    }, (err) => { console.warn(err); $('testimonials-grid').innerHTML = '<p class="empty-state">שגיאה בטעינה.</p>'; });
+    }, (err) => { console.warn(err); $('testimonials-grid').innerHTML = '<p class="empty-state">שגיאה בטעינה.</p>'; }));
   }
   function renderTestimonials() {
     const grid = $('testimonials-grid');
@@ -504,9 +514,9 @@ async function boot() {
   function contentCollection(o) {
     let items = [];
     function listen() {
-      fs.onSnapshot(fs.query(fs.collection(db, o.name), fs.orderBy('order', 'asc')), (snap) => {
+      track(fs.onSnapshot(fs.query(fs.collection(db, o.name), fs.orderBy('order', 'asc')), (snap) => {
         items = snap.docs.map((d) => ({ id: d.id, ...d.data() })); render();
-      }, (err) => { console.warn(err); $(o.gridId).innerHTML = '<p class="empty-state">שגיאה בטעינה.</p>'; });
+      }, (err) => { console.warn(err); $(o.gridId).innerHTML = '<p class="empty-state">שגיאה בטעינה.</p>'; }));
     }
     function render() {
       const grid = $(o.gridId);

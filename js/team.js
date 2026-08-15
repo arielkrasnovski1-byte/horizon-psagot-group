@@ -6,8 +6,8 @@
   var isEn = (document.documentElement.lang || 'he').toLowerCase().indexOf('en') === 0;
   function esc(s) { return String(s == null ? '' : s).replace(/[<>&]/g, function (c) { return { '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]; }); }
   function card(t) {
-    var role = isEn ? (t.role_en || t.role_he) : t.role_he;
-    var bio = isEn ? (t.bio_en || t.bio_he) : t.bio_he;
+    var role = isEn ? (t.role_en || t.role_he) : (t.role_he || t.role_en);
+    var bio = isEn ? (t.bio_en || t.bio_he) : (t.bio_he || t.bio_en);
     return '<article class="team-card reveal"><span class="team-accent" aria-hidden="true"></span>' +
       '<h3>' + esc(role) + '</h3><p class="team-bio">' + esc(bio) + '</p></article>';
   }

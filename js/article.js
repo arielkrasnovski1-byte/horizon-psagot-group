@@ -11,10 +11,10 @@
   function esc(s) { return String(s == null ? '' : s).replace(/[<>&]/g, function (c) { return { '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]; }); }
   function bodyHtml(b) { b = b || ''; if (/^\s*</.test(b)) return b; return b.split(/\n\s*\n/).map(function (p) { return '<p>' + esc(p.trim()) + '</p>'; }).join(''); }
   function render(a) {
-    var title = isEn ? (a.title_en || a.title_he) : a.title_he;
-    var cat = isEn ? (a.category_en || a.category_he) : a.category_he;
-    var read = isEn ? (a.read_en || a.read_he) : a.read_he;
-    var body = isEn ? (a.body_en || a.body_he) : a.body_he;
+    var title = isEn ? (a.title_en || a.title_he) : (a.title_he || a.title_en);
+    var cat = isEn ? (a.category_en || a.category_he) : (a.category_he || a.category_en);
+    var read = isEn ? (a.read_en || a.read_he) : (a.read_he || a.read_en);
+    var body = isEn ? (a.body_en || a.body_he) : (a.body_he || a.body_en);
     if (titleEl) titleEl.textContent = title;
     document.title = title + (isEn ? ' — Horizon Psagot Group' : ' — הורייזון פסגות גרופ');
     if (metaEl) metaEl.innerHTML = '<span class="category">' + esc(cat) + '</span><span>' + esc(a.date || '') + '</span><span>' + esc(read) + '</span><span>' + (isEn ? 'By: Horizon Psagot Group team' : 'מאת: צוות הורייזון פסגות גרופ') + '</span>';

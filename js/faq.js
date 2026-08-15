@@ -11,7 +11,7 @@
     if (!items || !items.length) return;
     var groups = [], byCat = {};
     items.forEach(function (f) {
-      var cat = isEn ? (f.category_en || f.category_he) : f.category_he;
+      var cat = isEn ? (f.category_en || f.category_he) : (f.category_he || f.category_en);
       cat = cat || '';
       if (!byCat[cat]) { byCat[cat] = []; groups.push(cat); }
       byCat[cat].push(f);
@@ -20,8 +20,8 @@
     groups.forEach(function (cat, gi) {
       if (cat) html += '<h2 class="reveal" style="font-size: var(--fs-xl); margin: ' + (gi === 0 ? '0 0 var(--space-sm)' : 'var(--space-lg) 0 var(--space-sm)') + ';">' + esc(cat) + '</h2>';
       byCat[cat].forEach(function (f) {
-        var q = isEn ? (f.question_en || f.question_he) : f.question_he;
-        var a = isEn ? (f.answer_en || f.answer_he) : f.answer_he;
+        var q = isEn ? (f.question_en || f.question_he) : (f.question_he || f.question_en);
+        var a = isEn ? (f.answer_en || f.answer_he) : (f.answer_he || f.answer_en);
         html += '<details class="faq-item reveal"><summary class="faq-question">' + esc(q) + '</summary>' +
                 '<div class="faq-answer">' + esc(a) + '</div></details>';
       });

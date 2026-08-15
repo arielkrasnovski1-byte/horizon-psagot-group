@@ -11,8 +11,8 @@
   function esc(s) { return String(s == null ? '' : s).replace(/[<>&]/g, function (c) { return { '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]; }); }
 
   function card(t) {
-    var quote = isEn ? (t.quote_en || t.quote_he) : t.quote_he;
-    var role = isEn ? (t.role_en || t.role_he) : t.role_he;
+    var quote = isEn ? (t.quote_en || t.quote_he) : (t.quote_he || t.quote_en);
+    var role = isEn ? (t.role_en || t.role_he) : (t.role_he || t.role_en);
     return '<div class="testimonial-card reveal">' +
       '<p class="testimonial-quote">' + esc(quote) + '</p>' +
       '<div class="testimonial-author">' +
