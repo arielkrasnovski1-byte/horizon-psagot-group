@@ -1,6 +1,7 @@
 {
   "articles": [
     {
+      "id": "negative-bdi",
       "title_he": "BDI שלילי — מה זה ואיך מתמודדים?",
       "title_en": "Negative BDI — What it Is and How to Deal With It",
       "category_he": "מימון",
@@ -16,6 +17,7 @@
       "order": 0
     },
     {
+      "id": "greece-real-estate-2026",
       "title_he": "השקעות נדל\"ן ביוון: המדריך השלם 2026",
       "title_en": "Real Estate Investments in Greece: The 2026 Complete Guide",
       "category_he": "נדל\"ן בחו\"ל",
@@ -31,6 +33,7 @@
       "order": 1
     },
     {
+      "id": "business-recovery-signs",
       "title_he": "5 סימנים שהעסק שלך זקוק להבראה פיננסית",
       "title_en": "5 Signs Your Business Needs Financial Recovery",
       "category_he": "עסקים",
@@ -46,6 +49,7 @@
       "order": 2
     },
     {
+      "id": "tama38-vs-pinui-binui",
       "title_he": "תמ\"א 38 vs פינוי-בינוי: השוואה למשקיע",
       "title_en": "TAMA 38 vs. Demolish-Rebuild: An Investor's Comparison",
       "category_he": "נדל\"ן בארץ",
@@ -61,6 +65,7 @@
       "order": 3
     },
     {
+      "id": "mortgage-path-2026",
       "title_he": "איך לבחור מסלול משכנתא ב-2026",
       "title_en": "How to Choose a Mortgage Path in 2026",
       "category_he": "מימון",
@@ -76,6 +81,7 @@
       "order": 4
     },
     {
+      "id": "dubai-real-estate",
       "title_he": "שוק הנדל\"ן בדובאי — הזדמנות אמיתית?",
       "title_en": "The Dubai Real Estate Market — A Real Opportunity?",
       "category_he": "דובאי",
