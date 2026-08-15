@@ -1,0 +1,73 @@
+rules_version = '2';
+
+// ============================================================
+//  Horizon Psagot Group — Firestore Security Rules
+//  מודל תפקידים: owner (הכל) · manager (לידים + תוכן) · agent (לידים)
+//  התפקיד נשמר ב-crm_users/{uid}.role
+// ============================================================
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- עזרים ----------
+    function signedIn() {
+      return request.auth != null;
+    }
+    function hasProfile() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/crm_users/$(request.auth.uid));
+    }
+    function myRole() {
+      // מחזיר את התפקיד של המשתמש המחובר, או 'none' אם אין לו פרופיל
+      return hasProfile()
+        ? get(/databases/$(database)/documents/crm_users/$(request.auth.uid)).data.role
+        : 'none';
+    }
+    function isOwner()   { return myRole() == 'owner'; }
+    function canContent(){ return myRole() == 'owner' || myRole() == 'manager'; }
+    // האם הבקשה משנה את שדה 'role' של המסמך
+    function touchesRole() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']);
+    }
+
+    // ---------- לידים ----------
+    // כל אחד יכול לשלוח פנייה (טופס האתר / פייסבוק); רק צוות מחובר רואה ועורך.
+    match /leads/{doc} {
+      allow create: if (request.resource.data.name is string
+                        && request.resource.data.phone is string
+                        && request.resource.data.name.size() < 300
+                        && request.resource.data.phone.size() < 60)
+                     || signedIn();               // צוות יכול ליצור ליד ידני
+      allow read, update, delete: if signedIn();  // כל תפקיד מטפל בלידים
+    }
+
+    // ---------- תוכן מוצג באתר ----------
+    // כולם קוראים (התוכן מוצג לגולשים); רק owner/manager עורכים.
+    match /deals/{doc}        { allow read: if true; allow write: if canContent(); }
+    match /testimonials/{doc} { allow read: if true; allow write: if canContent(); }
+    match /articles/{doc}     { allow read: if true; allow write: if canContent(); }
+    match /team/{doc}         { allow read: if true; allow write: if canContent(); }
+    match /faq/{doc}          { allow read: if true; allow write: if canContent(); }
+
+    // ---------- משתמשים והרשאות ----------
+    // כל צוות מחובר קורא את הרשימה.
+    // רק owner מוסיף/מסיר משתמשים או משנה תפקידים.
+    // כל משתמש מעדכן רק את המסמך של עצמו — ולעולם לא את שדה 'role' של עצמו
+    // (מונע הסלמת הרשאות: agent לא יכול להפוך את עצמו ל-owner).
+    match /crm_users/{uid} {
+      allow read: if signedIn();
+      allow delete: if isOwner();
+      // owner יוצר משתמשים עם תפקיד · משתמש חדש יוצר את המסמך של עצמו בלי 'role'
+      allow create: if isOwner()
+                    || (request.auth.uid == uid && !('role' in request.resource.data));
+      allow update: if isOwner()
+                    || (request.auth.uid == uid && !touchesRole());
+      // הערה: יצירת ה-owner הראשון נעשית ידנית ב-Firebase Console
+      // (מסמך crm_users/<uid> עם role:"owner"). ראו CRM-SETUP.md.
+    }
+
+    // ---------- ברירת מחדל: כל השאר חסום ----------
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

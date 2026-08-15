@@ -19,32 +19,18 @@
 ## שלב 3 — משתמש לצוות
 **Authentication → Users → Add user**: אימייל + סיסמה. אלה פרטי הכניסה ל-`/crm`. אפשר להוסיף כמה אנשי צוות.
 
-## שלב 4 — כללי אבטחה
-**Firestore → Rules** → הדביקו והחליפו הכל → **Publish**:
+## שלב 4 — כללי אבטחה (לפי תפקידים)
+כל הכללים נמצאים בקובץ **`firestore.rules`** בשורש הפרויקט.
+**Firestore → Rules** → העתיקו את כל תוכן `firestore.rules` → הדביקו במקום הקיים → **Publish**.
 
-```
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    // לידים — כל אחד שולח, רק צוות רואה/עורך
-    match /leads/{doc} {
-      allow create: if request.resource.data.name is string
-                    && request.resource.data.phone is string;
-      allow read, update, delete: if request.auth != null;
-    }
-    // עסקאות — כולם רואים (מוצג באתר), רק צוות עורך
-    match /deals/{doc} {
-      allow read: if true;
-      allow write: if request.auth != null;
-    }
-    // מאמרים — כולם רואים, רק צוות עורך
-    match /articles/{doc} {
-      allow read: if true;
-      allow write: if request.auth != null;
-    }
-  }
-}
-```
+מה הכללים עושים:
+- **לידים** — כל אחד שולח פנייה (טופס/פייסבוק); רק צוות מחובר רואה ועורך.
+- **תוכן** (עסקאות/המלצות/צוות/שאלות/מאמרים) — כולם קוראים (מוצג באתר), רק **owner/manager** עורכים.
+- **משתמשים** (`crm_users`) — כל הצוות קורא; רק **owner** מוסיף/מסיר/משנה תפקידים; אף אחד לא יכול לשנות את התפקיד של עצמו (מונע הסלמת הרשאות).
+
+> ⚠️ **חשוב לפני Publish:** ודאו שלמשתמש הראשי שלכם כבר יש מסמך ב-`crm_users/<uid>` עם `role: "owner"` (כבר בוצע דרך "הגדר אותי כבעלים" בפאנל). אחרת — צרו אותו ידנית ב-**Firestore → Data → crm_users** לפני הפרסום, כדי לא לנעול את עצמכם מניהול המשתמשים.
+
+**להוספת בעלים ראשון בפרויקט חדש (bootstrap):** ב-Firebase Console → Firestore → צרו מסמך בקולקשן `crm_users` עם מזהה = ה-UID מ-Authentication, ושדה `role` בערך `owner`.
 
 זהו — היכנסו ל-`https://horizonpsagotgroup.com/crm`, התחברו, וכל פנייה חדשה מהטופס תופיע בדשבורד בזמן אמת. ✅
 
