@@ -28,6 +28,21 @@
     });
     list.innerHTML = html;
     list.querySelectorAll('.reveal').forEach(function(el){el.classList.add('is-visible');});
+    injectFaqJsonLd(items);
+  }
+  // נתוני FAQPage מובנים — סיכוי לתצוגת שאלות עשירה בתוצאות גוגל
+  function injectFaqJsonLd(items) {
+    var prev = document.getElementById('faq-jsonld'); if (prev) prev.remove();
+    var strip = function (s) { return String(s == null ? '' : s).replace(/<[^>]*>/g, '').trim(); };
+    var entities = items.map(function (f) {
+      var q = isEn ? (f.question_en || f.question_he) : (f.question_he || f.question_en);
+      var a = isEn ? (f.answer_en || f.answer_he) : (f.answer_he || f.answer_en);
+      return { '@type': 'Question', name: strip(q), acceptedAnswer: { '@type': 'Answer', text: strip(a) } };
+    }).filter(function (e) { return e.name && e.acceptedAnswer.text; });
+    if (!entities.length) return;
+    var data = { '@context': 'https://schema.org', '@type': 'FAQPage', inLanguage: isEn ? 'en' : 'he', mainEntity: entities };
+    var s = document.createElement('script'); s.type = 'application/ld+json'; s.id = 'faq-jsonld';
+    s.textContent = JSON.stringify(data); document.head.appendChild(s);
   }
   function loadJson() { fetch('/data/faq.json', { cache: 'no-cache' }).then(function (r) { return r.json(); }).then(function (d) { render((d && d.faq) || []); }).catch(function () {}); }
   (async function () {

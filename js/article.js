@@ -10,6 +10,32 @@
   var metaEl = document.getElementById('articleMeta');
   function esc(s) { return String(s == null ? '' : s).replace(/[<>&]/g, function (c) { return { '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]; }); }
   function bodyHtml(b) { b = b || ''; if (/^\s*</.test(b)) return b; return b.split(/\n\s*\n/).map(function (p) { return '<p>' + esc(p.trim()) + '</p>'; }).join(''); }
+  var ORG = isEn ? 'Horizon Psagot Group' : 'הורייזון פסגות גרופ';
+  // DD.MM.YYYY -> YYYY-MM-DD (עבור datePublished בתקן schema)
+  function isoDate(d) { var m = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/.exec((d || '').trim()); return m ? (m[3] + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[1]).slice(-2)) : ''; }
+  function abs(u) { if (!u) return ''; return /^https?:/.test(u) ? u : (location.origin + u); }
+  function canonicalUrl() { return location.origin + location.pathname + '?id=' + encodeURIComponent(id); }
+  // קנוני ייחודי לכל מאמר (במקום שכל המאמרים יצביעו לאותו עמוד תבנית)
+  function setCanonical(url) {
+    var l = document.querySelector('link[rel="canonical"]');
+    if (!l) { l = document.createElement('link'); l.setAttribute('rel', 'canonical'); document.head.appendChild(l); }
+    l.setAttribute('href', url);
+  }
+  // נתוני BlogPosting מובנים — סיכוי לתצוגה עשירה בגוגל
+  function injectJsonLd(a, title, cat) {
+    var prev = document.getElementById('article-jsonld'); if (prev) prev.remove();
+    var data = {
+      '@context': 'https://schema.org', '@type': 'BlogPosting',
+      headline: title, articleSection: cat, inLanguage: isEn ? 'en' : 'he',
+      image: abs(a.image) || 'https://horizonpsagotgroup.com/assets/logo/og-image.png',
+      author: { '@type': 'Organization', name: ORG },
+      publisher: { '@type': 'Organization', name: ORG, logo: { '@type': 'ImageObject', url: 'https://horizonpsagotgroup.com/assets/logo/logo.png' } },
+      mainEntityOfPage: canonicalUrl()
+    };
+    var iso = isoDate(a.date); if (iso) { data.datePublished = iso; data.dateModified = iso; }
+    var s = document.createElement('script'); s.type = 'application/ld+json'; s.id = 'article-jsonld';
+    s.textContent = JSON.stringify(data); document.head.appendChild(s);
+  }
   function render(a) {
     var title = isEn ? (a.title_en || a.title_he) : (a.title_he || a.title_en);
     var cat = isEn ? (a.category_en || a.category_he) : (a.category_he || a.category_en);
@@ -19,6 +45,8 @@
     document.title = title + (isEn ? ' — Horizon Psagot Group' : ' — הורייזון פסגות גרופ');
     if (metaEl) metaEl.innerHTML = '<span class="category">' + esc(cat) + '</span><span>' + esc(a.date || '') + '</span><span>' + esc(read) + '</span><span>' + (isEn ? 'By: Horizon Psagot Group team' : 'מאת: צוות הורייזון פסגות גרופ') + '</span>';
     bodyEl.innerHTML = bodyHtml(body);
+    setCanonical(canonicalUrl());
+    injectJsonLd(a, title, cat);
   }
   // חיפוש המאמר בקובץ הסטטי לפי id (נפילה כש-Firestore לא מוגדר/ריק)
   async function fromJson() {
