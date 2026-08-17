@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>אזור אישי — הורייזון פסגות גרופ</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/logo/favicon-32.png">
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/portal.css">
+</head>
+<body class="portal-body">
+
+  <!-- ===== התחברות ===== -->
+  <div class="portal-wrap" id="login-view">
+    <div class="portal-card">
+      <img class="brand-logo" src="/assets/logo/logo-mark.png" alt="הורייזון פסגות גרופ" width="60" height="60">
+      <h1>האזור האישי שלך</h1>
+      <p class="sub">כאן מעלים את המסמכים לתהליך שלכם — בקלות ובאבטחה מלאה.</p>
+
+      <div class="method-tabs">
+        <button class="method-tab active" data-method="sms">כניסה ב-SMS</button>
+        <button class="method-tab" data-method="email">כניסה במייל</button>
+      </div>
+
+      <!-- SMS -->
+      <div class="method-panel" id="panel-sms">
+        <div id="sms-step-phone">
+          <label for="phone">מספר הטלפון שלך</label>
+          <input id="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="050-0000000">
+          <button class="portal-btn" id="send-sms">שליחת קוד ב-SMS</button>
+        </div>
+        <div id="sms-step-code" hidden>
+          <label for="otp">הקוד שקיבלת ב-SMS</label>
+          <input id="otp" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="6 ספרות" maxlength="6">
+          <button class="portal-btn" id="verify-otp">כניסה</button>
+          <button class="portal-link" id="sms-back">‹ החלפת מספר</button>
+        </div>
+      </div>
+
+      <!-- Email -->
+      <div class="method-panel" id="panel-email" hidden>
+        <div id="email-step">
+          <label for="email">כתובת המייל שלך</label>
+          <input id="email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com">
+          <button class="portal-btn" id="send-email">שליחת קישור כניסה</button>
+        </div>
+        <div id="email-sent" hidden>
+          <div class="notice ok">שלחנו לך קישור כניסה למייל. פִּתחו אותו מהמכשיר הזה כדי להיכנס.</div>
+          <button class="portal-link" id="email-back">‹ שליחה מחדש</button>
+        </div>
+      </div>
+
+      <div class="portal-error" id="login-error"></div>
+      <div id="recaptcha-holder"></div>
+      <p class="fineprint">הכניסה מאובטחת. הפרטים משמשים לזיהוי בלבד.</p>
+    </div>
+  </div>
+
+  <!-- ===== אזור הלקוח ===== -->
+  <div id="app-view" hidden>
+    <header class="portal-topbar">
+      <div class="brand">
+        <img src="/assets/logo/logo-mark.png" alt="" width="34" height="34">
+        <b>הורייזון פסגות</b> <span>· אזור אישי</span>
+      </div>
+      <div class="user">
+        <span id="user-id"></span>
+        <button class="logout" id="logout-btn">יציאה</button>
+      </div>
+    </header>
+
+    <main class="portal-main" id="portal-main">
+      <p class="loading" id="cases-loading">טוען את התיק שלך…</p>
+      <div id="case-picker" hidden></div>
+      <div id="case-detail" hidden></div>
+      <div id="no-case" hidden>
+        <div class="empty-card">
+          <h2>עדיין אין תיק פעיל</h2>
+          <p>לא נמצא תיק המשויך לפרטים שלך. ייתכן שהתהליך עוד לא נפתח — צרו קשר עם הצוות ונשמח לעזור.</p>
+          <a class="portal-btn" href="/contact/">יצירת קשר</a>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ===== הגדרה חסרה ===== -->
+  <div class="portal-wrap" id="setup-view" hidden>
+    <div class="portal-card">
+      <h1>כמעט מוכן</h1>
+      <p>המערכת ממתינה לחיבור Firebase. פנו לצוות הפיתוח.</p>
+    </div>
+  </div>
+
+  <script type="module" src="/js/portal.js"></script>
+</body>
+</html>

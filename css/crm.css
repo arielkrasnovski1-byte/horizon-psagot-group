@@ -306,3 +306,37 @@ tbody tr.lead-row:hover td { background: var(--color-cream-soft); }
   .modal-actions { flex-wrap: wrap; }
   .modal-actions .crm-btn, .modal-actions .btn-ghost { flex: 1 1 auto; }
 }
+
+/* ============================================================
+   תיקי לקוחות (טאב תיקים)
+   ============================================================ */
+.cases-hint { color: var(--color-warm-gray); font-size: var(--fs-sm); margin: 0 0 var(--space-md); line-height: 1.6; }
+.case-card { background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-md); box-shadow: var(--shadow-sm); cursor: pointer; transition: border-color .2s, transform .1s; border-inline-start: 4px solid var(--color-rose-gold); }
+.case-card:hover { border-color: var(--color-rose-gold); transform: translateY(-2px); }
+.case-card-head { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.case-card-head b { color: var(--color-navy-deep); font-size: var(--fs-base); }
+.case-card-svc { color: var(--color-charcoal-soft); font-size: var(--fs-sm); margin-top: .25rem; }
+.case-card-contact { color: var(--color-warm-gray); font-size: var(--fs-xs); margin-top: .25rem; }
+.case-progress { display: flex; align-items: center; gap: .5rem; margin-top: .7rem; }
+.case-progress-bar { flex: 1; height: 8px; background: var(--color-cream-soft); border-radius: 999px; overflow: hidden; }
+.case-progress-bar span { display: block; height: 100%; background: linear-gradient(90deg, var(--color-rose-gold), #2E9E5B); border-radius: 999px; }
+.case-progress em { font-size: var(--fs-xs); color: var(--color-warm-gray); font-style: normal; font-weight: 700; }
+
+/* כרטיס תיק (מודל) */
+.cm-toolbar { margin-bottom: var(--space-md); }
+.cm-group { margin-bottom: var(--space-md); }
+.cm-group h4 { font-size: var(--fs-sm); color: var(--color-navy-deep); margin: 0 0 .5rem; padding-bottom: .3rem; border-bottom: 1px solid var(--color-border); }
+.cm-item { border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: .8rem .9rem; margin-bottom: .6rem; }
+.cm-item-head { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.cm-item-head span { font-weight: 600; color: var(--color-navy-deep); font-size: var(--fs-sm); }
+.cm-nofiles { color: var(--color-warm-gray); font-size: var(--fs-xs); margin-top: .5rem; }
+.cm-item-actions { display: flex; gap: .4rem; margin-top: .6rem; }
+.cm-item-actions .btn-ghost { padding: .3rem .8rem; font-size: var(--fs-xs); }
+.file-list { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .6rem; }
+.file-chip { font-size: var(--fs-xs); background: var(--color-cream-soft); border: 1px solid var(--color-border); border-radius: 999px; padding: .25rem .7rem; color: var(--color-charcoal); text-decoration: none; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-chip:hover { border-color: var(--color-rose-gold); }
+.reject-reason { font-size: var(--fs-xs); color: #A5291D; margin-top: .5rem; }
+.pill { font-size: var(--fs-xs); font-weight: 700; padding: .15rem .55rem; border-radius: 999px; white-space: nowrap; }
+.pill.pending { background: rgba(138,122,104,.14); color: var(--color-warm-gray); }
+.pill.received { background: rgba(46,158,91,.14); color: #23794A; }
+.pill.rejected { background: rgba(192,57,43,.12); color: #A5291D; }

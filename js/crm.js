@@ -4,6 +4,7 @@
    ייצוא, פולו-אפ) · עסקאות · מאמרים (בגל הבא)
    ============================================================ */
 import { firebaseConfig, isConfigured } from '/js/firebase-config.js';
+import { SERVICE_TYPES, buildItems, serviceLabel } from '/js/case-templates.js';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? '' : s).replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -12,14 +13,16 @@ if (!isConfigured) { $('login-view').hidden = true; $('setup-view').hidden = fal
 else boot();
 
 async function boot() {
-  const [{ initializeApp, deleteApp }, auth, fs] = await Promise.all([
+  const [{ initializeApp, deleteApp }, auth, fs, st] = await Promise.all([
     import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'),
     import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js'),
-    import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js')
+    import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js'),
+    import('https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js')
   ]);
   const app = initializeApp(firebaseConfig);
   const authInstance = auth.getAuth(app);
   const db = fs.getFirestore(app);
+  const storage = st.getStorage(app);
   let currentEmail = '', currentUid = '';
 
   const STATUS = {
@@ -63,7 +66,7 @@ async function boot() {
       // רישום המשתמש לרשימת בעלי הגישה (לצורך הקצאה/סינון)
       fs.setDoc(fs.doc(db, 'crm_users', user.uid), { email: user.email, lastSeen: nowISO() }, { merge: true }).catch(() => {});
       listenUsers();
-      listenLeads(); listenDeals(); listenTestimonials(); teamCol.listen(); faqCol.listen(); articlesCol.listen();
+      listenLeads(); listenCases(); listenDeals(); listenTestimonials(); teamCol.listen(); faqCol.listen(); articlesCol.listen();
     } else { detachAll(); $('app-view').hidden = true; $('login-view').hidden = false; }
   });
 
@@ -71,7 +74,7 @@ async function boot() {
   document.querySelectorAll('.crm-tab').forEach((tab) => {
     tab.addEventListener('click', () => {
       document.querySelectorAll('.crm-tab').forEach((t) => t.classList.toggle('active', t === tab));
-      ['leads', 'deals', 'testimonials', 'team', 'faq', 'articles', 'users'].forEach((k) => { $('panel-' + k).hidden = (k !== tab.dataset.tab); });
+      ['leads', 'cases', 'deals', 'testimonials', 'team', 'faq', 'articles', 'users'].forEach((k) => { $('panel-' + k).hidden = (k !== tab.dataset.tab); });
     });
   });
 
@@ -373,6 +376,148 @@ async function boot() {
       } catch (err) { alert('שגיאה: ' + err.message); }
       $('modal-save').disabled = false;
     };
+  });
+
+  /* ============================================================
+     תיקי לקוחות (פורטל מסמכים)
+     ============================================================ */
+  let allCases = [];
+  const caseToE164 = (raw) => {
+    let d = (raw || '').replace(/\D/g, '');
+    if (d.indexOf('972') === 0) d = d.slice(3); else if (d.indexOf('0') === 0) d = d.slice(1);
+    return /^\d{8,9}$/.test(d) ? '+972' + d : '';
+  };
+  function listenCases() {
+    track(fs.onSnapshot(fs.collection(db, 'cases'), (snap) => {
+      allCases = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => (toDateObj(b.createdAt)?.getTime() || 0) - (toDateObj(a.createdAt)?.getTime() || 0));
+      renderCases();
+    }, (err) => { console.warn(err); $('cases-grid').innerHTML = '<p class="empty-state">שגיאה בטעינה. בדקו כללי אבטחה.</p>'; }));
+  }
+  function casePct(c) {
+    const items = (c.items || []).filter((it) => it.stage === 1 || c.stage2Open);
+    if (!items.length) return 0;
+    return Math.round(items.filter((it) => it.status === 'received').length / items.length * 100);
+  }
+  function renderCases() {
+    const grid = $('cases-grid');
+    if (!allCases.length) { grid.innerHTML = '<div class="empty-state"><p>אין תיקים עדיין. פתחו תיק חדש כדי לשלוח ללקוח קישור להעלאת מסמכים.</p></div>'; return; }
+    grid.innerHTML = allCases.map((c) => {
+      const p = casePct(c);
+      const contact = esc(c.clientPhone || c.clientEmail || '');
+      return '<div class="case-card" data-case="' + c.id + '">' +
+        '<div class="case-card-head"><b>' + esc(c.clientName || '—') + '</b>' +
+        (c.stage2Open ? '<span class="src-badge src-manual">שלב 2</span>' : '') + '</div>' +
+        '<div class="case-card-svc">' + esc(serviceLabel(c.serviceType)) + '</div>' +
+        '<div class="case-card-contact" style="direction:ltr;text-align:right">' + contact + '</div>' +
+        '<div class="case-progress"><div class="case-progress-bar"><span style="width:' + p + '%"></span></div><em>' + p + '%</em></div>' +
+        '</div>';
+    }).join('');
+    grid.querySelectorAll('.case-card').forEach((el) =>
+      el.addEventListener('click', () => openCaseModal(allCases.find((x) => x.id === el.dataset.case))));
+  }
+
+  // פתיחת תיק חדש
+  $('add-case').addEventListener('click', () => {
+    $('modal-title').textContent = 'תיק לקוח חדש';
+    const svcOpts = SERVICE_TYPES.map((s) => '<option value="' + s.key + '">' + esc(s.label) + '</option>').join('');
+    $('modal-form').innerHTML =
+      '<div class="field"><label>שם הלקוח</label><input type="text" data-k="clientName"></div>' +
+      '<div class="field"><label>טלפון (לכניסה ב-SMS)</label><input type="tel" data-k="clientPhone" placeholder="050-0000000" style="direction:ltr"></div>' +
+      '<div class="field"><label>אימייל (לכניסה במייל)</label><input type="email" data-k="clientEmail" placeholder="you@example.com" style="direction:ltr"></div>' +
+      '<div class="field"><label>סוג שירות</label><select data-k="serviceType">' + svcOpts + '</select></div>' +
+      '<div class="field"><label style="display:flex;align-items:center;gap:.5rem;font-weight:400"><input type="checkbox" data-k="isBusiness" style="width:auto"> ללקוח יש עסק (מוסיף מסמכים עסקיים)</label></div>';
+    $('modal').hidden = false;
+    $('modal-save').onclick = async () => {
+      const g = (k) => { const el = $('modal-form').querySelector('[data-k="' + k + '"]'); return el ? el.value.trim() : ''; };
+      const name = g('clientName'), phoneRaw = g('clientPhone'), emailRaw = g('clientEmail');
+      const serviceType = g('serviceType');
+      const isBusiness = $('modal-form').querySelector('[data-k="isBusiness"]').checked;
+      const phone = phoneRaw ? caseToE164(phoneRaw) : '';
+      const email = emailRaw ? emailRaw.toLowerCase() : '';
+      if (!name) { alert('יש להזין שם לקוח.'); return; }
+      if (!phone && !email) { alert('יש להזין טלפון או אימייל — לפיהם הלקוח נכנס לפורטל.'); return; }
+      if (phoneRaw && !phone) { alert('מספר הטלפון אינו תקין.'); return; }
+      $('modal-save').disabled = true;
+      try {
+        await fs.addDoc(fs.collection(db, 'cases'), {
+          clientName: name, clientPhone: phone, clientEmail: email,
+          serviceType, isBusiness, stage2Open: false, status: 'active',
+          items: buildItems(serviceType, isBusiness),
+          createdBy: currentEmail, createdAt: fs.serverTimestamp(),
+        });
+        closeModal();
+      } catch (err) { alert('שגיאה: ' + err.message); }
+      $('modal-save').disabled = false;
+    };
+  });
+
+  /* ---- כרטיס תיק: מעקב, אישור/דחייה, פתיחת שלב 2 ---- */
+  let currentCase = null;
+  function openCaseModal(c) {
+    if (!c) return;
+    currentCase = c;
+    $('cm-name').textContent = c.clientName || '—';
+    $('cm-sub').innerHTML = esc(serviceLabel(c.serviceType)) +
+      (c.clientPhone ? ' · <span style="direction:ltr">' + esc(c.clientPhone) + '</span>' : '') +
+      (c.clientEmail ? ' · <span style="direction:ltr">' + esc(c.clientEmail) + '</span>' : '') +
+      (c.isBusiness ? ' · בעל עסק' : '');
+    $('cm-stage2-btn').textContent = c.stage2Open ? 'סגירת שלב 2' : 'פתיחת שלב 2 ללקוח';
+    renderCaseItems(c);
+    $('case-modal').hidden = false;
+  }
+  function renderCaseItems(c) {
+    const items = c.items || [];
+    const row = (it, gi) => {
+      const files = (it.files || []).map((f) =>
+        '<a class="file-chip" href="' + esc(f.url) + '" target="_blank" rel="noopener">📄 ' + esc(f.name) + '</a>').join('');
+      const st = it.status === 'received' ? '<span class="pill received">✓ התקבל</span>'
+        : it.status === 'rejected' ? '<span class="pill rejected">✕ נדחה</span>'
+        : '<span class="pill pending">ממתין</span>';
+      return '<div class="cm-item">' +
+        '<div class="cm-item-head"><span>' + esc(it.label) + '</span>' + st + '</div>' +
+        (files ? '<div class="file-list">' + files + '</div>' : '<div class="cm-nofiles">טרם הועלו קבצים</div>') +
+        (it.status === 'rejected' && it.rejectReason ? '<div class="reject-reason">סיבה: ' + esc(it.rejectReason) + '</div>' : '') +
+        '<div class="cm-item-actions">' +
+          '<button class="btn-ghost" data-approve="' + gi + '">אישור</button>' +
+          '<button class="btn-ghost" data-reject="' + gi + '">דחייה</button>' +
+          (it.status !== 'pending' ? '<button class="btn-ghost" data-reset="' + gi + '">איפוס</button>' : '') +
+        '</div></div>';
+    };
+    const s1 = items.map((it, i) => ({ it, i })).filter((x) => x.it.stage === 1);
+    const s2 = items.map((it, i) => ({ it, i })).filter((x) => x.it.stage === 2);
+    let html = '<div class="cm-group"><h4>מסמכים ראשוניים</h4>' + s1.map((x) => row(x.it, x.i)).join('') + '</div>';
+    if (s2.length) html += '<div class="cm-group"><h4>שלב 2 — מסמכים משלימים' + (c.stage2Open ? '' : ' (טרם נפתח ללקוח)') + '</h4>' + s2.map((x) => row(x.it, x.i)).join('') + '</div>';
+    $('cm-items').innerHTML = html;
+    const setStatus = async (gi, status, reason) => {
+      const arr = (currentCase.items || []).slice();
+      arr[gi] = { ...arr[gi], status, rejectReason: reason || '' };
+      try { await fs.updateDoc(fs.doc(db, 'cases', currentCase.id), { items: arr }); currentCase.items = arr; renderCaseItems(currentCase); }
+      catch (e) { alert('שגיאה: ' + e.message); }
+    };
+    $('cm-items').querySelectorAll('[data-approve]').forEach((b) => b.onclick = () => setStatus(+b.dataset.approve, 'received'));
+    $('cm-items').querySelectorAll('[data-reset]').forEach((b) => b.onclick = () => setStatus(+b.dataset.reset, 'pending'));
+    $('cm-items').querySelectorAll('[data-reject]').forEach((b) => b.onclick = () => {
+      const r = prompt('סיבת הדחייה (תוצג ללקוח):', ''); if (r === null) return; setStatus(+b.dataset.reject, 'rejected', r.trim());
+    });
+  }
+  $('cm-close').addEventListener('click', () => $('case-modal').hidden = true);
+  $('cm-cancel').addEventListener('click', () => $('case-modal').hidden = true);
+  $('case-modal').addEventListener('click', (e) => { if (e.target === $('case-modal')) $('case-modal').hidden = true; });
+  $('cm-stage2-btn').addEventListener('click', async () => {
+    if (!currentCase) return;
+    try {
+      await fs.updateDoc(fs.doc(db, 'cases', currentCase.id), { stage2Open: !currentCase.stage2Open });
+      currentCase.stage2Open = !currentCase.stage2Open;
+      $('cm-stage2-btn').textContent = currentCase.stage2Open ? 'סגירת שלב 2' : 'פתיחת שלב 2 ללקוח';
+      renderCaseItems(currentCase);
+    } catch (e) { alert('שגיאה: ' + e.message); }
+  });
+  $('cm-delete').addEventListener('click', async () => {
+    if (currentCase && confirm('למחוק את התיק לצמיתות? הקבצים שהועלו יישארו ב-Storage.')) {
+      try { await fs.deleteDoc(fs.doc(db, 'cases', currentCase.id)); $('case-modal').hidden = true; }
+      catch (e) { alert('שגיאה: ' + e.message); }
+    }
   });
 
   /* ============================================================

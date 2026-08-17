@@ -1,0 +1,40 @@
+rules_version = '2';
+
+// ============================================================
+//  Horizon Psagot Group — Firebase Storage Rules
+//  קבצי תיקי לקוחות: client-cases/{caseId}/...
+//  הצוות (crm_users) ניגש להכל · לקוח ניגש רק לתיק שהטלפון/מייל שלו תואם.
+//  ההרשאה נקבעת ע"י קריאה חוצה-שירות ל-Firestore.
+// ============================================================
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isStaff() {
+      return request.auth != null
+        && firestore.exists(/databases/(default)/documents/crm_users/$(request.auth.uid));
+    }
+    function phoneMatch(caseId) {
+      return request.auth.token.phone_number != null
+        && firestore.get(/databases/(default)/documents/cases/$(caseId)).data.clientPhone
+             == request.auth.token.phone_number;
+    }
+    function emailMatch(caseId) {
+      return request.auth.token.email != null
+        && firestore.get(/databases/(default)/documents/cases/$(caseId)).data.clientEmail
+             == request.auth.token.email;
+    }
+    function canAccess(caseId) {
+      return request.auth != null && (isStaff() || phoneMatch(caseId) || emailMatch(caseId));
+    }
+
+    match /client-cases/{caseId}/{allPaths=**} {
+      allow read, delete: if canAccess(caseId);
+      allow write: if canAccess(caseId)
+                   && request.resource.size < 20 * 1024 * 1024               // עד 20MB
+                   && request.resource.contentType.matches('(image/.*|application/pdf)');
+    }
+
+    // כל השאר חסום
+    match /{allPaths=**} { allow read, write: if false; }
+  }
+}

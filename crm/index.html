@@ -45,6 +45,7 @@
 
     <nav class="crm-tabs">
       <button class="crm-tab active" data-tab="leads">לידים</button>
+      <button class="crm-tab" data-tab="cases">תיקים</button>
       <button class="crm-tab" data-tab="deals" hidden>עסקאות</button>
       <button class="crm-tab" data-tab="testimonials" hidden>המלצות</button>
       <button class="crm-tab" data-tab="team" hidden>צוות</button>
@@ -95,6 +96,16 @@
             <tbody id="leads-body"><tr><td colspan="8" class="empty-state">טוען…</td></tr></tbody>
           </table>
         </div>
+      </section>
+
+      <!-- ===== טאב תיקים ===== -->
+      <section class="tab-panel" id="panel-cases" hidden>
+        <div class="panel-head">
+          <h2>תיקי לקוחות</h2>
+          <button class="crm-btn" style="width:auto" id="add-case">+ תיק חדש</button>
+        </div>
+        <p class="cases-hint">פותחים תיק ללקוח קיים, בוחרים סוג שירות → נטענת רשימת המסמכים. הלקוח נכנס ל-<b>/portal</b> (ב-SMS או מייל) ומעלה. כאן רואים בזמן אמת מה התקבל.</p>
+        <div class="editor-grid" id="cases-grid"><p class="empty-state">טוען…</p></div>
       </section>
 
       <!-- ===== טאב עסקאות ===== -->
@@ -228,6 +239,30 @@
         <button class="crm-btn" style="width:auto" id="lc-save">שמירה</button>
         <button class="btn-ghost" id="lc-delete" style="color:var(--color-error)">מחיקה</button>
         <button class="btn-ghost" id="lc-cancel">סגירה</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== כרטיס תיק ===== -->
+  <div class="modal-overlay" id="case-modal" hidden>
+    <div class="modal lead-card">
+      <div class="lead-card-head">
+        <div>
+          <h3 id="cm-name">—</h3>
+          <div class="lc-sub" id="cm-sub"></div>
+        </div>
+        <button class="icon-btn" id="cm-close" title="סגירה">✕</button>
+      </div>
+
+      <div class="cm-toolbar">
+        <button class="crm-btn" style="width:auto" id="cm-stage2-btn">פתיחת שלב 2 ללקוח</button>
+      </div>
+
+      <div id="cm-items"></div>
+
+      <div class="modal-actions">
+        <button class="btn-ghost" id="cm-delete" style="color:var(--color-error)">מחיקת תיק</button>
+        <button class="btn-ghost" id="cm-cancel">סגירה</button>
       </div>
     </div>
   </div>

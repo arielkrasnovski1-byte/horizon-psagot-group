@@ -65,6 +65,27 @@ service cloud.firestore {
       // (מסמך crm_users/<uid> עם role:"owner"). ראו CRM-SETUP.md.
     }
 
+    // ---------- תיקי לקוחות (פורטל מסמכים) ----------
+    // הצוות (מי שיש לו פרופיל ב-crm_users) רואה ומנהל את כל התיקים.
+    // לקוח ניגש רק לתיק שבו הטלפון/מייל שלו תואם לזה שבתיק (בידוד מלא).
+    function ownsCase(data) {
+      return (data.clientPhone != null && request.auth.token.phone_number != null
+                && data.clientPhone == request.auth.token.phone_number)
+          || (data.clientEmail != null && request.auth.token.email != null
+                && data.clientEmail == request.auth.token.email);
+    }
+    match /cases/{caseId} {
+      allow read:   if hasProfile() || (signedIn() && ownsCase(resource.data));
+      allow create, delete: if hasProfile();               // רק הצוות פותח/מוחק תיק
+      // הצוות מעדכן הכל; לקוח מעדכן רק את התיק שלו, בלי לשנות שדות זיהוי/הרשאה
+      allow update: if hasProfile()
+                    || (signedIn() && ownsCase(resource.data)
+                        && request.resource.data.clientPhone == resource.data.clientPhone
+                        && request.resource.data.clientEmail == resource.data.clientEmail
+                        && request.resource.data.serviceType == resource.data.serviceType
+                        && request.resource.data.createdBy == resource.data.createdBy);
+    }
+
     // ---------- ברירת מחדל: כל השאר חסום ----------
     match /{document=**} {
       allow read, write: if false;
