@@ -45,6 +45,26 @@ import { serviceLabel } from '/js/case-templates.js';
     return '+972' + d;
   }
 
+  /* ---------- תרגום שגיאות Firebase להודעה מובנת (+ קוד לאבחון) ---------- */
+  const AUTH_ERRORS = {
+    'auth/too-many-requests':      'יותר מדי ניסיונות מהמספר הזה. נסו שוב בעוד כמה דקות.',
+    'auth/invalid-phone-number':   'מספר הטלפון אינו תקין.',
+    'auth/missing-phone-number':   'לא הוזן מספר טלפון.',
+    'auth/quota-exceeded':         'מכסת ההודעות היומית נוצלה. נסו מחר או פנו אלינו.',
+    'auth/operation-not-allowed':  'שיטת הכניסה אינה מופעלת במערכת.',
+    'auth/unauthorized-domain':    'הדומיין אינו מורשה במערכת ההתחברות.',
+    'auth/invalid-app-credential': 'אימות האבטחה (reCAPTCHA) נכשל. רעננו את הדף ונסו שוב.',
+    'auth/captcha-check-failed':   'אימות האבטחה (reCAPTCHA) נכשל. רעננו את הדף ונסו שוב.',
+    'auth/billing-not-enabled':    'שירות ה-SMS אינו פעיל בחשבון.',
+    'auth/network-request-failed': 'אין חיבור לאינטרנט יציב. נסו שוב.',
+    'auth/internal-error':         'שגיאה זמנית בשירות. נסו שוב.',
+  };
+  function authError(e, fallback) {
+    const code = (e && e.code) || '';
+    const msg = AUTH_ERRORS[code];
+    return msg ? msg : (fallback + (code ? ' (' + code + ')' : ''));
+  }
+
   /* ---------- כניסה ב-SMS ---------- */
   let confirmationResult = null, recaptcha = null;
   function ensureRecaptcha() {
@@ -65,7 +85,8 @@ import { serviceLabel } from '/js/case-templates.js';
       show($('sms-step-phone'), false); show($('sms-step-code'), true);
       $('otp').focus();
     } catch (e) {
-      err(e && e.code === 'auth/too-many-requests' ? 'יותר מדי ניסיונות. נסו מאוחר יותר.' : 'שליחת הקוד נכשלה. בדקו את המספר ונסו שוב.');
+      console.error('[portal] signInWithPhoneNumber נכשל:', e);
+      err(authError(e, 'שליחת הקוד נכשלה.'));
       resetRecaptcha();
     } finally { btn.disabled = false; btn.textContent = 'שליחת קוד ב-SMS'; }
   });
@@ -96,7 +117,7 @@ import { serviceLabel } from '/js/case-templates.js';
       await authMod.sendSignInLinkToEmail(auth, email, actionCodeSettings);
       window.localStorage.setItem('portalEmail', email);
       show($('email-step'), false); show($('email-sent'), true);
-    } catch (e) { err('שליחת הקישור נכשלה. נסו שוב.'); }
+    } catch (e) { console.error('[portal] sendSignInLinkToEmail נכשל:', e); err(authError(e, 'שליחת הקישור נכשלה.')); }
     finally { btn.disabled = false; btn.textContent = 'שליחת קישור כניסה'; }
   });
   $('email-back').addEventListener('click', () => { show($('email-sent'), false); show($('email-step'), true); err(''); });
