@@ -253,8 +253,14 @@ async function boot() {
         `<td class="lead-contact" data-label="יצירת קשר"><a href="tel:${esc(l.phone)}" onclick="event.stopPropagation()">${esc(l.phone)}</a>${l.email?`<a href="mailto:${esc(l.email)}" onclick="event.stopPropagation()">${esc(l.email)}</a>`:''}</td>`+
         `<td data-label="קהל / נושא">${esc(topic)}</td><td data-label="מקור">${src}</td><td data-label="מטופל ע״י">${assigned}</td>`+
         `<td data-label="סטטוס"><select class="status-select ${st.cls}" data-id="${l.id}" onclick="event.stopPropagation()">${opts}</select></td>`+
-        `<td class="actions-cell"><div class="row-actions"><span class="open-hint">פרטים ›</span><a class="icon-btn" href="https://wa.me/${phoneIntl(l.phone)}" target="_blank" rel="noopener" title="וואטסאפ" onclick="event.stopPropagation()"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2z"/></svg></a></div></td></tr>`;
+        `<td class="actions-cell"><div class="row-actions"><span class="open-hint">פרטים ›</span>`+
+        `<button type="button" class="icon-btn case-btn${caseForLead(l.id)?' has-case':''}" data-newcase="${l.id}" title="${caseForLead(l.id)?'תיק לקוח קיים — פתיחה':'פתיחת תיק לקוח'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>${caseForLead(l.id)?'<path d="m9 13 2 2 4-4"/>':'<path d="M12 10v6M9 13h6"/>'}</svg></button>`+
+        `<a class="icon-btn" href="https://wa.me/${phoneIntl(l.phone)}" target="_blank" rel="noopener" title="וואטסאפ" onclick="event.stopPropagation()"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2z"/></svg></a></div></td></tr>`;
     }).join('');
+    body.querySelectorAll('[data-newcase]').forEach((b) => b.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openCaseForLead(allLeads.find((x) => x.id === b.dataset.newcase));
+    }));
     body.querySelectorAll('.status-select').forEach((s) => s.addEventListener('change', () => changeStatus(s.dataset.id, s.value)));
     body.querySelectorAll('.lead-row').forEach((r) => r.addEventListener('click', () => openLeadModal(allLeads.find((x) => x.id === r.dataset.lead))));
   }
@@ -270,6 +276,21 @@ async function boot() {
     await fs.updateDoc(fs.doc(db, 'leads', id), updates);
   }
 
+  /* ---------- ליד → תיק לקוח ---------- */
+  // מחזיר תיק קיים שנפתח מהליד הזה (מניעת כפילות), אם יש
+  function caseForLead(leadId) {
+    return allCases.find((c) => c.fromLead === leadId) || null;
+  }
+  function openCaseForLead(lead) {
+    if (!lead) return;
+    $('lead-modal').hidden = true;
+    const tabBtn = document.querySelector('.crm-tab[data-tab="cases"]');
+    if (tabBtn) tabBtn.click();
+    const existing = caseForLead(lead.id);
+    if (existing) { openCaseModal(existing); return; }   // כבר קיים תיק — פותחים אותו
+    openNewCaseForm({ leadId: lead.id, name: lead.name || '', phone: lead.phone || '', email: lead.email || '' });
+  }
+
   /* ---------- כרטיס ליד ---------- */
   let currentLead = null;
   function openLeadModal(lead) {
@@ -281,13 +302,8 @@ async function boot() {
       `<a class="crm-btn" style="width:auto" href="https://wa.me/${phoneIntl(lead.phone)}" target="_blank" rel="noopener">וואטסאפ</a>`+
       `<a class="btn-ghost" href="tel:${esc(lead.phone)}">${esc(lead.phone)}</a>`+
       (lead.email?`<a class="btn-ghost" href="mailto:${esc(lead.email)}">${esc(lead.email)}</a>`:'')+
-      `<button type="button" class="btn-ghost lc-to-case" id="lc-open-case">פתיחת תיק לקוח ›</button>`;
-    $('lc-open-case').onclick = () => {
-      $('lead-modal').hidden = true;
-      const tabBtn = document.querySelector('.crm-tab[data-tab="cases"]');
-      if (tabBtn) tabBtn.click();
-      openNewCaseForm({ leadId: lead.id, name: lead.name || '', phone: lead.phone || '', email: lead.email || '' });
-    };
+      `<button type="button" class="btn-ghost lc-to-case" id="lc-open-case">${caseForLead(lead.id) ? 'מעבר לתיק הלקוח ›' : 'פתיחת תיק לקוח ›'}</button>`;
+    $('lc-open-case').onclick = () => openCaseForLead(lead);
     $('lc-status').innerHTML = STATUS_KEYS.filter((k)=>k!=='in_progress').map((k)=>`<option value="${k}"${(lead.status||'new')===k?' selected':''}>${STATUS[k].he}</option>`).join('');
     $('lc-status').className = 'status-select ' + (STATUS[lead.status||'new']?.cls||'new');
     $('lc-assigned').innerHTML = userOptions(lead.assignedTo || '');
@@ -461,6 +477,7 @@ async function boot() {
       allCases = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
         .sort((a, b) => (toDateObj(b.createdAt)?.getTime() || 0) - (toDateObj(a.createdAt)?.getTime() || 0));
       renderCases();
+      if (allLeads.length) renderLeads();   // עדכון סימון "יש תיק" בשורות הלידים
     }, (err) => { console.warn(err); $('cases-grid').innerHTML = '<p class="empty-state">שגיאה בטעינה. בדקו כללי אבטחה.</p>'; }));
   }
   function casePct(c) {
