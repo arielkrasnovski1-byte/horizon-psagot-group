@@ -42,7 +42,7 @@ export const TEMPLATES = {
       { key: 'appraisal',  label: 'שמאות' },
       { key: 'signatures', label: 'חתימות' },
       { key: 'poa',        label: 'ייפוי כוח' },
-      { key: 'credit',     label: 'דוח נתוני אשראי' },
+      { key: 'credit',     label: 'דוח נתוני אשראי (BDI)' },
     ],
   },
 
@@ -97,7 +97,7 @@ export const TEMPLATES = {
     stage1: [
       { key: 'id',        label: 'תעודת זהות' },
       { key: 'equity',    label: 'אישור הון עצמי / תדפיסי בנק' },
-      { key: 'tabu',      label: 'נסח טאבו (אם קיים נכס)' },
+      { key: 'tabu',      label: 'נסח טאבו' },
       { key: 'approval',  label: 'אישור עקרוני למשכנתא' },
       { key: 'payslips',  label: 'תלושי שכר — 3 חודשים אחרונים' },
     ],
@@ -155,4 +155,28 @@ export function buildItems(serviceKey, isBusiness) {
   if (isBusiness) (t.business || []).forEach((d) => items.push({ key: d.key, label: d.label, stage: 1 }));
   (t.stage2 || []).forEach((d) => items.push({ key: d.key, label: d.label, stage: 2 }));
   return items.map((it) => ({ ...it, status: 'pending', files: [] }));
+}
+
+// קטלוג כל סוגי המסמכים שמוגדרים במערכת — לבחירה ידנית בהוספת מסמך לתיק.
+// מוחזר מקובץ בקבוצות (optgroup): קודם הנפוצים, אחר כך ייחודיים לכל שירות.
+export function docCatalog() {
+  const count = new Map();
+  const perService = [];
+  SERVICE_TYPES.forEach((s) => {
+    const t = TEMPLATES[s.key] || {};
+    const labels = [];
+    [t.stage1, t.business, t.stage2].forEach((arr) => (arr || []).forEach((d) => {
+      if (labels.indexOf(d.label) === -1) labels.push(d.label);
+    }));
+    labels.forEach((l) => count.set(l, (count.get(l) || 0) + 1));
+    perService.push({ group: s.label, docs: labels });
+  });
+  const groups = [];
+  const common = Array.from(count.keys()).filter((l) => count.get(l) > 1);
+  if (common.length) groups.push({ group: 'מסמכים נפוצים', docs: common });
+  perService.forEach((g) => {
+    const only = g.docs.filter((l) => count.get(l) === 1);
+    if (only.length) groups.push({ group: g.group, docs: only });
+  });
+  return groups;
 }

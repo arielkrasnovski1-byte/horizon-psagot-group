@@ -264,6 +264,19 @@
 
       <div id="cm-items"></div>
 
+      <div class="cm-add">
+        <label class="cm-add-title">הוספת בקשת מסמך לתיק</label>
+        <div class="cm-add-row">
+          <select id="cm-add-pick"></select>
+          <input type="text" id="cm-add-custom" placeholder="שם המסמך" hidden>
+          <select id="cm-add-stage">
+            <option value="1">שלב 1 — ראשוני</option>
+            <option value="2">שלב 2 — משלים</option>
+          </select>
+          <button class="crm-btn" type="button" id="cm-add-btn" style="width:auto">הוספה</button>
+        </div>
+      </div>
+
       <div class="modal-actions">
         <button class="btn-ghost" id="cm-delete" style="color:var(--color-error)">מחיקת תיק</button>
         <button class="btn-ghost" id="cm-cancel">סגירה</button>

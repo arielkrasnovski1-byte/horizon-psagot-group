@@ -4,7 +4,7 @@
    ייצוא, פולו-אפ) · עסקאות · מאמרים (בגל הבא)
    ============================================================ */
 import { firebaseConfig, isConfigured } from '/js/firebase-config.js';
-import { SERVICE_TYPES, buildItems, serviceLabel } from '/js/case-templates.js';
+import { SERVICE_TYPES, buildItems, serviceLabel, docCatalog } from '/js/case-templates.js';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? '' : s).replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -567,9 +567,67 @@ async function boot() {
       (c.isBusiness ? ' · בעל עסק' : '');
     $('cm-stage2-btn').textContent = c.stage2Open ? 'סגירת שלב 2' : 'פתיחת שלב 2 ללקוח';
     renderSendBar(c);
+    fillDocCatalog();
+    $('cm-add-pick').value = ''; $('cm-add-custom').value = ''; $('cm-add-custom').hidden = true;
+    $('cm-add-stage').value = c.stage2Open ? '2' : '1';
     renderCaseItems(c);
     $('case-modal').hidden = false;
   }
+  /* ---- הוספה/הסרה ידנית של מסמכים בתיק ---- */
+  let catalogFilled = false;
+  function fillDocCatalog() {
+    if (catalogFilled) return;
+    const sel = $('cm-add-pick');
+    sel.innerHTML = '<option value="">— בחרו מסמך —</option>' +
+      docCatalog().map((g) =>
+        '<optgroup label="' + esc(g.group) + '">' +
+        g.docs.map((l) => '<option value="' + esc(l) + '">' + esc(l) + '</option>').join('') +
+        '</optgroup>').join('') +
+      '<option value="__custom__">אחר — הקלדת שם המסמך…</option>';
+    catalogFilled = true;
+  }
+  function newItemKey(items) {
+    let k = 'add_' + Date.now().toString(36);
+    while (items.some((it) => it.key === k)) k = 'add_' + Date.now().toString(36) + Math.floor(Math.random() * 999).toString(36);
+    return k;
+  }
+  async function addCaseItem() {
+    if (!currentCase) return;
+    const pick = $('cm-add-pick').value;
+    const label = pick === '__custom__' ? ($('cm-add-custom').value || '').trim() : pick;
+    if (!label) { alert('בחרו מסמך מהרשימה או הקלידו שם מסמך.'); return; }
+    const stage = +$('cm-add-stage').value === 2 ? 2 : 1;
+    const items = (currentCase.items || []).slice();
+    if (items.some((it) => it.label === label && it.stage === stage)) {
+      alert('המסמך "' + label + '" כבר קיים בשלב הזה בתיק.'); return;
+    }
+    items.push({ key: newItemKey(items), label, stage, status: 'pending', files: [], custom: true });
+    const btn = $('cm-add-btn'); btn.disabled = true;
+    try {
+      await fs.updateDoc(fs.doc(db, 'cases', currentCase.id), { items });
+      currentCase.items = items;
+      $('cm-add-pick').value = ''; $('cm-add-custom').value = ''; $('cm-add-custom').hidden = true;
+      renderCaseItems(currentCase); renderSendBar(currentCase);
+    } catch (e) { alert('שגיאה: ' + e.message); }
+    btn.disabled = false;
+  }
+  async function removeCaseItem(gi) {
+    if (!currentCase) return;
+    const items = (currentCase.items || []).slice();
+    const it = items[gi]; if (!it) return;
+    const hasFiles = (it.files || []).length;
+    const msg = hasFiles
+      ? 'להסיר את "' + it.label + '" מהתיק? הלקוח כבר העלה ' + hasFiles + ' קבצים — הם יישארו ב-Storage אך לא יוצגו יותר.'
+      : 'להסיר את "' + it.label + '" מהתיק?';
+    if (!confirm(msg)) return;
+    items.splice(gi, 1);
+    try {
+      await fs.updateDoc(fs.doc(db, 'cases', currentCase.id), { items });
+      currentCase.items = items;
+      renderCaseItems(currentCase); renderSendBar(currentCase);
+    } catch (e) { alert('שגיאה: ' + e.message); }
+  }
+
   function renderCaseItems(c) {
     const items = c.items || [];
     const row = (it, gi) => {
@@ -586,6 +644,7 @@ async function boot() {
           '<button class="btn-ghost" data-approve="' + gi + '">אישור</button>' +
           '<button class="btn-ghost" data-reject="' + gi + '">דחייה</button>' +
           (it.status !== 'pending' ? '<button class="btn-ghost" data-reset="' + gi + '">איפוס</button>' : '') +
+          '<button class="btn-ghost cm-remove" data-remove="' + gi + '" title="הסרת המסמך מהתיק">הסרה</button>' +
         '</div></div>';
     };
     const s1 = items.map((it, i) => ({ it, i })).filter((x) => x.it.stage === 1);
@@ -599,12 +658,20 @@ async function boot() {
       try { await fs.updateDoc(fs.doc(db, 'cases', currentCase.id), { items: arr }); currentCase.items = arr; renderCaseItems(currentCase); }
       catch (e) { alert('שגיאה: ' + e.message); }
     };
+    $('cm-items').querySelectorAll('[data-remove]').forEach((b) => b.onclick = () => removeCaseItem(+b.dataset.remove));
     $('cm-items').querySelectorAll('[data-approve]').forEach((b) => b.onclick = () => setStatus(+b.dataset.approve, 'received'));
     $('cm-items').querySelectorAll('[data-reset]').forEach((b) => b.onclick = () => setStatus(+b.dataset.reset, 'pending'));
     $('cm-items').querySelectorAll('[data-reject]').forEach((b) => b.onclick = () => {
       const r = prompt('סיבת הדחייה (תוצג ללקוח):', ''); if (r === null) return; setStatus(+b.dataset.reject, 'rejected', r.trim());
     });
   }
+  $('cm-add-pick').addEventListener('change', () => {
+    const custom = $('cm-add-pick').value === '__custom__';
+    $('cm-add-custom').hidden = !custom;
+    if (custom) $('cm-add-custom').focus();
+  });
+  $('cm-add-custom').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addCaseItem(); } });
+  $('cm-add-btn').addEventListener('click', addCaseItem);
   $('cm-close').addEventListener('click', () => $('case-modal').hidden = true);
   $('cm-cancel').addEventListener('click', () => $('case-modal').hidden = true);
   $('case-modal').addEventListener('click', (e) => { if (e.target === $('case-modal')) $('case-modal').hidden = true; });
