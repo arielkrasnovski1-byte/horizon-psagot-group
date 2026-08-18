@@ -68,6 +68,10 @@ service cloud.firestore {
     // ---------- תיקי לקוחות (פורטל מסמכים) ----------
     // הצוות (מי שיש לו פרופיל ב-crm_users) רואה ומנהל את כל התיקים.
     // לקוח ניגש רק לתיק שבו הטלפון/מייל שלו תואם לזה שבתיק (בידוד מלא).
+    // שינוי מצב התיק (סגירה/פתיחה מחדש) — פעולה ניהולית
+    function touchesCaseStatus() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'closedAt', 'closedBy']);
+    }
     function ownsCase(data) {
       return (data.clientPhone != null && request.auth.token.phone_number != null
                 && data.clientPhone == request.auth.token.phone_number)
@@ -76,10 +80,13 @@ service cloud.firestore {
     }
     match /cases/{caseId} {
       allow read:   if hasProfile() || (signedIn() && ownsCase(resource.data));
-      allow create, delete: if hasProfile();               // רק הצוות פותח/מוחק תיק
+      allow create: if hasProfile();                       // כל הצוות פותח תיק
+      allow delete: if isOwner();                          // מחיקת תיק — בעלים בלבד
       // הצוות מעדכן הכל; לקוח מעדכן רק את התיק שלו, בלי לשנות שדות זיהוי/הרשאה
       // תיק סגור (status == 'closed') — הלקוח בתצוגה בלבד, אין לו כתיבה
-      allow update: if hasProfile()
+      // נציג (agent): מטפל בתיק — מאשר/דוחה מסמכים, מוסיף בקשות.
+      // סגירת תיק / פתיחה מחדש — owner או manager בלבד.
+      allow update: if (hasProfile() && (canContent() || !touchesCaseStatus()))
                     || (signedIn() && ownsCase(resource.data)
                         && resource.data.status != 'closed'
                         && request.resource.data.status == resource.data.status

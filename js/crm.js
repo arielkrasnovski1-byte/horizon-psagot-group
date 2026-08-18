@@ -83,6 +83,8 @@ async function boot() {
      ============================================================ */
   let allLeads = [], leadFilter = 'all', searchQ = '', userFilter = '';
   let teamUsers = [], allUsers = [], currentRole = 'agent';
+  // הרשאות תיקים: סגירה/פתיחה מחדש — owner/manager · מחיקה — owner בלבד
+  let canManageCases = false, canDeleteCase = false;
   const ROLES = { owner: 'בעלים', manager: 'מנהל', agent: 'נציג' };
   const normRole = (r) => (r === 'owner' || r === 'manager' || r === 'agent') ? r : 'agent';
   // שם תצוגה של מטפל לפי המייל — מהשם שהוגדר, אחרת החלק שלפני ה-@
@@ -98,6 +100,9 @@ async function boot() {
       const ownerExists = allUsers.some((u) => u.role === 'owner');
       const isOwner = currentRole === 'owner';
       const canContent = isOwner || currentRole === 'manager' || !ownerExists;
+      canManageCases = canContent;
+      canDeleteCase = isOwner || !ownerExists;
+      if (currentCase) renderClosedState(currentCase);   // רענון הכפתורים אם כרטיס פתוח
       // חשיפת טאבים לפי תפקיד: נציג=לידים בלבד · מנהל=+תוכן · בעלים=+משתמשים
       ['deals', 'testimonials', 'team', 'faq', 'articles'].forEach((k) => {
         const btn = document.querySelector('.crm-tab[data-tab="' + k + '"]'); if (btn) btn.hidden = !canContent;
@@ -689,6 +694,9 @@ async function boot() {
   /* ---- סגירת תיק / פתיחה מחדש ---- */
   function renderClosedState(c) {
     const closed = isClosed(c);
+    // נציג רואה ומטפל בתיק, אך אינו סוגר ואינו מוחק
+    $('cm-close-btn').hidden = !canManageCases;
+    $('cm-delete').hidden = !canDeleteCase;
     $('cm-close-btn').textContent = closed ? 'פתיחת התיק מחדש' : 'סגירת תיק';
     $('cm-close-btn').className = closed ? 'btn-ghost' : 'btn-ghost cm-closebtn';
     const note = $('cm-closed-note');
