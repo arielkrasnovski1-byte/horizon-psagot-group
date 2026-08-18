@@ -105,6 +105,7 @@
           <button class="crm-btn" style="width:auto" id="add-case">+ תיק חדש</button>
         </div>
         <p class="cases-hint">פותחים תיק ללקוח קיים, בוחרים סוג שירות → נטענת רשימת המסמכים. הלקוח נכנס ל-<b>/portal</b> (ב-SMS או מייל) ומעלה. כאן רואים בזמן אמת מה התקבל.</p>
+        <div class="cases-filter" id="cases-filter"></div>
         <div class="editor-grid" id="cases-grid"><p class="empty-state">טוען…</p></div>
       </section>
 
@@ -259,8 +260,10 @@
         <button class="btn-ghost" type="button" id="cm-send-wa">שליחה בוואטסאפ</button>
         <button class="btn-ghost" type="button" id="cm-send-mail">שליחה במייל</button>
         <button class="btn-ghost" type="button" id="cm-copy-msg">העתקת ההודעה</button>
+        <button class="btn-ghost cm-closebtn" type="button" id="cm-close-btn">סגירת תיק</button>
         <span class="cm-sent" id="cm-sent"></span>
       </div>
+      <div class="cm-closed-note" id="cm-closed-note" hidden></div>
 
       <div id="cm-items"></div>
 

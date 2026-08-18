@@ -109,3 +109,7 @@
 
 /* reCAPTCHA להישאר בלתי-נראה אך תקין */
 #recaptcha-holder { display: flex; justify-content: center; }
+
+/* תיק סגור — הודעה ללקוח */
+.case-closed-note { margin: var(--space-md) 0; padding: .9rem 1rem; border-radius: var(--radius-sm); background: rgba(0,0,0,.04); border-inline-start: 3px solid var(--color-warm-gray, #8a8a8a); font-size: var(--fs-sm); line-height: 1.6; }
+.case-closed-note b { display: block; margin-bottom: .2rem; }

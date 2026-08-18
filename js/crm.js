@@ -485,15 +485,35 @@ async function boot() {
     if (!items.length) return 0;
     return Math.round(items.filter((it) => it.status === 'received').length / items.length * 100);
   }
+  const isClosed = (c) => c.status === 'closed';
+  let casesFilter = 'active';   // active | closed | all
+  function filteredCases() {
+    if (casesFilter === 'closed') return allCases.filter(isClosed);
+    if (casesFilter === 'all') return allCases;
+    return allCases.filter((c) => !isClosed(c));
+  }
   function renderCases() {
     const grid = $('cases-grid');
+    const counts = { active: allCases.filter((c) => !isClosed(c)).length, closed: allCases.filter(isClosed).length };
+    const fbar = $('cases-filter');
+    if (fbar) {
+      fbar.innerHTML = [
+        ['active', 'פעילים', counts.active],
+        ['closed', 'סגורים', counts.closed],
+        ['all', 'הכל', allCases.length],
+      ].map(([k, l, n]) => '<button type="button" class="cases-fbtn' + (casesFilter === k ? ' on' : '') + '" data-cf="' + k + '">' + l + ' (' + n + ')</button>').join('');
+      fbar.querySelectorAll('[data-cf]').forEach((b) => b.onclick = () => { casesFilter = b.dataset.cf; renderCases(); });
+    }
+    const list = filteredCases();
     if (!allCases.length) { grid.innerHTML = '<div class="empty-state"><p>אין תיקים עדיין. פתחו תיק חדש כדי לשלוח ללקוח קישור להעלאת מסמכים.</p></div>'; return; }
-    grid.innerHTML = allCases.map((c) => {
+    if (!list.length) { grid.innerHTML = '<div class="empty-state"><p>אין תיקים בקטגוריה הזו.</p></div>'; return; }
+    grid.innerHTML = list.map((c) => {
       const p = casePct(c);
       const contact = esc(c.clientPhone || c.clientEmail || '');
-      return '<div class="case-card" data-case="' + c.id + '">' +
+      return '<div class="case-card' + (isClosed(c) ? ' closed' : '') + '" data-case="' + c.id + '">' +
         '<div class="case-card-head"><b>' + esc(c.clientName || '—') + '</b>' +
-        (c.stage2Open ? '<span class="src-badge src-manual">שלב 2</span>' : '') + '</div>' +
+        (isClosed(c) ? '<span class="src-badge case-badge-closed">סגור</span>'
+          : c.stage2Open ? '<span class="src-badge src-manual">שלב 2</span>' : '') + '</div>' +
         '<div class="case-card-svc">' + esc(serviceLabel(c.serviceType)) + '</div>' +
         '<div class="case-card-contact" style="direction:ltr;text-align:right">' + contact + '</div>' +
         '<div class="case-progress"><div class="case-progress-bar"><span style="width:' + p + '%"></span></div><em>' + p + '%</em></div>' +
@@ -566,6 +586,7 @@ async function boot() {
       (c.clientEmail ? ' · <span style="direction:ltr">' + esc(c.clientEmail) + '</span>' : '') +
       (c.isBusiness ? ' · בעל עסק' : '');
     $('cm-stage2-btn').textContent = c.stage2Open ? 'סגירת שלב 2' : 'פתיחת שלב 2 ללקוח';
+    renderClosedState(c);
     renderSendBar(c);
     fillDocCatalog();
     $('cm-add-pick').value = ''; $('cm-add-custom').value = ''; $('cm-add-custom').hidden = true;
@@ -665,6 +686,45 @@ async function boot() {
       const r = prompt('סיבת הדחייה (תוצג ללקוח):', ''); if (r === null) return; setStatus(+b.dataset.reject, 'rejected', r.trim());
     });
   }
+  /* ---- סגירת תיק / פתיחה מחדש ---- */
+  function renderClosedState(c) {
+    const closed = isClosed(c);
+    $('cm-close-btn').textContent = closed ? 'פתיחת התיק מחדש' : 'סגירת תיק';
+    $('cm-close-btn').className = closed ? 'btn-ghost' : 'btn-ghost cm-closebtn';
+    const note = $('cm-closed-note');
+    note.hidden = !closed;
+    if (closed) {
+      note.textContent = 'התיק סגור' + (c.closedAt ? ' · ' + fmtDate(c.closedAt) : '') +
+        (c.closedBy ? ' · ' + displayName(c.closedBy) : '') + ' — הלקוח רואה אותו לצפייה בלבד, ללא אפשרות העלאה.';
+    }
+    // בתיק סגור אין טעם לבקש מסמכים נוספים
+    $('cm-add-btn').disabled = closed;
+    $('cm-add-pick').disabled = closed;
+    $('cm-add-stage').disabled = closed;
+    $('cm-send-wa').disabled = closed || !c.clientPhone;
+    $('cm-send-mail').disabled = closed || !c.clientEmail;
+    $('cm-stage2-btn').disabled = closed;
+  }
+  $('cm-close-btn').addEventListener('click', async () => {
+    if (!currentCase) return;
+    const closed = isClosed(currentCase);
+    const missing = caseMissingItems(currentCase).length;
+    if (!closed) {
+      const warn = missing
+        ? 'בתיק עדיין חסרים ' + missing + ' מסמכים. לסגור בכל זאת?\nהלקוח לא יוכל להעלות עוד, והתיק יעבור לתצוגת "סגורים".'
+        : 'לסגור את התיק? הלקוח לא יוכל להעלות עוד מסמכים.';
+      if (!confirm(warn)) return;
+    }
+    const upd = closed
+      ? { status: 'active', closedAt: '', closedBy: '' }
+      : { status: 'closed', closedAt: nowISO(), closedBy: currentEmail };
+    try {
+      await fs.updateDoc(fs.doc(db, 'cases', currentCase.id), upd);
+      Object.assign(currentCase, upd);
+      renderClosedState(currentCase);
+    } catch (e) { alert('שגיאה: ' + e.message); }
+  });
+
   $('cm-add-pick').addEventListener('change', () => {
     const custom = $('cm-add-pick').value === '__custom__';
     $('cm-add-custom').hidden = !custom;

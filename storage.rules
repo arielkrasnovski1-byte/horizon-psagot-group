@@ -26,10 +26,19 @@ service firebase.storage {
     function canAccess(caseId) {
       return request.auth != null && (isStaff() || phoneMatch(caseId) || emailMatch(caseId));
     }
+    // תיק סגור — הלקוח עדיין רואה את הקבצים, אך לא מעלה/מוחק
+    function caseOpen(caseId) {
+      return firestore.get(/databases/(default)/documents/cases/$(caseId)).data.status != 'closed';
+    }
+    function canWrite(caseId) {
+      return request.auth != null
+        && (isStaff() || ((phoneMatch(caseId) || emailMatch(caseId)) && caseOpen(caseId)));
+    }
 
     match /client-cases/{caseId}/{allPaths=**} {
-      allow read, delete: if canAccess(caseId);
-      allow write: if canAccess(caseId)
+      allow read: if canAccess(caseId);
+      allow delete: if canWrite(caseId);
+      allow write: if canWrite(caseId)
                    && request.resource.size < 20 * 1024 * 1024               // עד 20MB
                    && request.resource.contentType.matches('(image/.*|application/pdf)');
     }

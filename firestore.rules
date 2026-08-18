@@ -78,8 +78,11 @@ service cloud.firestore {
       allow read:   if hasProfile() || (signedIn() && ownsCase(resource.data));
       allow create, delete: if hasProfile();               // רק הצוות פותח/מוחק תיק
       // הצוות מעדכן הכל; לקוח מעדכן רק את התיק שלו, בלי לשנות שדות זיהוי/הרשאה
+      // תיק סגור (status == 'closed') — הלקוח בתצוגה בלבד, אין לו כתיבה
       allow update: if hasProfile()
                     || (signedIn() && ownsCase(resource.data)
+                        && resource.data.status != 'closed'
+                        && request.resource.data.status == resource.data.status
                         && request.resource.data.clientPhone == resource.data.clientPhone
                         && request.resource.data.clientEmail == resource.data.clientEmail
                         && request.resource.data.serviceType == resource.data.serviceType

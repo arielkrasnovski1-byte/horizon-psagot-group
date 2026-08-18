@@ -203,6 +203,11 @@ import { serviceLabel } from '/js/case-templates.js';
       '<div class="progress-wrap"><div class="progress-bar"><span style="width:' + p + '%"></span></div>' +
       '<div class="progress-label">' + p + '% מהמסמכים הועלו</div></div>';
 
+    if (c.status === 'closed') {
+      html += '<div class="case-closed-note"><b>התיק הושלם וסגור.</b> ' +
+        'המסמכים שמורים אצלנו ואין צורך בפעולה נוספת. לשאלות — <a href="/contact/">צרו קשר</a>.</div>';
+    }
+
     html += '<section class="doc-group"><h3>מסמכים נדרשים</h3>' + s1.map((it) => itemRow(c, it)).join('') + '</section>';
     if (c.stage2Open && s2.length) {
       html += '<section class="doc-group stage2"><h3>שלב נוסף — מסמכים משלימים</h3>' + s2.map((it) => itemRow(c, it)).join('') + '</section>';
@@ -235,14 +240,17 @@ import { serviceLabel } from '/js/case-templates.js';
       '<div class="doc-item-head"><span class="doc-label">' + esc(it.label) + '</span>' + statusPill(it.status) + '</div>' +
       reject +
       (files ? '<div class="file-list">' + files + '</div>' : '') +
-      '<label class="upload-btn"><input type="file" accept="image/*,application/pdf" multiple data-key="' + esc(it.key) + '" hidden>' +
-      (it.files && it.files.length ? '＋ הוספת קובץ' : '⬆ העלאת מסמך') + '</label>' +
-      '<div class="upload-progress" data-prog="' + esc(it.key) + '" hidden></div>' +
+      // בתיק סגור אין העלאות — תצוגה בלבד
+      (c.status === 'closed' ? '' :
+        '<label class="upload-btn"><input type="file" accept="image/*,application/pdf" multiple data-key="' + esc(it.key) + '" hidden>' +
+        (it.files && it.files.length ? '＋ הוספת קובץ' : '⬆ העלאת מסמך') + '</label>' +
+        '<div class="upload-progress" data-prog="' + esc(it.key) + '" hidden></div>') +
       '</div>';
   }
 
   /* ---------- העלאת קבצים ---------- */
   async function uploadFiles(c, idx, files) {
+    if (c.status === 'closed') { alert('התיק סגור — לא ניתן להעלות מסמכים נוספים.'); return; }
     const item = c.items[idx];
     const prog = $('case-detail').querySelector('[data-prog="' + cssEsc(item.key) + '"]');
     if (prog) { prog.hidden = false; prog.textContent = 'מעלה…'; }
