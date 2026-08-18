@@ -14,6 +14,14 @@ export const SERVICE_TYPES = [
   { key: 'urban',      label: 'התחדשות עירונית',            cat: 'נדל"ן' },
 ];
 
+// מסמכים נוספים ללקוח שהוא בעל עסק — משותף לרוב סוגי השירות.
+const BIZ_DOCS = [
+  { key: 'biz_bank',   label: 'תדפיסי חשבון בנק עסקי' },
+  { key: 'income',     label: 'דוח הכנסות' },
+  { key: 'accountant', label: 'מסמכי רואה חשבון' },
+  { key: 'tax_assess', label: 'שומת מס' },
+];
+
 // תבנית מסמכים לכל סוג שירות. כרגע מפורט: mortgage. השאר — שלד ריק להשלמה.
 export const TEMPLATES = {
   mortgage: {
@@ -37,7 +45,100 @@ export const TEMPLATES = {
       { key: 'credit',     label: 'דוח נתוני אשראי' },
     ],
   },
-  // recovery / debt / business / re_israel / re_abroad / urban — יוגדרו בהמשך
+
+  recovery: {
+    stage1: [
+      { key: 'id',        label: 'תעודת זהות' },
+      { key: 'bank6',     label: 'תדפיסי חשבון בנק — 6 חודשים אחרונים' },
+      { key: 'balances',  label: 'ריכוז יתרות והלוואות' },
+      { key: 'payslips',  label: 'תלושי שכר — 3 חודשים אחרונים' },
+      { key: 'bdi',       label: 'דוח נתוני אשראי (BDI)' },
+      { key: 'expenses',  label: 'פירוט הוצאות קבועות' },
+    ],
+    business: BIZ_DOCS,
+    stage2: [
+      { key: 'plan',      label: 'תוכנית הבראה חתומה' },
+      { key: 'clearance', label: 'אישורי סגירת חובות' },
+    ],
+  },
+
+  debt: {
+    stage1: [
+      { key: 'id',        label: 'תעודת זהות' },
+      { key: 'creditors', label: 'ריכוז חובות ונושים' },
+      { key: 'demands',   label: 'מכתבי דרישה / עיקולים' },
+      { key: 'bank6',     label: 'תדפיסי חשבון בנק — 6 חודשים אחרונים' },
+      { key: 'bdi',       label: 'דוח נתוני אשראי (BDI)' },
+      { key: 'hotzaa',    label: 'תיק הוצאה לפועל (אם קיים)' },
+    ],
+    business: BIZ_DOCS,
+    stage2: [
+      { key: 'settlement', label: 'הסכמי פשרה' },
+      { key: 'payments',   label: 'אישורי תשלום' },
+    ],
+  },
+
+  business: {
+    stage1: [
+      { key: 'id',        label: 'תעודת זהות + תעודת עוסק / ח.פ' },
+      { key: 'financials',label: 'מאזן ודוח רווח והפסד שנתי' },
+      { key: 'biz_bank',  label: 'תדפיסי חשבון בנק עסקי — 6 חודשים אחרונים' },
+      { key: 'vat',       label: 'דוח מע"מ אחרון' },
+      { key: 'liabilities', label: 'פירוט התחייבויות' },
+    ],
+    business: [],
+    stage2: [
+      { key: 'bizplan',   label: 'תוכנית עסקית' },
+      { key: 'cashflow',  label: 'תחזית תזרים' },
+    ],
+  },
+
+  re_israel: {
+    stage1: [
+      { key: 'id',        label: 'תעודת זהות' },
+      { key: 'equity',    label: 'אישור הון עצמי / תדפיסי בנק' },
+      { key: 'tabu',      label: 'נסח טאבו (אם קיים נכס)' },
+      { key: 'approval',  label: 'אישור עקרוני למשכנתא' },
+      { key: 'payslips',  label: 'תלושי שכר — 3 חודשים אחרונים' },
+    ],
+    business: BIZ_DOCS,
+    stage2: [
+      { key: 'contract',  label: 'זיכרון דברים / חוזה' },
+      { key: 'appraisal', label: 'שמאות' },
+      { key: 'poa',       label: 'ייפוי כוח' },
+    ],
+  },
+
+  re_abroad: {
+    stage1: [
+      { key: 'id',        label: 'תעודת זהות + דרכון' },
+      { key: 'source',    label: 'אישור מקור כספים' },
+      { key: 'bank',      label: 'תדפיסי חשבון בנק — 3 חודשים אחרונים' },
+      { key: 'tax',       label: 'אישור ניכוי מס / תושבות' },
+    ],
+    business: BIZ_DOCS,
+    stage2: [
+      { key: 'contract',  label: 'חוזה רכישה' },
+      { key: 'poa',       label: 'ייפוי כוח נוטריוני' },
+      { key: 'foreign_bank', label: 'פתיחת חשבון בנק זר' },
+    ],
+  },
+
+  urban: {
+    stage1: [
+      { key: 'id',        label: 'תעודת זהות' },
+      { key: 'tabu',      label: 'נסח טאבו' },
+      { key: 'ownership', label: 'הסכם בעלות / צו ירושה' },
+      { key: 'rent',      label: 'חוזה שכירות (אם הנכס מושכר)' },
+      { key: 'vaad',      label: 'אישור ועד הבית / היזם' },
+    ],
+    business: BIZ_DOCS,
+    stage2: [
+      { key: 'developer', label: 'הסכם חתום מול היזם' },
+      { key: 'guarantees',label: 'ערבויות' },
+      { key: 'poa',       label: 'ייפוי כוח' },
+    ],
+  },
 };
 
 export function serviceLabel(key) {

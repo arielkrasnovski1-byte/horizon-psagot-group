@@ -323,7 +323,13 @@ tbody tr.lead-row:hover td { background: var(--color-cream-soft); }
 .case-progress em { font-size: var(--fs-xs); color: var(--color-warm-gray); font-style: normal; font-weight: 700; }
 
 /* כרטיס תיק (מודל) */
-.cm-toolbar { margin-bottom: var(--space-md); }
+.cm-toolbar { margin-bottom: var(--space-md); display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.cm-toolbar .btn-ghost[disabled] { opacity: .45; cursor: not-allowed; }
+.cm-sent { font-size: var(--fs-sm); color: var(--color-warm-gray); margin-inline-start: auto; }
+.cm-sent.ok { color: var(--color-success, #2e7d5b); }
+.case-card-sent { margin-top: .4rem; font-size: var(--fs-sm); color: var(--color-warm-gray); }
+.case-card-sent.ok { color: var(--color-success, #2e7d5b); }
+.lc-to-case { font-weight: 600; }
 .cm-group { margin-bottom: var(--space-md); }
 .cm-group h4 { font-size: var(--fs-sm); color: var(--color-navy-deep); margin: 0 0 .5rem; padding-bottom: .3rem; border-bottom: 1px solid var(--color-border); }
 .cm-item { border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: .8rem .9rem; margin-bottom: .6rem; }

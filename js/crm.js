@@ -280,7 +280,14 @@ async function boot() {
     $('lc-quick').innerHTML =
       `<a class="crm-btn" style="width:auto" href="https://wa.me/${phoneIntl(lead.phone)}" target="_blank" rel="noopener">וואטסאפ</a>`+
       `<a class="btn-ghost" href="tel:${esc(lead.phone)}">${esc(lead.phone)}</a>`+
-      (lead.email?`<a class="btn-ghost" href="mailto:${esc(lead.email)}">${esc(lead.email)}</a>`:'');
+      (lead.email?`<a class="btn-ghost" href="mailto:${esc(lead.email)}">${esc(lead.email)}</a>`:'')+
+      `<button type="button" class="btn-ghost lc-to-case" id="lc-open-case">פתיחת תיק לקוח ›</button>`;
+    $('lc-open-case').onclick = () => {
+      $('lead-modal').hidden = true;
+      const tabBtn = document.querySelector('.crm-tab[data-tab="cases"]');
+      if (tabBtn) tabBtn.click();
+      openNewCaseForm({ leadId: lead.id, name: lead.name || '', phone: lead.phone || '', email: lead.email || '' });
+    };
     $('lc-status').innerHTML = STATUS_KEYS.filter((k)=>k!=='in_progress').map((k)=>`<option value="${k}"${(lead.status||'new')===k?' selected':''}>${STATUS[k].he}</option>`).join('');
     $('lc-status').className = 'status-select ' + (STATUS[lead.status||'new']?.cls||'new');
     $('lc-assigned').innerHTML = userOptions(lead.assignedTo || '');
@@ -387,6 +394,68 @@ async function boot() {
     if (d.indexOf('972') === 0) d = d.slice(3); else if (d.indexOf('0') === 0) d = d.slice(1);
     return /^\d{8,9}$/.test(d) ? '+972' + d : '';
   };
+  let pendingOpenCase = null;
+  const PORTAL_URL = location.origin + '/portal/';
+
+  /* ---- הודעת קליטה ללקוח (וואטסאפ / מייל) ---- */
+  function caseMissingItems(c) {
+    return (c.items || []).filter((it) => (c.stage2Open ? it.stage === 2 : it.stage === 1) && it.status !== 'received');
+  }
+  function caseMessage(c) {
+    const missing = caseMissingItems(c);
+    const list = missing.map((it) => '\u2022 ' + it.label).join('\n');
+    const how = c.clientPhone && c.clientEmail
+      ? 'בקוד חד-פעמי שיישלח ב-SMS למספר הזה, או בקישור שיישלח למייל'
+      : c.clientPhone ? 'בקוד חד-פעמי שיישלח ב-SMS למספר הזה'
+      : 'בקישור חד-פעמי שיישלח לכתובת המייל הזו';
+    const head = 'שלום ' + (c.clientName || '') + ',\n\n' +
+      (c.stage2Open
+        ? 'התהליך שלך בהורייזון פסגות גרופ (' + serviceLabel(c.serviceType) + ') מתקדם, ולשלב הבא נדרשים המסמכים הבאים:'
+        : 'פתחנו עבורך תיק אישי בהורייזון פסגות גרופ עבור ' + serviceLabel(c.serviceType) + '.\nכדי להתחיל בתהליך נדרשים המסמכים הבאים:');
+    const body = missing.length ? '\n' + list : '\nכרגע לא חסרים מסמכים — נעדכן אותך בהמשך.';
+    return head + body + '\n\n' +
+      'להעלאה מהנייד, בקישור המאובטח:\n' + PORTAL_URL + '\n' +
+      'הכניסה ' + how + ' — ללא סיסמה.\n\n' +
+      'בקישור תוכל לראות בכל רגע מה כבר התקבל ומה עוד חסר.\n\n' +
+      'בברכה,\nהורייזון פסגות גרופ';
+  }
+  async function markSent(c, via) {
+    const at = nowISO();
+    c.lastSentAt = at; c.lastSentBy = currentEmail; c.lastSentVia = via;
+    renderSentNote(c);
+    try { await fs.updateDoc(fs.doc(db, 'cases', c.id), { lastSentAt: at, lastSentBy: currentEmail, lastSentVia: via }); }
+    catch (e) { console.warn(e); }
+  }
+  function renderSentNote(c) {
+    const n = $('cm-sent'); if (!n) return;
+    const via = c.lastSentVia === 'email' ? 'במייל' : c.lastSentVia === 'whatsapp' ? 'בוואטסאפ' : '';
+    n.textContent = c.lastSentAt
+      ? ('נשלח ' + via + ' ' + fmtDate(c.lastSentAt) + (c.lastSentBy ? ' · ' + displayName(c.lastSentBy) : ''))
+      : 'טרם נשלח ללקוח';
+    n.className = 'cm-sent' + (c.lastSentAt ? ' ok' : '');
+  }
+  function renderSendBar(c) {
+    const wa = $('cm-send-wa'), ml = $('cm-send-mail'), cp = $('cm-copy-msg');
+    wa.disabled = !c.clientPhone; wa.title = c.clientPhone ? '' : 'אין טלפון בתיק';
+    ml.disabled = !c.clientEmail; ml.title = c.clientEmail ? '' : 'אין אימייל בתיק';
+    wa.onclick = () => {
+      window.open('https://wa.me/' + phoneIntl(c.clientPhone) + '?text=' + encodeURIComponent(caseMessage(c)), '_blank', 'noopener');
+      markSent(c, 'whatsapp');
+    };
+    ml.onclick = () => {
+      const subj = c.stage2Open ? 'מסמכים משלימים — הורייזון פסגות גרופ' : 'פתיחת תיק — המסמכים הנדרשים | הורייזון פסגות גרופ';
+      window.location.href = 'mailto:' + c.clientEmail + '?subject=' + encodeURIComponent(subj) + '&body=' + encodeURIComponent(caseMessage(c));
+      markSent(c, 'email');
+    };
+    cp.onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(caseMessage(c));
+        cp.textContent = 'הועתק ✓'; setTimeout(() => { cp.textContent = 'העתקת ההודעה'; }, 1600);
+      } catch (e) { window.prompt('העתיקו את ההודעה:', caseMessage(c)); }
+    };
+    renderSentNote(c);
+  }
+
   function listenCases() {
     track(fs.onSnapshot(fs.collection(db, 'cases'), (snap) => {
       allCases = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
@@ -411,20 +480,28 @@ async function boot() {
         '<div class="case-card-svc">' + esc(serviceLabel(c.serviceType)) + '</div>' +
         '<div class="case-card-contact" style="direction:ltr;text-align:right">' + contact + '</div>' +
         '<div class="case-progress"><div class="case-progress-bar"><span style="width:' + p + '%"></span></div><em>' + p + '%</em></div>' +
+        '<div class="case-card-sent' + (c.lastSentAt ? ' ok' : '') + '">' +
+          (c.lastSentAt ? '✓ נשלח ללקוח ' + fmtDate(c.lastSentAt) : 'טרם נשלח ללקוח') + '</div>' +
         '</div>';
     }).join('');
     grid.querySelectorAll('.case-card').forEach((el) =>
       el.addEventListener('click', () => openCaseModal(allCases.find((x) => x.id === el.dataset.case))));
+    if (pendingOpenCase) {
+      const fresh = allCases.find((x) => x.id === pendingOpenCase);
+      if (fresh) { pendingOpenCase = null; openCaseModal(fresh); }
+    }
   }
 
-  // פתיחת תיק חדש
-  $('add-case').addEventListener('click', () => {
+  // פתיחת תיק חדש (prefill — פתיחה מתוך כרטיס ליד)
+  $('add-case').addEventListener('click', () => openNewCaseForm({}));
+  function openNewCaseForm(prefill) {
+    prefill = prefill || {};
     $('modal-title').textContent = 'תיק לקוח חדש';
     const svcOpts = SERVICE_TYPES.map((s) => '<option value="' + s.key + '">' + esc(s.label) + '</option>').join('');
     $('modal-form').innerHTML =
-      '<div class="field"><label>שם הלקוח</label><input type="text" data-k="clientName"></div>' +
-      '<div class="field"><label>טלפון (לכניסה ב-SMS)</label><input type="tel" data-k="clientPhone" placeholder="050-0000000" style="direction:ltr"></div>' +
-      '<div class="field"><label>אימייל (לכניסה במייל)</label><input type="email" data-k="clientEmail" placeholder="you@example.com" style="direction:ltr"></div>' +
+      '<div class="field"><label>שם הלקוח</label><input type="text" data-k="clientName" value="' + esc(prefill.name || '') + '"></div>' +
+      '<div class="field"><label>טלפון (לכניסה ב-SMS)</label><input type="tel" data-k="clientPhone" placeholder="050-0000000" style="direction:ltr" value="' + esc(prefill.phone || '') + '"></div>' +
+      '<div class="field"><label>אימייל (לכניסה במייל)</label><input type="email" data-k="clientEmail" placeholder="you@example.com" style="direction:ltr" value="' + esc(prefill.email || '') + '"></div>' +
       '<div class="field"><label>סוג שירות</label><select data-k="serviceType">' + svcOpts + '</select></div>' +
       '<div class="field"><label style="display:flex;align-items:center;gap:.5rem;font-weight:400"><input type="checkbox" data-k="isBusiness" style="width:auto"> ללקוח יש עסק (מוסיף מסמכים עסקיים)</label></div>';
     $('modal').hidden = false;
@@ -440,17 +517,26 @@ async function boot() {
       if (phoneRaw && !phone) { alert('מספר הטלפון אינו תקין.'); return; }
       $('modal-save').disabled = true;
       try {
-        await fs.addDoc(fs.collection(db, 'cases'), {
+        const ref = await fs.addDoc(fs.collection(db, 'cases'), {
           clientName: name, clientPhone: phone, clientEmail: email,
           serviceType, isBusiness, stage2Open: false, status: 'active',
           items: buildItems(serviceType, isBusiness),
+          fromLead: prefill.leadId || '',
           createdBy: currentEmail, createdAt: fs.serverTimestamp(),
         });
+        // רישום בכרטיס הליד שממנו נפתח התיק
+        if (prefill.leadId) {
+          const l = allLeads.find((x) => x.id === prefill.leadId);
+          const act = ((l && l.activity) || []).slice();
+          act.push({ at: nowISO(), by: currentEmail, action: 'פתח תיק לקוח בפורטל המסמכים' });
+          fs.updateDoc(fs.doc(db, 'leads', prefill.leadId), { activity: act }).catch(() => {});
+        }
+        pendingOpenCase = ref.id;   // ייפתח אוטומטית כדי לשלוח ללקוח מיד
         closeModal();
       } catch (err) { alert('שגיאה: ' + err.message); }
       $('modal-save').disabled = false;
     };
-  });
+  }
 
   /* ---- כרטיס תיק: מעקב, אישור/דחייה, פתיחת שלב 2 ---- */
   let currentCase = null;
@@ -463,6 +549,7 @@ async function boot() {
       (c.clientEmail ? ' · <span style="direction:ltr">' + esc(c.clientEmail) + '</span>' : '') +
       (c.isBusiness ? ' · בעל עסק' : '');
     $('cm-stage2-btn').textContent = c.stage2Open ? 'סגירת שלב 2' : 'פתיחת שלב 2 ללקוח';
+    renderSendBar(c);
     renderCaseItems(c);
     $('case-modal').hidden = false;
   }
@@ -510,6 +597,7 @@ async function boot() {
       await fs.updateDoc(fs.doc(db, 'cases', currentCase.id), { stage2Open: !currentCase.stage2Open });
       currentCase.stage2Open = !currentCase.stage2Open;
       $('cm-stage2-btn').textContent = currentCase.stage2Open ? 'סגירת שלב 2' : 'פתיחת שלב 2 ללקוח';
+      renderSendBar(currentCase);
       renderCaseItems(currentCase);
     } catch (e) { alert('שגיאה: ' + e.message); }
   });
