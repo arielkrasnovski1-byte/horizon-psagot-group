@@ -363,3 +363,8 @@ tbody tr.lead-row:hover td { background: var(--color-cream-soft); }
 .pill.pending { background: rgba(138,122,104,.14); color: var(--color-warm-gray); }
 .pill.received { background: rgba(46,158,91,.14); color: #23794A; }
 .pill.rejected { background: rgba(192,57,43,.12); color: #A5291D; }
+
+/* חיצי סדר בכרטיסי תוכן */
+.editor-card .ec-move { display: flex; gap: 4px; }
+.icon-btn:disabled { opacity: .3; cursor: default; }
+.icon-btn:disabled:hover { color: var(--color-warm-gray); border-color: var(--color-border); }

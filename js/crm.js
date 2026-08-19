@@ -921,6 +921,39 @@ async function boot() {
       grid.innerHTML = items.map(o.card).join('');
       grid.querySelectorAll('[data-edit]').forEach((b) => b.addEventListener('click', () => openModal(items.find((x) => x.id === b.dataset.edit))));
       grid.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', () => { if (confirm('למחוק פריט זה?')) fs.deleteDoc(fs.doc(db, o.name, b.dataset.del)); }));
+      addMoveButtons();
+
+      // חיצי סדר על כל כרטיס — נשתלים אחרי הרינדור כדי שלא צריך לשנות כל תבנית כרטיס
+      function addMoveButtons() {
+        const cards = grid.children;
+        for (let i = 0; i < cards.length; i++) {
+          const act = cards[i].querySelector('.ec-actions');
+          if (!act) continue;
+          const wrap = document.createElement('div');
+          wrap.className = 'ec-move';
+          wrap.innerHTML =
+            '<button class="icon-btn" data-move="up" data-i="' + i + '" title="הזזה למעלה"' + (i === 0 ? ' disabled' : '') + '><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>' +
+            '<button class="icon-btn" data-move="down" data-i="' + i + '" title="הזזה למטה"' + (i === cards.length - 1 ? ' disabled' : '') + '><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg></button>';
+          act.insertBefore(wrap, act.firstChild);
+        }
+        grid.querySelectorAll('[data-move]').forEach((b) => b.addEventListener('click', () => move(+b.dataset.i, b.dataset.move === 'up' ? -1 : 1)));
+      }
+
+      // מזיז פריט מקום אחד ואז ממספר מחדש 0..n-1 — כך גם נסגרים חורים בסדר הקיים
+      async function move(i, delta) {
+        const j = i + delta;
+        if (j < 0 || j >= items.length) return;
+        const arr = items.slice();
+        const [moved] = arr.splice(i, 1);
+        arr.splice(j, 0, moved);
+        grid.querySelectorAll('[data-move]').forEach((b) => { b.disabled = true; });
+        try {
+          await Promise.all(arr.map((x, idx) => (x.order === idx ? null : fs.updateDoc(fs.doc(db, o.name, x.id), { order: idx }))).filter(Boolean));
+        } catch (err) {
+          alert('שגיאה בשינוי הסדר: ' + err.message);
+          grid.querySelectorAll('[data-move]').forEach((b) => { b.disabled = false; });
+        }
+      }
     }
     function openModal(item) {
       const editing = !!item;
