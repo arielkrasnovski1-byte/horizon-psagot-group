@@ -67,13 +67,3 @@
   transform: scale(1);
 }
 
-
-/* === Pulse עדין (לאלמנטים שצריכים להדגיש) === */
-@keyframes subtle-pulse {
-  0%, 100% { box-shadow: 0 6px 18px rgba(168, 132, 95, 0.35); }
-  50%      { box-shadow: 0 6px 28px rgba(168, 132, 95, 0.55); }
-}
-
-.pulse-attention {
-  animation: subtle-pulse 2.5s ease-in-out infinite;
-}

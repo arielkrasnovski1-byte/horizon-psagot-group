@@ -222,8 +222,6 @@
   max-width: 820px;
 }
 
-.hero-image-side { display: none; }
-
 .hero-inner {
   position: relative;
   text-align: center;
@@ -327,16 +325,6 @@
   gap: var(--space-sm);
   justify-content: center;
   flex-wrap: wrap;
-}
-
-.hero-divider {
-  display: block;
-  width: 56px;
-  height: 3px;
-  background: var(--gradient-rose-gold);
-  border-radius: var(--radius-full);
-  margin: var(--space-2xl) auto 0;
-  opacity: 0.7;
 }
 
 
