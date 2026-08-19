@@ -93,7 +93,7 @@ async function boot() {
   /* רשימת בעלי גישה — לבחירת מטפל, סינון וניהול משתמשים + הרשאות */
   function listenUsers() {
     track(fs.onSnapshot(fs.collection(db, 'crm_users'), (snap) => {
-      allUsers = snap.docs.map((d) => ({ uid: d.id, ...d.data() }));
+      allUsers = snap.docs.map((d) => ({ ...d.data(), uid: d.id }));
       teamUsers = allUsers.map((u) => u.email).filter(Boolean).sort();
       const me = allUsers.find((u) => u.uid === currentUid);
       currentRole = normRole(me && me.role);
@@ -194,7 +194,7 @@ async function boot() {
 
   function listenLeads() {
     track(fs.onSnapshot(fs.collection(db, 'leads'), (snap) => {
-      allLeads = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+      allLeads = snap.docs.map((d) => ({ ...d.data(), id: d.id }))
         .sort((a, b) => (toDateObj(b.createdAt)?.getTime() || 0) - (toDateObj(a.createdAt)?.getTime() || 0));
       renderLeadStats(); renderLeads();
     }, (err) => { console.warn(err); $('leads-body').innerHTML = '<tr><td colspan="8" class="empty-state">שגיאה בטעינה. בדקו כללי אבטחה.</td></tr>'; }));
@@ -479,7 +479,7 @@ async function boot() {
 
   function listenCases() {
     track(fs.onSnapshot(fs.collection(db, 'cases'), (snap) => {
-      allCases = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+      allCases = snap.docs.map((d) => ({ ...d.data(), id: d.id }))
         .sort((a, b) => (toDateObj(b.createdAt)?.getTime() || 0) - (toDateObj(a.createdAt)?.getTime() || 0));
       renderCases();
       if (allLeads.length) renderLeads();   // עדכון סימון "יש תיק" בשורות הלידים
@@ -778,7 +778,7 @@ async function boot() {
   let allDeals = [];
   function listenDeals() {
     track(fs.onSnapshot(fs.query(fs.collection(db, 'deals'), fs.orderBy('order', 'asc')), (snap) => {
-      allDeals = snap.docs.map((d) => ({ id: d.id, ...d.data() })); renderDeals();
+      allDeals = snap.docs.map((d) => ({ ...d.data(), id: d.id })); renderDeals();
     }, (err) => { console.warn(err); $('deals-grid').innerHTML = '<p class="empty-state">שגיאה בטעינה.</p>'; }));
   }
   function renderDeals() {
@@ -844,7 +844,7 @@ async function boot() {
   let allTesti = [];
   function listenTestimonials() {
     track(fs.onSnapshot(fs.query(fs.collection(db, 'testimonials'), fs.orderBy('order', 'asc')), (snap) => {
-      allTesti = snap.docs.map((d) => ({ id: d.id, ...d.data() })); renderTestimonials();
+      allTesti = snap.docs.map((d) => ({ ...d.data(), id: d.id })); renderTestimonials();
     }, (err) => { console.warn(err); $('testimonials-grid').innerHTML = '<p class="empty-state">שגיאה בטעינה.</p>'; }));
   }
   function renderTestimonials() {
@@ -900,7 +900,7 @@ async function boot() {
     let items = [];
     function listen() {
       track(fs.onSnapshot(fs.query(fs.collection(db, o.name), fs.orderBy('order', 'asc')), (snap) => {
-        items = snap.docs.map((d) => ({ id: d.id, ...d.data() })); render();
+        items = snap.docs.map((d) => ({ ...d.data(), id: d.id })); render();
       }, (err) => { console.warn(err); $(o.gridId).innerHTML = '<p class="empty-state">שגיאה בטעינה.</p>'; }));
     }
     function render() {
@@ -912,7 +912,7 @@ async function boot() {
           sb.disabled = true; sb.textContent = 'מייבא…';
           try {
             const r = await fetch(o.seedPath, { cache: 'no-cache' }); const data = await r.json(); const arr = (data && data[o.seedKey]) || [];
-            for (let i = 0; i < arr.length; i++) await fs.addDoc(fs.collection(db, o.name), { ...arr[i], order: i });
+            for (let i = 0; i < arr.length; i++) { const { id: _slug, ...rest } = arr[i]; await fs.addDoc(fs.collection(db, o.name), { ...rest, order: i }); }
             alert('יובאו ' + arr.length + ' פריטים בהצלחה.');
           } catch (err) { alert('שגיאה בייבוא: ' + err.message); sb.disabled = false; sb.textContent = 'ייבוא ה' + o.labelPlural + ' הקיימים מהאתר'; }
         });
@@ -964,7 +964,8 @@ async function boot() {
           for (let i = 0; i < arr.length; i++) {
             const key = String(arr[i][o.dedupKey] || '').trim();
             if (have.has(key)) continue;
-            await fs.addDoc(fs.collection(db, o.name), { ...arr[i], order: items.length + added });
+            const { id: _slug, ...rest } = arr[i];
+            await fs.addDoc(fs.collection(db, o.name), { ...rest, order: items.length + added });
             added++;
           }
           alert(added ? ('נוספו ' + added + ' פריטים חדשים.') : 'הכל כבר מעודכן — אין מה לייבא.');

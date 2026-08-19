@@ -37,7 +37,7 @@
       var fs = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
       var db = fs.getFirestore(appMod.initializeApp(cfg.firebaseConfig));
       var snap = await fs.getDocs(fs.query(fs.collection(db, 'articles'), fs.orderBy('order', 'asc')));
-      var items = snap.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); });
+      var items = snap.docs.map(function (d) { return Object.assign({}, d.data(), { id: d.id }); });
       if (items.length) { render(items); } else { loadJson(); }
     } catch (e) { loadJson(); }
   })();

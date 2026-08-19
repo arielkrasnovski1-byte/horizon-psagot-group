@@ -157,7 +157,7 @@ import { serviceLabel } from '/js/case-templates.js';
     else { show($('cases-loading'), false); show($('no-case'), true); return; }
 
     unsub = fsMod.onSnapshot(q, (snap) => {
-      const cases = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const cases = snap.docs.map((d) => ({ ...d.data(), id: d.id }));
       show($('cases-loading'), false);
       if (!cases.length) { show($('case-picker'), false); show($('case-detail'), false); show($('no-case'), true); return; }
       show($('no-case'), false);
