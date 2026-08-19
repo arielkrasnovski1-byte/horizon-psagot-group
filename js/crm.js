@@ -927,16 +927,24 @@ async function boot() {
       $('modal-title').textContent = editing ? ('עריכת ' + o.labelSingular) : (o.labelSingular + ' חדש');
       $('modal-form').innerHTML = o.fields.map((f) => {
         const v = editing ? (item[f.k] || '') : '';
-        const inp = f.t === 'textarea' ? `<textarea data-k="${f.k}">${esc(v)}</textarea>` : `<input type="text" data-k="${f.k}" value="${esc(v)}">`;
+        const inp = f.t === 'textarea' ? `<textarea data-k="${f.k}">${esc(v)}</textarea>`
+          : f.t === 'number' ? `<input type="number" step="1" data-k="${f.k}" data-num="1" value="${esc(v)}">`
+          : `<input type="text" data-k="${f.k}" value="${esc(v)}">`;
         return `<div class="field"><label>${f.l}</label>${inp}${f.hint?`<div class="field-hint">${f.hint}</div>`:''}</div>`;
       }).join('');
       $('modal').hidden = false;
       $('modal-save').onclick = async () => {
-        const data = {}; $('modal-form').querySelectorAll('[data-k]').forEach((el) => { data[el.dataset.k] = el.value.trim(); });
+        // שדות מספריים נשמרים כמספר — Firestore ממיין מספרים ומחרוזות בנפרד,
+        // ו-order שנשמר כמחרוזת היה שובר את orderBy של הרשימה.
+        const data = {}; $('modal-form').querySelectorAll('[data-k]').forEach((el) => {
+          const raw = el.value.trim();
+          data[el.dataset.k] = el.dataset.num ? (raw === '' ? 0 : Number(raw)) : raw;
+        });
         $('modal-save').disabled = true;
         try {
           if (editing) await fs.updateDoc(fs.doc(db, o.name, item.id), data);
-          else await fs.addDoc(fs.collection(db, o.name), { ...data, order: items.length });
+          // order: items.length הוא ברירת מחדל בלבד — אם האוסף חושף שדה סדר, מה שהוקלד גובר.
+          else await fs.addDoc(fs.collection(db, o.name), { order: items.length, ...data });
           closeModal();
         } catch (err) { alert('שגיאה בשמירה: ' + err.message); }
         $('modal-save').disabled = false;
@@ -1004,6 +1012,7 @@ async function boot() {
     name: 'articles', gridId: 'articles-grid', addBtnId: 'add-article', syncBtnId: 'sync-articles', dedupKey: 'title_he',
     labelSingular: 'מאמר', labelPlural: 'מאמרים', seedPath: '/data/articles.json', seedKey: 'articles',
     fields: [
+      { k: 'order', l: 'סדר תצוגה', t: 'number', hint: 'מספר קטן יותר = מופיע קודם. אפשר גם מספרים שליליים כדי להקפיץ מאמר לראש הרשימה.' },
       { k: 'title_he', l: 'כותרת (עברית)', t: 'text' },
       { k: 'title_en', l: 'Title (English)', t: 'text' },
       { k: 'category_he', l: 'קטגוריה (עברית)', t: 'text', hint: 'לדוגמה: מימון' },
