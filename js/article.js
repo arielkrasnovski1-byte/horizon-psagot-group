@@ -14,6 +14,21 @@
   // DD.MM.YYYY -> YYYY-MM-DD (עבור datePublished בתקן schema)
   function isoDate(d) { var m = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/.exec((d || '').trim()); return m ? (m[3] + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[1]).slice(-2)) : ''; }
   function abs(u) { if (!u) return ''; return /^https?:/.test(u) ? u : (location.origin + u); }
+
+  // הכתובות הישנות /article/?id=<docId> מפנות לעמוד הסטטי המקביל.
+  // בלי זה הן היו ממשיכות להתחרות בו על אותו תוכן בגוגל.
+  (async function redirectToStatic() {
+    if (!id) return;
+    try {
+      var r = await fetch('/data/article-slugs.json', { cache: 'no-cache' });
+      var map = await r.json();
+      var slug = map[id];
+      if (!slug) return;
+      var isEn = (document.documentElement.lang || 'he').toLowerCase().indexOf('en') === 0;
+      location.replace((isEn ? '/en/article/' : '/article/') + slug + '/');
+    } catch (e) { /* נשאר על העיבוד בצד הלקוח */ }
+  })();
+
   function canonicalUrl() { return location.origin + location.pathname + '?id=' + encodeURIComponent(id); }
   // קנוני ייחודי לכל מאמר (במקום שכל המאמרים יצביעו לאותו עמוד תבנית)
   function setCanonical(url) {

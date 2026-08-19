@@ -6,13 +6,16 @@
   if (!grid) return;
   var isEn = (document.documentElement.lang || 'he').toLowerCase().indexOf('en') === 0;
   var base = isEn ? '/en/article/' : '/article/';
+  var SLUGS = {};
   function esc(s) { return String(s == null ? '' : s).replace(/[<>&"]/g, function (c) { return { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]; }); }
   function card(a) {
     var title = isEn ? (a.title_en || a.title_he) : (a.title_he || a.title_en);
     var cat = isEn ? (a.category_en || a.category_he) : (a.category_he || a.category_en);
     var read = isEn ? (a.read_en || a.read_he) : (a.read_he || a.read_en);
     var exc = isEn ? (a.excerpt_en || a.excerpt_he) : (a.excerpt_he || a.excerpt_en);
-    var href = a.id ? (base + '?id=' + encodeURIComponent(a.id)) : base;
+    var slug = SLUGS[a.id];
+    // עמוד סטטי כשיש slug; ?id= רק כגיבוי למאמר שטרם נבנה
+    var href = slug ? (base + slug + '/') : (a.id ? (base + '?id=' + encodeURIComponent(a.id)) : base);
     return '<a href="' + href + '" class="blog-card reveal">' +
       (a.image ? '<div class="blog-card-image" aria-hidden="true"><img src="' + esc(a.image) + '" alt="" loading="lazy"></div>' : '') +
       '<div class="blog-card-content"><div class="blog-card-meta">' +
@@ -29,7 +32,15 @@
       render((data && data.articles) || []);
     } catch (e) { /* משאיר סטטי */ }
   }
+  async function loadSlugs() {
+    try {
+      var r = await fetch('/data/article-slugs.json', { cache: 'no-cache' });
+      SLUGS = await r.json();
+    } catch (e) { SLUGS = {}; }
+  }
+
   (async function () {
+    await loadSlugs();
     try {
       var cfg = await import('/js/firebase-config.js');
       if (!cfg.isConfigured) { return loadJson(); }

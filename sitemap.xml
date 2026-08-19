@@ -29,4 +29,23 @@
   <url><loc>https://horizonpsagotgroup.com/en/contact/</loc><changefreq>yearly</changefreq><priority>0.8</priority></url>
   <url><loc>https://horizonpsagotgroup.com/en/accessibility/</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
   <url><loc>https://horizonpsagotgroup.com/en/privacy/</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+
+  <!-- articles -->
+  <url><loc>https://horizonpsagotgroup.com/article/negative-bdi/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://horizonpsagotgroup.com/en/article/negative-bdi/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://horizonpsagotgroup.com/article/greece-real-estate-2026/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://horizonpsagotgroup.com/en/article/greece-real-estate-2026/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://horizonpsagotgroup.com/article/mortgage-refused-what-now/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://horizonpsagotgroup.com/en/article/mortgage-refused-what-now/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://horizonpsagotgroup.com/article/business-recovery-signs/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://horizonpsagotgroup.com/en/article/business-recovery-signs/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://horizonpsagotgroup.com/article/tama38-vs-pinui-binui/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://horizonpsagotgroup.com/en/article/tama38-vs-pinui-binui/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://horizonpsagotgroup.com/article/mortgage-path-2026/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://horizonpsagotgroup.com/en/article/mortgage-path-2026/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://horizonpsagotgroup.com/article/non-bank-financing/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://horizonpsagotgroup.com/en/article/non-bank-financing/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://horizonpsagotgroup.com/article/dubai-real-estate/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://horizonpsagotgroup.com/en/article/dubai-real-estate/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <!-- /articles -->
 </urlset>
