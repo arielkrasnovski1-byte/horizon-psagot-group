@@ -158,6 +158,7 @@
       if (data.success) {
         captureToCRM();               // כתיבה ל-CRM (לא חוסמת — לא מפריעה למייל)
         if (window.gtag) window.gtag('event', 'generate_lead', { form_location: location.pathname });
+        if (window.adsConversion) window.adsConversion('lead');   // המרה ל-Google Ads
         formWrap.classList.add('is-submitted');
         formWrap.scrollIntoView({ behavior: 'smooth', block: 'center' });
       } else {
