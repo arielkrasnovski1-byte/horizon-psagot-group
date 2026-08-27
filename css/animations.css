@@ -1,17 +1,22 @@
 /* ============================================================
    ANIMATIONS - אנימציות עדינות בגלילה
+   הערת SEO (2026-08-27): מצב ההתחלה השקוף (opacity:0) חל רק כאשר
+   JavaScript פעיל (@media scripting:enabled). זחלנים/כלים בלי JS
+   ודפדפנים ישנים רואים את כל התוכן גלוי — לא עמוד ריק.
    ============================================================
    הרעיון: אלמנטים מתחילים שקופים ומעט מתחת למיקומם הסופי,
    וכאשר ה-JavaScript מזהה שהם נכנסו למסך הוא מוסיף class="is-visible"
    שמפעיל את האנימציה החלקה.
    ============================================================ */
 
+@media (scripting: enabled) {
 .reveal {
   opacity: 0;
   transform: translateY(28px);
   transition: opacity 800ms cubic-bezier(0.22, 1, 0.36, 1),
               transform 800ms cubic-bezier(0.22, 1, 0.36, 1);
   will-change: opacity, transform;
+}
 }
 
 .reveal.is-visible {
@@ -28,11 +33,13 @@
 
 
 /* === Fade-in מימין (RTL) === */
+@media (scripting: enabled) {
 .reveal-right {
   opacity: 0;
   transform: translateX(28px);
   transition: opacity 800ms cubic-bezier(0.22, 1, 0.36, 1),
               transform 800ms cubic-bezier(0.22, 1, 0.36, 1);
+}
 }
 
 .reveal-right.is-visible {
@@ -42,11 +49,13 @@
 
 
 /* === Fade-in משמאל === */
+@media (scripting: enabled) {
 .reveal-left {
   opacity: 0;
   transform: translateX(-28px);
   transition: opacity 800ms cubic-bezier(0.22, 1, 0.36, 1),
               transform 800ms cubic-bezier(0.22, 1, 0.36, 1);
+}
 }
 
 .reveal-left.is-visible {
@@ -56,10 +65,12 @@
 
 
 /* === Subtle scale-in לקלפים === */
+@media (scripting: enabled) {
 .reveal-scale {
   opacity: 0;
   transform: scale(0.96);
   transition: opacity 700ms ease, transform 700ms ease;
+}
 }
 
 .reveal-scale.is-visible {
