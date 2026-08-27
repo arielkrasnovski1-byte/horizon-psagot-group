@@ -2,7 +2,7 @@ rules_version = '2';
 
 // ============================================================
 //  Horizon Psagot Group — Firestore Security Rules
-//  מודל תפקידים: owner (הכל) · manager (לידים + תוכן) · agent (לידים)
+//  מודל תפקידים: owner (הכל) · manager (לידים + תוכן + משימות) · agent (לידים + משימות שלו)
 //  התפקיד נשמר ב-crm_users/{uid}.role
 // ============================================================
 service cloud.firestore {
@@ -94,6 +94,60 @@ service cloud.firestore {
                         && request.resource.data.clientEmail == resource.data.clientEmail
                         && request.resource.data.serviceType == resource.data.serviceType
                         && request.resource.data.createdBy == resource.data.createdBy);
+    }
+
+    // ---------- משימות (ניהול משימות לצוות) ----------
+    // מודל: כל משימה = {title, assignedUid, createdByUid, private, status, ...}
+    //  · private=true רק כשבעלים יצר משימה לבעלים ולא סימן "גלוי לצוות"
+    //    → נסתרת מכל מי שאינו בעלים (נאכף כאן, לא רק ב-UI)
+    //  · בעלים: הכל · מנהל: הכל חוץ ממשימות שבעלים יצר (בהן: סטטוס/תגובות בלבד)
+    //  · נציג: יוצר לעצמו, רואה את הצוות (קריאה), מעדכן סטטוס/תגובות רק במשימות שלו
+    function roleOf(uid) {
+      return exists(/databases/$(database)/documents/crm_users/$(uid))
+        ? get(/databases/$(database)/documents/crm_users/$(uid)).data.role : 'none';
+    }
+    function taskParticipant(d) {
+      return d.assignedUid == request.auth.uid || d.createdByUid == request.auth.uid;
+    }
+    // עדכון "מוגבל": רק התקדמות בביצוע — לא כותרת/אחראי/דדליין/מחיקה
+    function taskLimitedUpdate() {
+      return request.resource.data.diff(resource.data).affectedKeys()
+        .hasOnly(['status', 'completedAt', 'completedBy', 'comments', 'activity',
+                  'completedByUid', 'updatedAt', 'updatedBy', 'occurrences', 'dueDate', 'seenBy'])
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['dueDate'])
+            || resource.data.repeat in ['daily', 'weekly', 'monthly']);   // דדליין זז רק במשימה חוזרת
+    }
+    match /tasks/{taskId} {
+      allow read: if hasProfile() && (isOwner() || resource.data.private == false);
+      allow create: if hasProfile()
+                    && request.resource.data.title is string
+                    && request.resource.data.title.size() > 0
+                    && request.resource.data.title.size() < 300
+                    && request.resource.data.createdByUid == request.auth.uid
+                    && request.resource.data.assignedUid is string
+                    && (myRole() != 'agent' || request.resource.data.assignedUid == request.auth.uid)
+                    && request.resource.data.private is bool
+                    && (request.resource.data.private == false
+                        || (isOwner() && roleOf(request.resource.data.assignedUid) == 'owner'));
+      allow update: if hasProfile() && (
+                      isOwner()
+                      || (myRole() == 'manager'
+                          && resource.data.private == false
+                          && request.resource.data.private == false
+                          && (roleOf(resource.data.createdByUid) != 'owner' || taskLimitedUpdate()))
+                      || (myRole() == 'agent'
+                          && taskParticipant(resource.data)
+                          && request.resource.data.private == false
+                          && request.resource.data.assignedUid == request.auth.uid
+                          && (resource.data.createdByUid == request.auth.uid || taskLimitedUpdate()))
+                    );
+      allow delete: if hasProfile() && (
+                      isOwner()
+                      || (myRole() == 'manager' && resource.data.private == false
+                          && roleOf(resource.data.createdByUid) != 'owner')
+                      || (myRole() == 'agent' && resource.data.createdByUid == request.auth.uid
+                          && resource.data.assignedUid == request.auth.uid)
+                    );
     }
 
     // ---------- ברירת מחדל: כל השאר חסום ----------

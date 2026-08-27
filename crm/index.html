@@ -16,7 +16,7 @@
     <form class="login-card" id="login-form">
       <img class="brand-logo" src="/assets/logo/logo-mark.png" alt="הורייזון פסגות גרופ" width="56" height="56">
       <h1>מערכת ניהול</h1>
-      <p>לידים · עסקאות · מאמרים — כניסה לצוות בלבד</p>
+      <p>לידים · משימות · תיקים — כניסה לצוות בלבד</p>
       <div class="field">
         <label for="email">אימייל</label>
         <input id="email" name="email" type="email" required autocomplete="username" placeholder="you@example.com">
@@ -38,6 +38,11 @@
         <b>הורייזון פסגות</b> <span style="opacity:.6">· ניהול</span>
       </div>
       <div class="user">
+        <button class="bell-btn" id="bell-btn" type="button" title="התראות" aria-label="התראות">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+          <span class="bell-count" id="bell-count" hidden>0</span>
+        </button>
+        <div class="bell-panel" id="bell-panel" hidden></div>
         <span id="user-email"></span>
         <button class="logout" id="logout-btn">יציאה</button>
       </div>
@@ -45,6 +50,7 @@
 
     <nav class="crm-tabs">
       <button class="crm-tab active" data-tab="leads">לידים</button>
+      <button class="crm-tab" data-tab="tasks">משימות <span class="tab-badge" id="tasks-badge" hidden>0</span></button>
       <button class="crm-tab" data-tab="cases">תיקים</button>
       <button class="crm-tab" data-tab="deals" hidden>עסקאות</button>
       <button class="crm-tab" data-tab="testimonials" hidden>המלצות</button>
@@ -86,6 +92,7 @@
           <button class="filter-btn" data-filter="closed">נסגרו</button>
           <button class="filter-btn" data-filter="website">מהאתר</button>
           <button class="filter-btn" data-filter="facebook">מפייסבוק</button>
+          <button class="filter-btn" data-filter="whatsapp">מוואטסאפ</button>
           <button class="filter-btn" data-filter="mine">שלי</button>
           <button class="filter-btn" data-filter="followup">פולו-אפ היום</button>
         </div>
@@ -96,6 +103,59 @@
             <tbody id="leads-body"><tr><td colspan="8" class="empty-state">טוען…</td></tr></tbody>
           </table>
         </div>
+      </section>
+
+      <!-- ===== טאב משימות ===== -->
+      <section class="tab-panel" id="panel-tasks" hidden>
+        <div class="panel-head">
+          <h2>משימות</h2>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+            <div class="view-switch" id="tasks-view">
+              <button class="active" data-view="list" type="button">רשימה</button>
+              <button data-view="board" type="button">לוח</button>
+              <button data-view="calendar" type="button">לוח שנה</button>
+              <button data-view="team" type="button" id="tasks-team-btn" hidden>צוות</button>
+            </div>
+            <button class="btn-ghost" type="button" id="notif-btn" hidden title="התראות דפדפן לפני שעת יעד ובהקצאה חדשה">🔔 הפעלת תזכורות</button>
+            <button class="crm-btn" style="width:auto" id="add-task">+ משימה חדשה</button>
+          </div>
+        </div>
+
+        <div class="stat-row tasks-stats">
+          <div class="stat-tile"><div class="n" id="ts-open">0</div><div class="l">פתוחות</div></div>
+          <div class="stat-tile"><div class="n" id="ts-today">0</div><div class="l">להיום</div></div>
+          <div class="stat-tile"><div class="n accent" id="ts-overdue">0</div><div class="l">באיחור</div></div>
+          <div class="stat-tile"><div class="n" id="ts-done">0</div><div class="l">הושלמו השבוע</div></div>
+        </div>
+
+        <div class="auto-notes" id="tasks-digest"></div>
+        <div class="auto-notes" id="tasks-auto-notes"></div>
+
+        <div class="lead-toolbar">
+          <input type="search" id="task-search" class="lead-search" placeholder="חיפוש משימה / לקוח…">
+          <select id="task-user-filter" class="user-filter"><option value="">כל העובדים</option></select>
+          <select id="task-prio-filter" class="user-filter">
+            <option value="">כל העדיפויות</option>
+            <option value="urgent">דחוף</option>
+            <option value="high">גבוהה</option>
+            <option value="normal">רגילה</option>
+          </select>
+        </div>
+        <div class="filters" id="task-filters">
+          <button class="filter-btn active" data-filter="mine">שלי</button>
+          <button class="filter-btn" data-filter="today">היום</button>
+          <button class="filter-btn" data-filter="overdue">באיחור</button>
+          <button class="filter-btn" data-filter="week">השבוע</button>
+          <button class="filter-btn" data-filter="waiting">ממתין ללקוח</button>
+          <button class="filter-btn" data-filter="open">כל הפתוחות</button>
+          <button class="filter-btn" data-filter="done">הושלמו</button>
+          <button class="filter-btn" data-filter="all">הכל</button>
+        </div>
+
+        <div id="tasks-list" class="task-list"></div>
+        <div id="tasks-board" class="task-board" hidden></div>
+        <div id="tasks-calendar" class="task-calendar" hidden></div>
+        <div id="tasks-team" class="task-team" hidden></div>
       </section>
 
       <!-- ===== טאב תיקים ===== -->
@@ -231,6 +291,8 @@
 
       <div class="field"><label>הערות</label><textarea id="lc-notes" placeholder="הערות פנימיות…"></textarea></div>
 
+      <div class="linked-tasks" id="lc-tasks"></div>
+
       <div class="lc-activity">
         <h4>היסטוריית פעילות</h4>
         <ul id="lc-activity-list"><li class="lc-empty">אין פעילות עדיין.</li></ul>
@@ -240,6 +302,60 @@
         <button class="crm-btn" style="width:auto" id="lc-save">שמירה</button>
         <button class="btn-ghost" id="lc-delete" style="color:var(--color-error)">מחיקה</button>
         <button class="btn-ghost" id="lc-cancel">סגירה</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== כרטיס משימה ===== -->
+  <div class="modal-overlay" id="task-modal" hidden>
+    <div class="modal lead-card task-card">
+      <div class="lead-card-head">
+        <div>
+          <h3 id="tm-title-h">משימה חדשה</h3>
+          <div class="lc-sub" id="tm-sub"></div>
+        </div>
+        <button class="icon-btn" id="tm-close" title="סגירה">✕</button>
+      </div>
+
+      <div class="field"><label>כותרת</label><input type="text" id="tm-title" placeholder="מה צריך לעשות?" maxlength="200"></div>
+      <div class="field"><label>פירוט</label><textarea id="tm-desc" placeholder="פרטים, הנחיות, מה נחשב 'הושלם'…"></textarea></div>
+
+      <div class="lc-grid tm-grid">
+        <div class="field"><label>אחראי</label><select id="tm-assignee"></select></div>
+        <div class="field"><label>סטטוס</label><select id="tm-status" class="status-select"></select></div>
+        <div class="field"><label>תאריך יעד</label><input type="date" id="tm-due"></div>
+        <div class="field"><label>שעה (לא חובה)</label><input type="time" id="tm-due-time"></div>
+        <div class="field"><label>עדיפות</label><select id="tm-prio">
+          <option value="normal">רגילה</option><option value="high">גבוהה</option><option value="urgent">דחוף</option></select></div>
+        <div class="field"><label>חזרה</label><select id="tm-repeat">
+          <option value="">חד-פעמי</option><option value="daily">כל יום</option><option value="weekly">כל שבוע</option><option value="monthly">כל חודש</option></select></div>
+        <div class="field tm-link-field"><label>קישור לליד / תיק</label>
+          <div class="assign-row">
+            <input type="text" id="tm-link-search" list="tm-link-list" placeholder="הקלד שם לקוח…" autocomplete="off">
+            <datalist id="tm-link-list"></datalist>
+            <button class="btn-ghost" id="tm-link-clear" type="button" hidden>✕</button>
+          </div>
+          <div class="field-hint" id="tm-link-hint"></div>
+        </div>
+        <label class="tm-private" id="tm-private-wrap" hidden><input type="checkbox" id="tm-private"> <span>גלוי לצוות (מנהלים ונציגים יראו את המשימה)</span></label>
+      </div>
+
+      <div class="tm-comments" id="tm-comments-wrap" hidden>
+        <h4>תגובות</h4>
+        <ul id="tm-comments"></ul>
+        <div class="assign-row"><input type="text" id="tm-comment-input" placeholder="הוספת תגובה…"><button class="btn-ghost" id="tm-comment-add" type="button">שליחה</button></div>
+      </div>
+
+      <div class="lc-activity" id="tm-activity-wrap" hidden>
+        <h4>היסטוריית פעילות</h4>
+        <ul id="tm-activity"></ul>
+      </div>
+
+      <div class="modal-actions">
+        <button class="crm-btn" style="width:auto" id="tm-save">שמירה</button>
+        <button class="btn-ghost" id="tm-done" type="button" hidden>✓ סימון כהושלמה</button>
+        <button class="btn-ghost" id="tm-delete" style="color:var(--color-error)" hidden>מחיקה</button>
+        <button class="btn-ghost" id="tm-cancel">סגירה</button>
       </div>
     </div>
   </div>
@@ -266,6 +382,8 @@
       <div class="cm-closed-note" id="cm-closed-note" hidden></div>
 
       <div id="cm-items"></div>
+
+      <div class="linked-tasks" id="cm-tasks"></div>
 
       <div class="cm-add">
         <label class="cm-add-title">הוספת בקשת מסמך לתיק</label>

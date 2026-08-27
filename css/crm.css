@@ -147,6 +147,7 @@ table.leads tbody tr:hover td { background: var(--color-cream-soft); }
 .src-badge { font-size: var(--fs-xs); font-weight: 600; padding: 3px 9px; border-radius: var(--radius-full); }
 .src-website { color: var(--color-navy-mid); background: rgba(27,50,88,0.1); }
 .src-facebook { color: #1877F2; background: rgba(24,119,242,0.1); }
+.src-whatsapp { color: #128C50; background: rgba(37,211,102,0.12); }
 
 .status-select { font-size: var(--fs-sm); font-weight: 600; padding: 5px 10px; border-radius: var(--radius-full); border: 1px solid var(--color-border); background: var(--color-white); color: var(--color-charcoal); cursor: pointer; }
 /* צבעי רמזור לסטטוס: חדש=ירוק · בטיפול=צהוב · נסגר=אדום */
@@ -368,3 +369,166 @@ tbody tr.lead-row:hover td { background: var(--color-cream-soft); }
 .editor-card .ec-move { display: flex; gap: 4px; }
 .icon-btn:disabled { opacity: .3; cursor: default; }
 .icon-btn:disabled:hover { color: var(--color-warm-gray); border-color: var(--color-border); }
+
+/* ============================================================
+   משימות
+   ============================================================ */
+.tab-badge { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; margin-inline-start: 4px; border-radius: var(--radius-full); background: #C0392B; color: #fff; font-size: 11px; font-weight: 700; vertical-align: middle; }
+.tab-badge[hidden] { display: none; }
+.view-switch { display: inline-flex; border: 1px solid rgba(255,255,255,0); background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius-full); padding: 3px; }
+.view-switch button { border: none; background: none; padding: .45em 1em; border-radius: var(--radius-full); font-weight: 600; font-size: var(--fs-sm); color: var(--color-charcoal-soft); cursor: pointer; font-family: inherit; }
+.view-switch button.active { background: var(--color-navy-deep); color: var(--color-white); }
+.view-switch button[hidden] { display: none; }
+.auto-notes:empty { display: none; }
+.auto-note { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; background: rgba(214,164,25,.12); border: 1px solid rgba(214,164,25,.4); border-radius: var(--radius-md); padding: .6rem 1rem; margin-bottom: var(--space-md); font-size: var(--fs-sm); color: var(--color-charcoal); }
+.auto-note b { color: #96700F; font-size: 1.1em; }
+.auto-note .btn-ghost { padding: .3em .9em; font-size: var(--fs-xs); margin-inline-start: auto; }
+
+/* רשימה */
+.t-group { margin-bottom: var(--space-md); }
+.t-group h4 { font-size: var(--fs-sm); color: var(--color-navy-deep); margin: 0 0 6px; display: flex; align-items: center; gap: 6px; }
+.t-group h4 span { background: var(--color-cream-soft); color: var(--color-warm-gray); border-radius: var(--radius-full); padding: 0 8px; font-size: var(--fs-xs); }
+.task-row { display: grid; grid-template-columns: 28px 1fr auto; gap: 12px; align-items: center; background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 10px 12px; margin-bottom: 6px; cursor: pointer; transition: border-color .2s, transform .1s; border-inline-start: 4px solid var(--color-border); }
+.task-row:hover { border-color: var(--color-rose-gold); transform: translateY(-1px); }
+.task-row.st-progress { border-inline-start-color: #D6A419; }
+.task-row.st-waiting { border-inline-start-color: #8E7CC3; }
+.task-row.st-open { border-inline-start-color: #2E9E5B; }
+.task-row.overdue { border-inline-start-color: #C0392B; background: rgba(192,57,43,.03); }
+.task-row.closed { opacity: .6; }
+.task-row.closed .t-title { text-decoration: line-through; }
+.t-check { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--color-border); background: var(--color-white); color: #fff; cursor: pointer; font-size: 14px; line-height: 1; display: grid; place-items: center; transition: all .15s; }
+.t-check:hover:not(:disabled) { border-color: #2E9E5B; background: rgba(46,158,91,.12); }
+.t-check.on { background: #2E9E5B; border-color: #2E9E5B; }
+.t-check:disabled { cursor: default; opacity: .5; }
+.t-main { min-width: 0; }
+.t-title { font-weight: 700; color: var(--color-navy-deep); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.t-meta { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: var(--fs-xs); color: var(--color-warm-gray); margin-top: 3px; }
+.t-assignee { color: var(--color-charcoal-soft); font-weight: 600; }
+.t-link { color: var(--color-rose-gold-deep); font-weight: 600; }
+.t-side { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.t-due { font-size: var(--fs-xs); color: var(--color-warm-gray); white-space: nowrap; }
+.t-due.late { color: #C0392B; font-weight: 700; }
+.t-status { font-size: var(--fs-xs); font-weight: 700; padding: 2px 9px; border-radius: var(--radius-full); white-space: nowrap; }
+.t-status.open { color: #23794A; background: rgba(46,158,91,.1); }
+.t-status.progress { color: #96700F; background: rgba(214,164,25,.14); }
+.t-status.waiting { color: #5E4B9E; background: rgba(142,124,195,.16); }
+.t-status.done { color: var(--color-warm-gray); background: var(--color-cream-soft); }
+.t-status.cancelled { color: #A5291D; background: rgba(192,57,43,.08); }
+.t-prio { font-size: 10px; font-weight: 800; padding: 1px 7px; border-radius: var(--radius-full); letter-spacing: .02em; }
+.t-prio.high { color: #B35A00; background: rgba(219,122,40,.14); }
+.t-prio.urgent { color: #fff; background: #C0392B; }
+.t-repeat { color: var(--color-rose-gold-deep); font-size: 13px; }
+.t-private { font-size: 12px; }
+.status-select.open { border-color: #2E9E5B; color: #23794A; background: rgba(46,158,91,0.09); font-weight: 700; }
+.status-select.progress { border-color: #D6A419; color: #96700F; background: rgba(214,164,25,0.13); font-weight: 700; }
+.status-select.waiting { border-color: #8E7CC3; color: #5E4B9E; background: rgba(142,124,195,.14); font-weight: 700; }
+.status-select.done { border-color: var(--color-border); color: var(--color-warm-gray); background: var(--color-cream-soft); }
+.status-select.cancelled { border-color: #C0392B; color: #A5291D; background: rgba(192,57,43,.08); }
+
+/* לוח (קנבן) */
+.task-board { display: grid; grid-template-columns: repeat(4, minmax(220px, 1fr)); gap: var(--space-sm); overflow-x: auto; padding-bottom: 6px; }
+.board-col { background: var(--color-cream-soft); border-radius: var(--radius-lg); padding: 10px; min-height: 260px; border-top: 4px solid var(--color-border); transition: background .15s; }
+.board-col.st-open { border-top-color: #2E9E5B; } .board-col.st-progress { border-top-color: #D6A419; } .board-col.st-waiting { border-top-color: #8E7CC3; } .board-col.st-done { border-top-color: var(--color-warm-gray); }
+.board-col.over { background: rgba(201,164,122,.18); }
+.board-col h4 { font-size: var(--fs-sm); color: var(--color-navy-deep); margin: 0 0 8px; display: flex; align-items: center; gap: 6px; }
+.board-col h4 span { color: var(--color-warm-gray); font-weight: 600; } .board-col h4 small { margin-inline-start: auto; font-weight: 400; color: var(--color-warm-gray); font-size: 10px; }
+.board-cards { display: flex; flex-direction: column; gap: 6px; }
+.board-card { background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 9px 11px; cursor: grab; box-shadow: var(--shadow-sm); }
+.board-card:active { cursor: grabbing; } .board-card.dragging { opacity: .4; }
+.board-card.overdue { border-color: rgba(192,57,43,.5); }
+.board-card .t-title { font-size: var(--fs-sm); }
+.board-card .t-due { display: block; margin-top: 4px; }
+.board-empty { color: var(--color-warm-gray); text-align: center; padding: 20px 0; font-size: var(--fs-sm); }
+
+/* לוח שנה */
+.cal-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.cal-head h4 { margin: 0 auto 0 0; font-family: var(--font-heading); color: var(--color-navy-deep); font-size: var(--fs-lg); }
+.cal-head .btn-ghost { padding: .35em .9em; font-size: var(--fs-xs); }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal-dow { text-align: center; font-size: var(--fs-xs); color: var(--color-warm-gray); font-weight: 700; padding: 4px 0; }
+.cal-cell { background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius-sm); min-height: 92px; padding: 4px; font-size: 11px; }
+.cal-cell.empty { background: transparent; border-color: transparent; }
+.cal-cell.today { border-color: var(--color-rose-gold); box-shadow: inset 0 0 0 1px var(--color-rose-gold); }
+.cal-day { font-weight: 700; color: var(--color-navy-deep); margin-bottom: 3px; }
+.cal-item { border-radius: 4px; padding: 2px 5px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; background: rgba(46,158,91,.12); color: #23794A; }
+.cal-item.st-progress { background: rgba(214,164,25,.16); color: #96700F; } .cal-item.st-waiting { background: rgba(142,124,195,.16); color: #5E4B9E; }
+.cal-item.st-done, .cal-item.st-cancelled { background: var(--color-cream-soft); color: var(--color-warm-gray); text-decoration: line-through; }
+.cal-item.late { background: rgba(192,57,43,.12); color: #A5291D; }
+.cal-more { color: var(--color-warm-gray); }
+
+/* לוח צוות */
+.team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--space-md); }
+.team-card { background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-md); box-shadow: var(--shadow-sm); cursor: pointer; border-inline-start: 4px solid #2E9E5B; display: flex; flex-direction: column; gap: 10px; transition: transform .1s, border-color .2s; }
+.team-card:hover { transform: translateY(-2px); border-color: var(--color-rose-gold); }
+.team-card.warn { border-inline-start-color: #D6A419; } .team-card.bad { border-inline-start-color: #C0392B; }
+.team-head { display: flex; align-items: center; justify-content: space-between; }
+.team-head b { font-family: var(--font-heading); color: var(--color-navy-deep); font-size: var(--fs-lg); }
+.t-role { font-size: var(--fs-xs); color: var(--color-rose-gold-deep); background: rgba(201,164,122,.14); padding: 2px 8px; border-radius: var(--radius-full); font-weight: 700; }
+.team-nums { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; text-align: center; font-size: 10px; color: var(--color-warm-gray); }
+.team-nums i { display: block; font-style: normal; font-family: var(--font-heading); font-size: var(--fs-xl); font-weight: 700; color: var(--color-navy-deep); line-height: 1.1; }
+.team-nums .late i { color: #C0392B; }
+.team-foot { display: flex; align-items: center; gap: 8px; font-size: var(--fs-xs); color: var(--color-warm-gray); }
+.team-bar { height: 5px; background: var(--color-cream-soft); border-radius: var(--radius-full); overflow: hidden; }
+.team-bar span { display: block; height: 100%; background: var(--color-rose-gold); }
+.team-card .btn-ghost { padding: .35em .9em; font-size: var(--fs-xs); align-self: flex-start; }
+
+/* כרטיס משימה */
+.task-card { max-width: 680px; }
+.tm-grid { grid-template-columns: 1fr 1fr; }
+.tm-grid .field:first-child { grid-column: auto; }
+.tm-grid .tm-link-field { grid-column: 1 / -1; }
+.tm-private { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; font-size: var(--fs-sm); color: var(--color-charcoal); background: rgba(201,164,122,.1); padding: 8px 12px; border-radius: var(--radius-md); cursor: pointer; }
+.tm-private[hidden] { display: none; }
+.tm-comments { margin-top: var(--space-md); }
+.tm-comments h4, .linked-tasks h4 { font-size: var(--fs-sm); color: var(--color-navy-deep); margin-bottom: var(--space-2xs); }
+.tm-comments ul { list-style: none; padding: 0; margin: 0 0 8px; max-height: 200px; overflow-y: auto; }
+.tm-comments li { background: var(--color-cream-soft); border-radius: var(--radius-md); padding: 8px 10px; margin-bottom: 6px; font-size: var(--fs-sm); color: var(--color-charcoal); }
+.tm-comments li.lc-empty { background: none; color: var(--color-warm-gray); padding: 4px 0; }
+.tm-comments li div { margin-top: 3px; white-space: pre-wrap; }
+.tm-comments .assign-row input { flex: 1; }
+#tm-activity { list-style: none; padding: var(--space-2xs); margin: 0; max-height: 150px; overflow-y: auto; border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+#tm-activity li { font-size: var(--fs-sm); color: var(--color-charcoal-soft); padding: 4px 6px; border-bottom: 1px solid var(--color-border); }
+#tm-activity li:last-child { border-bottom: none; }
+
+/* משימות מקושרות בכרטיס ליד/תיק */
+.linked-tasks { margin: var(--space-sm) 0; border-top: 1px solid var(--color-border); padding-top: var(--space-sm); }
+.linked-tasks:empty { display: none; }
+.lt-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+.lt-head h4 { margin: 0; } .lt-head h4 span { color: var(--color-warm-gray); font-weight: 400; font-size: var(--fs-xs); }
+.lt-head div { display: flex; gap: 6px; } .lt-head .btn-ghost { padding: .3em .8em; font-size: var(--fs-xs); }
+.lt-row { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: var(--radius-sm); cursor: pointer; font-size: var(--fs-sm); }
+.lt-row:hover { background: var(--color-cream-soft); }
+.lt-row.closed { opacity: .55; } .lt-row .lt-title { flex: 1; font-weight: 600; color: var(--color-navy-deep); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lt-empty { color: var(--color-warm-gray); font-size: var(--fs-xs); }
+
+/* פעמון */
+.crm-topbar .user { position: relative; }
+.bell-btn { position: relative; width: 36px; height: 36px; border-radius: 50%; border: 1px solid rgba(255,255,255,.2); background: none; color: rgba(255,255,255,.8); cursor: pointer; display: grid; place-items: center; }
+.bell-btn:hover { background: rgba(255,255,255,.12); color: #fff; }
+.bell-btn svg { width: 18px; height: 18px; }
+.bell-count { position: absolute; top: -4px; inset-inline-end: -4px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: var(--radius-full); background: #C0392B; color: #fff; font-size: 11px; font-weight: 700; display: grid; place-items: center; }
+.bell-count[hidden] { display: none; }
+.bell-panel { position: absolute; top: calc(100% + 8px); inset-inline-start: 0; width: min(380px, 92vw); max-height: 70vh; overflow-y: auto; background: var(--color-white); color: var(--color-charcoal); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); z-index: 900; text-align: start; }
+.bell-panel[hidden] { display: none; }
+.bell-head { font-weight: 700; color: var(--color-navy-deep); padding: 10px 14px; border-bottom: 1px solid var(--color-border); font-size: var(--fs-sm); }
+.bell-item { padding: 9px 14px; border-bottom: 1px solid var(--color-border); cursor: pointer; font-size: var(--fs-sm); display: flex; flex-direction: column; gap: 2px; border-inline-start: 3px solid transparent; }
+.bell-item:hover { background: var(--color-cream-soft); }
+.bell-item.unread { background: rgba(201,164,122,.08); font-weight: 600; }
+.bell-item.late { border-inline-start-color: #C0392B; } .bell-item.assign { border-inline-start-color: #2E9E5B; } .bell-item.done { border-inline-start-color: var(--color-warm-gray); } .bell-item.comment { border-inline-start-color: #8E7CC3; }
+.bell-item small { color: var(--color-warm-gray); font-size: var(--fs-xs); font-weight: 400; }
+.bell-empty { padding: 20px; color: var(--color-warm-gray); text-align: center; font-size: var(--fs-sm); }
+
+@media (max-width: 760px) {
+  .task-board { grid-template-columns: repeat(4, 240px); }
+  .cal-cell { min-height: 60px; } .cal-item { font-size: 10px; padding: 1px 3px; }
+  .task-row { grid-template-columns: 28px 1fr; } .task-row .t-side { grid-column: 2; flex-direction: row; gap: 8px; align-items: center; }
+  .tm-grid { grid-template-columns: 1fr; }
+  .team-nums { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* תזכורות */
+.auto-note.digest { background: rgba(46,158,91,.1); border-color: rgba(46,158,91,.35); }
+.auto-note.digest b { color: #23794A; } .auto-note.digest b.late { color: #C0392B; }
+.auto-note.digest .icon-btn { width: 28px; height: 28px; margin-inline-start: 4px; }
+#notif-btn { padding: .55em 1em; font-size: var(--fs-sm); }
+#notif-btn:disabled { opacity: .5; cursor: not-allowed; }

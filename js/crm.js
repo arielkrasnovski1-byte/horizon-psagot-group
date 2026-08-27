@@ -5,6 +5,7 @@
    ============================================================ */
 import { firebaseConfig, isConfigured } from '/js/firebase-config.js';
 import { SERVICE_TYPES, buildItems, serviceLabel, docCatalog } from '/js/case-templates.js';
+import { initTasks } from '/js/crm-tasks.js';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? '' : s).replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -65,16 +66,18 @@ async function boot() {
       $('login-view').hidden = true; $('app-view').hidden = false; $('user-email').textContent = user.email;
       // רישום המשתמש לרשימת בעלי הגישה (לצורך הקצאה/סינון)
       fs.setDoc(fs.doc(db, 'crm_users', user.uid), { email: user.email, lastSeen: nowISO() }, { merge: true }).catch(() => {});
+      if (!tasks) tasks = initTasks(taskCtx);
       listenUsers();
       listenLeads(); listenCases(); listenDeals(); listenTestimonials(); teamCol.listen(); faqCol.listen(); articlesCol.listen();
-    } else { detachAll(); $('app-view').hidden = true; $('login-view').hidden = false; }
+    } else { detachAll(); if (tasks) tasks.detach(); $('app-view').hidden = true; $('login-view').hidden = false; }
   });
 
   /* ---------- טאבים ---------- */
   document.querySelectorAll('.crm-tab').forEach((tab) => {
     tab.addEventListener('click', () => {
       document.querySelectorAll('.crm-tab').forEach((t) => t.classList.toggle('active', t === tab));
-      ['leads', 'cases', 'deals', 'testimonials', 'team', 'faq', 'articles', 'users'].forEach((k) => { $('panel-' + k).hidden = (k !== tab.dataset.tab); });
+      ['leads', 'tasks', 'cases', 'deals', 'testimonials', 'team', 'faq', 'articles', 'users'].forEach((k) => { $('panel-' + k).hidden = (k !== tab.dataset.tab); });
+      if (tab.dataset.tab === 'tasks' && tasks) tasks.refresh();
     });
   });
 
@@ -89,6 +92,14 @@ async function boot() {
   const normRole = (r) => (r === 'owner' || r === 'manager' || r === 'agent') ? r : 'agent';
   // שם תצוגה של מטפל לפי המייל — מהשם שהוגדר, אחרת החלק שלפני ה-@
   const displayName = (email) => { if (!email) return ''; const u = allUsers.find((x) => x.email === email); return (u && u.name) ? u.name : email.split('@')[0]; };
+
+  /* ---------- משימות (js/crm-tasks.js) ---------- */
+  let tasks = null;
+  const taskCtx = {
+    fs, db, $, esc, track, nowISO, fmtDate, todayStr, toDateObj, displayName, serviceLabel,
+    users: () => allUsers, role: () => currentRole, me: () => ({ email: currentEmail, uid: currentUid }),
+    leads: () => allLeads, cases: () => allCases, currentLead: () => currentLead, currentCase: () => currentCase,
+  };
 
   /* רשימת בעלי גישה — לבחירת מטפל, סינון וניהול משתמשים + הרשאות */
   function listenUsers() {
@@ -115,6 +126,7 @@ async function boot() {
       populateUserFilter();
       renderUsers(ownerExists, isOwner);
       renderLeads();   // רענון שמות המטפלים בטבלה כשרשימת המשתמשים נטענת/משתנה
+      if (tasks) tasks.onUsersChanged();
     }, (err) => console.warn('users listener', err)));
   }
   function renderUsers(ownerExists, isOwner) {
@@ -197,6 +209,7 @@ async function boot() {
       allLeads = snap.docs.map((d) => ({ ...d.data(), id: d.id }))
         .sort((a, b) => (toDateObj(b.createdAt)?.getTime() || 0) - (toDateObj(a.createdAt)?.getTime() || 0));
       renderLeadStats(); renderLeads();
+      if (tasks) tasks.refresh();
     }, (err) => { console.warn(err); $('leads-body').innerHTML = '<tr><td colspan="8" class="empty-state">שגיאה בטעינה. בדקו כללי אבטחה.</td></tr>'; }));
   }
 
@@ -225,7 +238,7 @@ async function boot() {
     let rows = allLeads;
     const f = leadFilter;
     if (['new','contacted','closed'].includes(f)) rows = rows.filter((l) => (l.status||'new')===f || (f==='contacted'&&l.status==='in_progress'));
-    else if (['website','facebook'].includes(f)) rows = rows.filter((l) => (l.source||'website')===f);
+    else if (['website','facebook','whatsapp'].includes(f)) rows = rows.filter((l) => (l.source||'website')===f);
     else if (f === 'mine') rows = rows.filter((l) => (l.assignedTo||'') === currentEmail);
     else if (f === 'followup') rows = rows.filter(isFollowUpDue);
     if (searchQ) rows = rows.filter((l) => [l.name,l.phone,l.email,l.message,l.topic,l.audience].filter(Boolean).join(' ').toLowerCase().includes(searchQ));
@@ -237,6 +250,7 @@ async function boot() {
   }
   function srcBadge(source) {
     if (source === 'facebook') return '<span class="src-badge src-facebook">פייסבוק</span>';
+    if (source === 'whatsapp') return '<span class="src-badge src-whatsapp">וואטסאפ</span>';
     if (source === 'manual') return '<span class="src-badge src-manual">ידני</span>';
     return '<span class="src-badge src-website">אתר</span>';
   }
@@ -301,7 +315,7 @@ async function boot() {
   function openLeadModal(lead) {
     if (!lead) return; currentLead = lead;
     $('lc-name').textContent = lead.name || '—';
-    const srcTxt = lead.source === 'facebook' ? 'פייסבוק' : lead.source === 'manual' ? 'ידני' : 'אתר';
+    const srcTxt = lead.source === 'facebook' ? 'פייסבוק' : lead.source === 'whatsapp' ? 'וואטסאפ' : lead.source === 'manual' ? 'ידני' : 'אתר';
     $('lc-sub').innerHTML = [fmtDate(lead.createdAt), srcTxt, [lead.audience,lead.topic].filter(Boolean).join(' · ')].filter(Boolean).map(esc).join(' · ');
     $('lc-quick').innerHTML =
       `<a class="crm-btn" style="width:auto" href="https://wa.me/${phoneIntl(lead.phone)}" target="_blank" rel="noopener">וואטסאפ</a>`+
@@ -317,6 +331,7 @@ async function boot() {
     $('lc-notes').value = lead.notes || '';
     renderActivity(lead.activity || []);
     $('lead-modal').hidden = false;
+    if (tasks) tasks.refresh();
   }
   function renderActivity(act) {
     const list = $('lc-activity-list');
@@ -358,7 +373,7 @@ async function boot() {
     const csvRows = [head];
     rows.forEach((l) => csvRows.push([
       fmtDate(l.createdAt), l.name||'', l.phone||'', l.email||'', l.audience||'', l.topic||'',
-      l.source==='facebook'?'פייסבוק':l.source==='manual'?'ידני':'אתר', STATUS[l.status||'new']?.he||'', l.assignedTo||'', l.followUpAt||'', (l.notes||'').replace(/\n/g,' ')
+      l.source==='facebook'?'פייסבוק':l.source==='whatsapp'?'וואטסאפ':l.source==='manual'?'ידני':'אתר', STATUS[l.status||'new']?.he||'', l.assignedTo||'', l.followUpAt||'', (l.notes||'').replace(/\n/g,' ')
     ]));
     // מונע הזרקת נוסחאות ל-Excel: תא שמתחיל ב- = + - @ מקבל גרש מגן
     const safe = (c) => { let s = String(c == null ? '' : c); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return s.replace(/"/g, '""'); };
@@ -598,6 +613,7 @@ async function boot() {
     $('cm-add-stage').value = c.stage2Open ? '2' : '1';
     renderCaseItems(c);
     $('case-modal').hidden = false;
+    if (tasks) tasks.refresh();
   }
   /* ---- הוספה/הסרה ידנית של מסמכים בתיק ---- */
   let catalogFilled = false;
