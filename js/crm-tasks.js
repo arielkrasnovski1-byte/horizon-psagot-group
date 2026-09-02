@@ -256,7 +256,7 @@ export function initTasks(ctx) {
         `<div class="team-foot">${r.urgent ? `<span class="t-prio urgent">${r.urgent} דחוף</span>` : ''}<span>${r.avg == null ? 'אין נתוני ביצוע' : 'זמן ביצוע ממוצע: ' + (r.avg < 1 ? 'פחות מיום' : r.avg.toFixed(1) + ' ימים')}</span></div>` +
         `<div class="team-bar"><span style="width:${r.total ? Math.round(100 * (r.total - r.open) / r.total) : 0}%"></span></div>` +
         `<div class="team-actions"><button class="btn-ghost" type="button" data-assign="${r.u.uid}">+ משימה</button>` +
-        `${(r.open || r.overdue) && r.u.uid !== me().uid ? `<button class="btn-ghost" type="button" data-remind="${r.u.uid}" title="${phoneOfUid(r.u.uid) ? 'שליחת תזכורת בוואטסאפ' : 'אין טלפון — ההודעה תועתק'}">📲 תזכורת</button>` : ''}</div></div>`;
+        `${r.u.uid !== me().uid ? `<button class="btn-ghost" type="button" data-remind="${r.u.uid}" title="${phoneOfUid(r.u.uid) ? 'שליחת תזכורת בוואטסאפ' : 'אין טלפון במערכת — ההודעה תועתק'}">📲 תזכורת</button>` : ''}</div></div>`;
     }).join('') + `</div>`;
     el.querySelectorAll('.team-card').forEach((c) => c.addEventListener('click', () => { userF = c.dataset.uid; $('task-user-filter').value = userF; filter = 'open'; setFilterBtn('open'); switchView('list'); }));
     el.querySelectorAll('[data-assign]').forEach((b) => b.addEventListener('click', (e) => { e.stopPropagation(); openNew({ assignedUid: b.dataset.assign }); }));
@@ -364,6 +364,7 @@ export function initTasks(ctx) {
     if (late.length) msg += '\nבאיחור:\n' + late.map(line).join('\n') + '\n';
     if (today.length) msg += '\nלהיום:\n' + today.map(line).join('\n') + '\n';
     if (!late.length && !today.length && rest.length) msg += '\nמשימות פתוחות:\n' + rest.slice(0, 5).map(line).join('\n') + '\n';
+    if (!late.length && !today.length && !rest.length) msg += '\nכדאי להציץ במערכת ולוודא שהכל מעודכן.\n';
     msg += '\nהכל מחכה לך במערכת: ' + location.origin + '/desk/';
     return msg;
   }
@@ -376,6 +377,9 @@ export function initTasks(ctx) {
       '\n\nהמשימה במערכת: ' + location.origin + '/desk/';
   }
   async function sendReminder(uid, msg, task) {
+    if (!task && !allTasks.some((t) => t.assignedUid === uid && OPEN(t))) {
+      if (!confirm('ל"' + nameOfUid(uid) + '" אין משימות פתוחות. לשלוח בכל זאת תזכורת כללית?')) return;
+    }
     const phone = phoneOfUid(uid);
     if (phone) {
       window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank', 'noopener');
