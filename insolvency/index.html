@@ -24,6 +24,33 @@
   <meta property="og:url" content="https://horizonpsagotgroup.com/insolvency/">
   <meta property="og:locale" content="he_IL">
   <script defer src="/js/analytics.js"></script>
+  <script defer src="/js/form.js"></script>
+  <style>
+    /* עיצוב דף נחיתה — בתחום העמוד הזה בלבד */
+    .lp-hero { background: linear-gradient(135deg, #0A1F3D 0%, #1B3258 100%); color: #F4EFE6; padding: clamp(2.2rem, 6vw, 4.5rem) 0; }
+    .lp-hero .breadcrumb, .lp-hero .breadcrumb a { color: rgba(244,239,230,.65); }
+    .lp-hero h1 { color: #fff; }
+    .lp-hero .lead { color: rgba(244,239,230,.88); }
+    .lp-hero-grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: clamp(1.5rem, 4vw, 3.5rem); align-items: center; }
+    @media (max-width: 900px) { .lp-hero-grid { grid-template-columns: 1fr; } }
+    .lp-form { background: #fff; border-radius: var(--radius-lg); padding: clamp(1.2rem, 3vw, 1.8rem); box-shadow: 0 18px 50px rgba(0,0,0,.35); }
+    .lp-form h2 { font-family: var(--font-heading); color: var(--color-navy-deep); font-size: var(--fs-xl); margin: 0 0 .3rem; }
+    .lp-form .form-intro { margin: 0 0 1rem; font-size: var(--fs-sm); color: var(--color-warm-gray); }
+    .lp-form .form-field { margin-bottom: .8rem; }
+    .lp-form .form-submit { width: 100%; font-size: 1.05rem; }
+    .lp-form .form-field-checkbox { display: flex; gap: .5rem; align-items: flex-start; font-size: var(--fs-xs); color: var(--color-warm-gray); margin: .6rem 0 .9rem; }
+    .lp-form .form-field-checkbox label { line-height: 1.5; }
+    .lp-trust { display: flex; flex-wrap: wrap; gap: .5rem 1.6rem; justify-content: center; padding: 1rem 0; margin: 0; list-style: none; font-size: var(--fs-sm); font-weight: 600; color: var(--color-navy-deep); }
+    .lp-trust li::before { content: "✓ "; color: var(--color-rose-gold-deep); font-weight: 800; }
+    .lp-cta-row { text-align: center; margin-top: 1.6rem; }
+    .lp-quotes { text-align: center; font-family: var(--font-heading); font-size: clamp(1rem, 2.2vw, 1.25rem); color: var(--color-navy-mid); line-height: 2; }
+    .lp-sticky { position: fixed; bottom: 0; inset-inline: 0; z-index: 950; display: none; background: var(--color-navy-deep); padding: .55rem .8rem calc(.55rem + env(safe-area-inset-bottom)); gap: .5rem; box-shadow: 0 -6px 24px rgba(10,31,61,.35); }
+    .lp-sticky a { flex: 1; display: grid; place-items: center; padding: .7rem .4rem; border-radius: var(--radius-md); font-weight: 700; font-size: .95rem; text-decoration: none; }
+    .lp-sticky .s-call { background: rgba(255,255,255,.12); color: #fff; }
+    .lp-sticky .s-wa { background: #25D366; color: #fff; }
+    .lp-sticky .s-form { background: var(--color-rose-gold); color: #fff; }
+    @media (max-width: 760px) { .lp-sticky { display: flex; } body { padding-bottom: 64px; } .whatsapp-float { display: none; } }
+  </style>
 </head>
 <body>
 
@@ -69,25 +96,74 @@
 
   <main id="main">
 
-    <section class="page-hero" aria-labelledby="page-heading">
-      <div class="container page-hero-inner">
-        <nav class="breadcrumb" aria-label="פירורי לחם"><a href="/">בית</a> · <a href="/financial/">ליווי פיננסי-עסקי</a> · <span>חדלות פירעון</span></nav>
-        <h1 id="page-heading" class="reveal">חדלות פירעון ושיקום כלכלי</h1>
-        <p class="lead reveal" data-delay="1">
-          כשהחובות גדולים מהיכולת להחזיר — החוק נותן דרך מסודרת לעצור את הסחרור,
-          למחוק את מה שאי-אפשר לשלם, ולפתוח דף חדש. אנחנו מלווים אתכם בכל הדרך:
-          לפני ההליך, במהלכו — וגם ביום שאחרי.
-        </p>
-        <div class="reveal" data-delay="2" style="display:flex;gap:.8rem;flex-wrap:wrap;margin-top:1.2rem">
-          <a href="/contact/" class="btn btn-primary">שיחת הערכה ללא התחייבות</a>
-          <a href="https://wa.me/972549665999?text=%D7%A9%D7%9C%D7%95%D7%9D%2C%20%D7%90%D7%A0%D7%99%20%D7%9E%D7%AA%D7%A2%D7%A0%D7%99%D7%99%D7%9F%20%D7%91%D7%9C%D7%99%D7%95%D7%95%D7%99%20%D7%91%D7%94%D7%9C%D7%99%D7%9A%20%D7%97%D7%93%D7%9C%D7%95%D7%AA%20%D7%A4%D7%99%D7%A8%D7%A2%D7%95%D7%9F" target="_blank" rel="noopener" class="btn btn-secondary">דברו איתנו בוואטסאפ</a>
+    <section class="lp-hero" aria-labelledby="page-heading">
+      <div class="container">
+        <div class="lp-hero-grid">
+          <div>
+            <nav class="breadcrumb" aria-label="פירורי לחם"><a href="/">בית</a> · <span>חדלות פירעון ושיקום כלכלי</span></nav>
+            <h1 id="page-heading" class="reveal">הסוף לסחרור החובות.<br>יש דרך חוקית להתחלה חדשה.</h1>
+            <p class="lead reveal" data-delay="1">
+              עיקולים, הוצאה לפועל, הלוואות שמגלגלות זו את זו — החוק מאפשר לעצור הכול,
+              לרכז את החובות להליך אחד מסודר, ובסופו <strong>למחוק את יתרת החובות</strong>.
+              אנחנו מלווים אתכם מהשיחה הראשונה ועד היום שאחרי.
+            </p>
+            <div class="reveal" data-delay="2" style="display:flex;gap:.8rem;flex-wrap:wrap;margin-top:1.2rem">
+              <a href="tel:+972549665999" class="btn btn-secondary">התקשרו: 054-966-5999</a>
+              <a href="https://wa.me/972549665999?text=%D7%A9%D7%9C%D7%95%D7%9D%2C%20%D7%90%D7%A0%D7%99%20%D7%9E%D7%AA%D7%A2%D7%A0%D7%99%D7%99%D7%9F%20%D7%91%D7%9C%D7%99%D7%95%D7%95%D7%99%20%D7%91%D7%94%D7%9C%D7%99%D7%9A%20%D7%97%D7%93%D7%9C%D7%95%D7%AA%20%D7%A4%D7%99%D7%A8%D7%A2%D7%95%D7%9F" target="_blank" rel="noopener" class="btn btn-secondary">וואטסאפ דיסקרטי</a>
+            </div>
+          </div>
+
+          <div class="contact-form lp-form" id="lead-form">
+            <h2>נבדוק אם ההליך מתאים לכם</h2>
+            <p class="form-intro">שיחת הערכה חינם וללא התחייבות. דיסקרטיות מלאה.</p>
+            <form novalidate>
+              <input type="hidden" name="access_key" value="2ac246b9-2132-4601-a985-38868169ffb3">
+              <input type="hidden" name="subject" value="ליד חדש — חדלות פירעון (דף נחיתה)">
+              <input type="hidden" id="topic" name="סיבת הפנייה" value="חדלות פירעון">
+              <input type="checkbox" name="botcheck" style="display:none" tabindex="-1" aria-hidden="true">
+              <div class="form-field">
+                <label for="name">שם מלא <span class="required" aria-hidden="true">*</span></label>
+                <input type="text" id="name" name="name" required autocomplete="name">
+                <span class="form-error" role="alert">שדה חובה</span>
+              </div>
+              <div class="form-field">
+                <label for="phone">טלפון <span class="required" aria-hidden="true">*</span></label>
+                <input type="tel" id="phone" name="טלפון" required autocomplete="tel" placeholder="050-0000000">
+                <span class="form-error" role="alert">טלפון לא תקין</span>
+              </div>
+              <div class="form-field">
+                <label for="message">מה המצב בקצרה? (לא חובה)</label>
+                <textarea id="message" name="message" rows="2" placeholder="למשל: חובות של כ-400 אלף, עיקול על החשבון..."></textarea>
+              </div>
+              <div class="form-field-checkbox">
+                <input type="checkbox" id="consent" name="consent" required>
+                <label for="consent">אני מאשר/ת פנייה חוזרת ושמירת הפרטים לצורך מתן שירות. הפרטים לא יועברו לצד שלישי.</label>
+              </div>
+              <button type="submit" class="btn btn-primary form-submit">בדקו את המקרה שלי — חינם</button>
+            </form>
+            <div class="form-success" role="alert">
+              <h3 style="margin-bottom: var(--space-2xs);">הפרטים התקבלו.</h3>
+              <p style="margin: 0;">נחזור אליכם בהקדם — בדיסקרטיות מלאה.</p>
+            </div>
+          </div>
         </div>
+      </div>
+    </section>
+
+    <section style="background:var(--color-white);border-bottom:1px solid var(--color-border)">
+      <div class="container">
+        <ul class="lp-trust">
+          <li>שיחת הערכה ללא עלות</li>
+          <li>דיסקרטיות מלאה</li>
+          <li>בשיתוף עורכי דין מומחים לחדלות פירעון</li>
+          <li>ליווי בכל הארץ — פרונטלית או מרחוק</li>
+        </ul>
       </div>
     </section>
 
     <section class="section section-cream">
       <div class="container container-narrow">
-        <p class="lead reveal" style="text-align:center">
+        <p class="lp-quotes reveal">
           "עיקלו לי את החשבון" · "אני מפחד לאבד את הבית" · "ההלוואות רק מגלגלות אחת את השנייה" ·
           "ערבתי למישהו ונתקעתי" · "העסק נסגר והחובות נשארו"
         </p>
@@ -156,6 +232,7 @@
             <p>כאן אנחנו שונים: בניית תקציב, שיקום דירוג אשראי ותכנון קדימה — כדי שההתחלה החדשה תישאר כזאת.</p>
           </div>
         </div>
+        <div class="lp-cta-row reveal"><a href="#lead-form" class="btn btn-primary">רוצים לדעת איפה אתם עומדים? השאירו פרטים</a></div>
       </div>
     </section>
 
@@ -193,6 +270,7 @@
             </div>
           </div>
         </article>
+        <div class="lp-cta-row reveal"><a href="#lead-form" class="btn btn-primary">בדקו את המקרה שלכם — שיחת הערכה חינם</a></div>
       </div>
     </section>
 
@@ -233,7 +311,7 @@
         <div class="cta-banner reveal-scale">
           <h2>הצעד הראשון הוא שיחה אחת</h2>
           <p>שיחת הערכה דיסקרטית וללא התחייבות. נבין יחד את התמונה — ונגיד לכם ביושר מה הדרך הנכונה, גם אם היא לא אצלנו.</p>
-          <a href="/contact/" class="btn btn-secondary">קבעו שיחת הערכה</a>
+          <a href="#lead-form" class="btn btn-secondary">השאירו פרטים למעלה</a>
         </div>
         <p style="text-align:center;font-size:.85rem;color:var(--color-warm-gray);margin-top:1.2rem">
           התכנים בעמוד זה הם מידע כללי ואינם ייעוץ משפטי. הטיפול המשפטי בהליכי חדלות פירעון מבוצע בשיתוף עורכי דין חיצוניים מומחים בתחום.
@@ -280,6 +358,12 @@
     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413"/></svg>
     <span class="whatsapp-tooltip">צרו קשר ב-WhatsApp</span>
   </a>
+
+  <nav class="lp-sticky" aria-label="יצירת קשר מהירה">
+    <a class="s-call" href="tel:+972549665999">📞 שיחה</a>
+    <a class="s-wa" href="https://wa.me/972549665999?text=%D7%A9%D7%9C%D7%95%D7%9D%2C%20%D7%90%D7%A0%D7%99%20%D7%9E%D7%AA%D7%A2%D7%A0%D7%99%D7%99%D7%9F%20%D7%91%D7%9C%D7%99%D7%95%D7%95%D7%99%20%D7%91%D7%94%D7%9C%D7%99%D7%9A%20%D7%97%D7%93%D7%9C%D7%95%D7%AA%20%D7%A4%D7%99%D7%A8%D7%A2%D7%95%D7%9F" target="_blank" rel="noopener">וואטסאפ</a>
+    <a class="s-form" href="#lead-form">לבדיקה חינם</a>
+  </nav>
 
   <script src="/js/animations.js" defer></script>
   <script src="/js/main.js" defer></script>
