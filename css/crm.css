@@ -540,3 +540,8 @@ tbody tr.lead-row:hover td { background: var(--color-cream-soft); }
 /* תזכורת לעובד */
 .team-actions { display: flex; gap: 6px; }
 .team-actions .btn-ghost { padding: .35em .9em; font-size: var(--fs-xs); }
+
+/* סינון וחיפוש בתיקים */
+.cases-filter { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: var(--space-md); }
+.cases-search { max-width: 260px; height: 40px; }
+#cases-type-f { height: 40px; max-width: 240px; }

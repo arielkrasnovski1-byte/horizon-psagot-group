@@ -513,10 +513,14 @@ async function boot() {
   }
   const isClosed = (c) => c.status === 'closed';
   let casesFilter = 'active';   // active | closed | all
+  let casesTypeF = '', casesQ = '';   // סינון לפי תחום + חיפוש חופשי
   function filteredCases() {
-    if (casesFilter === 'closed') return allCases.filter(isClosed);
-    if (casesFilter === 'all') return allCases;
-    return allCases.filter((c) => !isClosed(c));
+    let rows = allCases;
+    if (casesFilter === 'closed') rows = rows.filter(isClosed);
+    else if (casesFilter !== 'all') rows = rows.filter((c) => !isClosed(c));
+    if (casesTypeF) rows = rows.filter((c) => c.serviceType === casesTypeF);
+    if (casesQ) rows = rows.filter((c) => [c.clientName, c.clientPhone, c.clientEmail, serviceLabel(c.serviceType)].filter(Boolean).join(' ').toLowerCase().includes(casesQ));
+    return rows;
   }
   function renderCases() {
     const grid = $('cases-grid');
@@ -527,8 +531,14 @@ async function boot() {
         ['active', 'פעילים', counts.active],
         ['closed', 'סגורים', counts.closed],
         ['all', 'הכל', allCases.length],
-      ].map(([k, l, n]) => '<button type="button" class="cases-fbtn' + (casesFilter === k ? ' on' : '') + '" data-cf="' + k + '">' + l + ' (' + n + ')</button>').join('');
+      ].map(([k, l, n]) => '<button type="button" class="cases-fbtn' + (casesFilter === k ? ' on' : '') + '" data-cf="' + k + '">' + l + ' (' + n + ')</button>').join('') +
+        '<select class="user-filter" id="cases-type-f"><option value="">כל התחומים</option>' +
+        SERVICE_TYPES.map((t) => '<option value="' + t.key + '"' + (casesTypeF === t.key ? ' selected' : '') + '>' + esc(t.label) + '</option>').join('') + '</select>' +
+        '<input type="search" class="lead-search cases-search" id="cases-q" placeholder="חיפוש שם / טלפון…" value="' + esc(casesQ) + '">';
       fbar.querySelectorAll('[data-cf]').forEach((b) => b.onclick = () => { casesFilter = b.dataset.cf; renderCases(); });
+      fbar.querySelector('#cases-type-f').addEventListener('change', (e) => { casesTypeF = e.target.value; renderCases(); });
+      const qEl = fbar.querySelector('#cases-q');
+      qEl.addEventListener('input', (e) => { casesQ = e.target.value.trim().toLowerCase(); renderCases(); const el = $('cases-q'); el.focus(); el.setSelectionRange(el.value.length, el.value.length); });
     }
     const list = filteredCases();
     if (!allCases.length) { grid.innerHTML = '<div class="empty-state"><p>אין תיקים עדיין. פתחו תיק חדש כדי לשלוח ללקוח קישור להעלאת מסמכים.</p></div>'; return; }
@@ -765,6 +775,33 @@ async function boot() {
   });
   $('cm-add-custom').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addCaseItem(); } });
   $('cm-add-btn').addEventListener('click', addCaseItem);
+  /* העברת המסמכים שהתקבלו לעורך הדין — הודעה עם קישורי הורדה (ללא backend) */
+  function lawyerMessage(c) {
+    const got = (c.items || []).filter((it) => (it.files || []).length);
+    let msg = 'שלום, מצורפים מסמכי הלקוח מתיק ' + serviceLabel(c.serviceType) + ' — הורייזון פסגות גרופ\n';
+    msg += 'לקוח: ' + (c.clientName || '') + (c.clientPhone ? ' · ' + c.clientPhone : '') + (c.clientEmail ? ' · ' + c.clientEmail : '') + '\n\n';
+    got.forEach((it) => {
+      msg += '▸ ' + it.label + (it.status === 'received' ? '' : ' (טרם אושר)') + ':\n';
+      (it.files || []).forEach((f) => { msg += '   ' + f.name + ' — ' + f.url + '\n'; });
+    });
+    const missing = (c.items || []).filter((it) => (it.stage === 1 || c.stage2Open) && !(it.files || []).length);
+    if (missing.length) msg += '\nטרם התקבלו: ' + missing.map((it) => it.label).join(', ') + '\n';
+    msg += '\nבברכה,\n' + displayName(currentEmail) + ' · הורייזון פסגות גרופ';
+    return msg;
+  }
+  $('cm-lawyer').addEventListener('click', async () => {
+    const c = currentCase; if (!c) return;
+    const got = (c.items || []).filter((it) => (it.files || []).length);
+    if (!got.length) { alert('אין עדיין מסמכים בתיק להעברה.'); return; }
+    const msg = lawyerMessage(c);
+    try { await navigator.clipboard.writeText(msg); } catch (e) { window.prompt('העתיקו את ההודעה:', msg); return; }
+    const stamp = { lawyerSentAt: nowISO(), lawyerSentBy: currentEmail };
+    fs.updateDoc(fs.doc(db, 'cases', c.id), stamp).then(() => Object.assign(c, stamp)).catch(() => {});
+    if (confirm('ההודעה עם קישורי כל המסמכים (' + got.length + ' פריטים) הועתקה.\nלפתוח מייל חדש להדבקה?')) {
+      const subj = 'מסמכי לקוח — ' + (c.clientName || '') + ' · ' + serviceLabel(c.serviceType);
+      window.location.href = 'mailto:?subject=' + encodeURIComponent(subj) + (msg.length < 1500 ? '&body=' + encodeURIComponent(msg) : '');
+    }
+  });
   $('cm-close').addEventListener('click', () => $('case-modal').hidden = true);
   $('cm-cancel').addEventListener('click', () => $('case-modal').hidden = true);
   $('case-modal').addEventListener('click', (e) => { if (e.target === $('case-modal')) $('case-modal').hidden = true; });

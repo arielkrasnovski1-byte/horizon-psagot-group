@@ -31,6 +31,19 @@
     .lp-hero .breadcrumb, .lp-hero .breadcrumb a { color: rgba(244,239,230,.65); }
     .lp-hero h1 { color: #fff; }
     .lp-hero .lead { color: rgba(244,239,230,.88); }
+    .lp-hero strong, .lp-hero b { color: var(--color-rose-gold); font-weight: 700; }
+    /* ציר זמן — איך ההליך עובד */
+    .lp-steps { list-style: none; max-width: 720px; margin: 2.2rem auto 0; padding: 0; }
+    .lp-step { position: relative; padding-inline-start: 4.4rem; padding-bottom: 2.1rem; }
+    .lp-step::before { content: ""; position: absolute; inset-inline-start: 1.6rem; top: 3.4rem; bottom: .3rem; width: 2px; background: linear-gradient(var(--color-rose-gold), var(--color-border)); }
+    .lp-step:last-child::before { display: none; }
+    .lp-step:last-child { padding-bottom: 0; }
+    .lp-num { position: absolute; inset-inline-start: 0; top: 0; width: 3.3rem; height: 3.3rem; border-radius: 50%; background: var(--color-white); border: 2px solid var(--color-rose-gold); color: var(--color-navy-deep); display: grid; place-items: center; font-family: var(--font-heading); font-size: 1.15rem; font-weight: 700; box-shadow: var(--shadow-sm); }
+    .lp-step h3 { font-family: var(--font-heading); color: var(--color-navy-deep); font-size: var(--fs-lg); margin: .35rem 0 .35rem; display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+    .lp-step p { color: var(--color-charcoal-soft); line-height: 1.7; margin: 0; max-width: 60ch; }
+    .lp-step .lp-when { font-family: var(--font-body); font-size: var(--fs-xs); font-weight: 700; color: var(--color-rose-gold-deep); background: rgba(201,164,122,.14); border-radius: 999px; padding: .2rem .7rem; }
+    .lp-step.hl .lp-num { background: var(--color-navy-deep); color: var(--color-rose-gold); border-color: var(--color-navy-deep); }
+    .lp-step.hl h3 .lp-when { background: var(--color-navy-deep); color: var(--color-rose-gold); }
     .lp-hero-grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: clamp(1.5rem, 4vw, 3.5rem); align-items: center; }
     @media (max-width: 900px) { .lp-hero-grid { grid-template-columns: 1fr; } }
     .lp-form { background: #fff; border-radius: var(--radius-lg); padding: clamp(1.2rem, 3vw, 1.8rem); box-shadow: 0 18px 50px rgba(0,0,0,.35); }
@@ -210,28 +223,33 @@
     <section class="section section-cream">
       <div class="container">
         <h2 class="section-title reveal" style="text-align:center">איך ההליך עובד — צעד אחר צעד</h2>
-        <div class="process-grid">
-          <div class="process-step reveal">
-            <h4>הערכת מצב</h4>
-            <p>כבר השבוע: מיפוי מלא של החובות, הנכסים וההכנסות — ובחירת המסלול הנכון: הסדר חוב או הליך חדלות פירעון.</p>
-          </div>
-          <div class="process-step reveal" data-delay="1">
-            <h4>הגשת הבקשה</h4>
+        <ol class="lp-steps">
+          <li class="lp-step reveal">
+            <span class="lp-num" aria-hidden="true">1</span>
+            <h3>הערכת מצב <span class="lp-when">כבר השבוע</span></h3>
+            <p>מיפוי מלא של החובות, הנכסים וההכנסות — ובחירת המסלול הנכון: הסדר חוב מול הנושים, או הליך חדלות פירעון.</p>
+          </li>
+          <li class="lp-step reveal" data-delay="1">
+            <span class="lp-num" aria-hidden="true">2</span>
+            <h3>הגשת הבקשה <span class="lp-when">תוך ימים</span></h3>
             <p>הכנת תיק כלכלי מסודר והגשת הבקשה, בשיתוף עורכי דין מומחים לחדלות פירעון.</p>
-          </div>
-          <div class="process-step reveal" data-delay="2">
-            <h4>צו פתיחת הליכים</h4>
-            <p>הליכי הגבייה נעצרים: עיקולים והוצאה לפועל מוקפאים, ונקבע תשלום חודשי שמתחשב ביכולת האמיתית שלכם.</p>
-          </div>
-          <div class="process-step reveal" data-delay="3">
-            <h4>תוכנית השיקום</h4>
-            <p>נבנית תוכנית לתקופה קצובה — ובסיומה ניתן הפטר: מחיקת יתרת החובות.</p>
-          </div>
-          <div class="process-step reveal" data-delay="4">
-            <h4>היום שאחרי</h4>
-            <p>כאן אנחנו שונים: בניית תקציב, שיקום דירוג אשראי ותכנון קדימה — כדי שההתחלה החדשה תישאר כזאת.</p>
-          </div>
-        </div>
+          </li>
+          <li class="lp-step reveal" data-delay="2">
+            <span class="lp-num" aria-hidden="true">3</span>
+            <h3>צו פתיחת הליכים <span class="lp-when">ההקלה הראשונה</span></h3>
+            <p>הליכי הגבייה נעצרים: עיקולים והוצאה לפועל מוקפאים, ונקבע תשלום חודשי אחד שמתחשב ביכולת האמיתית שלכם.</p>
+          </li>
+          <li class="lp-step reveal" data-delay="3">
+            <span class="lp-num" aria-hidden="true">4</span>
+            <h3>תוכנית השיקום <span class="lp-when">תקופה קצובה</span></h3>
+            <p>עומדים בתוכנית — ובסיומה ניתן הפטר: מחיקת יתרת החובות.</p>
+          </li>
+          <li class="lp-step hl reveal" data-delay="4">
+            <span class="lp-num" aria-hidden="true">5</span>
+            <h3>היום שאחרי <span class="lp-when">הייחוד שלנו</span></h3>
+            <p>בניית תקציב, שיקום דירוג אשראי ותכנון קדימה — כדי שההתחלה החדשה תישאר כזאת. את החלק הזה אף עורך דין לא נותן.</p>
+          </li>
+        </ol>
         <div class="lp-cta-row reveal"><a href="#lead-form" class="btn btn-primary">רוצים לדעת איפה אתם עומדים? השאירו פרטים</a></div>
       </div>
     </section>

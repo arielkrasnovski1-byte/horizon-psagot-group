@@ -12,6 +12,7 @@ export const SERVICE_TYPES = [
   { key: 're_israel',  label: 'נדל"ן והשקעות בישראל',       cat: 'נדל"ן' },
   { key: 're_abroad',  label: 'השקעות נדל"ן בחו"ל',          cat: 'נדל"ן' },
   { key: 'urban',      label: 'התחדשות עירונית',            cat: 'נדל"ן' },
+  { key: 'insolvency', label: 'חדלות פירעון ושיקום כלכלי',   cat: 'פיננסי' },
 ];
 
 // מסמכים נוספים ללקוח שהוא בעל עסק — משותף לרוב סוגי השירות.
@@ -24,6 +25,26 @@ const BIZ_DOCS = [
 
 // תבנית מסמכים לכל סוג שירות. כרגע מפורט: mortgage. השאר — שלד ריק להשלמה.
 export const TEMPLATES = {
+  insolvency: {
+    stage1: [
+      { key: 'id',         label: 'תעודת זהות + ספח' },
+      { key: 'bank',       label: 'תדפיסי עו"ש — 3 חודשים אחרונים (כל החשבונות)' },
+      { key: 'balances',   label: 'ריכוז יתרות מכל הבנקים' },
+      { key: 'payslips',   label: 'תלושי שכר — 3 חודשים אחרונים (או שומות לעצמאי)' },
+      { key: 'debts',      label: 'פירוט חובות ונושים (כולל תיקי הוצאה לפועל)' },
+      { key: 'loans',      label: 'הסכמי הלוואות קיימים' },
+      { key: 'credit_rep', label: 'דוח נתוני אשראי (BDI)' },
+      { key: 'assets',     label: 'רשימת נכסים: רכב / דירה / נסח טאבו' },
+    ],
+    business: BIZ_DOCS,
+    stage2: [
+      { key: 'expenses',   label: 'דוח הכנסות והוצאות משק הבית (טופס כלכלי)' },
+      { key: 'rent',       label: 'הסכם שכירות / פירוט משכנתא' },
+      { key: 'poa',        label: 'ייפוי כוח לעורך הדין' },
+      { key: 'extra',      label: 'מסמכים נוספים לפי דרישת הנאמן' },
+    ],
+  },
+
   mortgage: {
     stage1: [
       { key: 'id',        label: 'תעודת זהות' },
