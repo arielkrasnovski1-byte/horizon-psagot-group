@@ -255,10 +255,12 @@ export function initTasks(ctx) {
         `<div class="team-nums"><div><i>${r.open}</i>פתוחות</div><div class="${r.overdue ? 'late' : ''}"><i>${r.overdue}</i>באיחור</div><div><i>${r.waiting}</i>ממתין ללקוח</div><div><i>${r.done7}</i>הושלמו השבוע</div></div>` +
         `<div class="team-foot">${r.urgent ? `<span class="t-prio urgent">${r.urgent} דחוף</span>` : ''}<span>${r.avg == null ? 'אין נתוני ביצוע' : 'זמן ביצוע ממוצע: ' + (r.avg < 1 ? 'פחות מיום' : r.avg.toFixed(1) + ' ימים')}</span></div>` +
         `<div class="team-bar"><span style="width:${r.total ? Math.round(100 * (r.total - r.open) / r.total) : 0}%"></span></div>` +
-        `<button class="btn-ghost" type="button" data-assign="${r.u.uid}">+ משימה</button></div>`;
+        `<div class="team-actions"><button class="btn-ghost" type="button" data-assign="${r.u.uid}">+ משימה</button>` +
+        `${(r.open || r.overdue) && r.u.uid !== me().uid ? `<button class="btn-ghost" type="button" data-remind="${r.u.uid}" title="${phoneOfUid(r.u.uid) ? 'שליחת תזכורת בוואטסאפ' : 'אין טלפון — ההודעה תועתק'}">📲 תזכורת</button>` : ''}</div></div>`;
     }).join('') + `</div>`;
     el.querySelectorAll('.team-card').forEach((c) => c.addEventListener('click', () => { userF = c.dataset.uid; $('task-user-filter').value = userF; filter = 'open'; setFilterBtn('open'); switchView('list'); }));
     el.querySelectorAll('[data-assign]').forEach((b) => b.addEventListener('click', (e) => { e.stopPropagation(); openNew({ assignedUid: b.dataset.assign }); }));
+    el.querySelectorAll('[data-remind]').forEach((b) => b.addEventListener('click', (e) => { e.stopPropagation(); sendReminder(b.dataset.remind, reminderMsgForUser(b.dataset.remind)); }));
   }
 
   /* --- משימות מקושרות בכרטיס ליד / תיק --- */
@@ -349,6 +351,43 @@ export function initTasks(ctx) {
     try { await fs.updateDoc(fs.doc(db, 'tasks', t.id), upd); } catch (e) { alert('שגיאה: ' + e.message); }
   }
 
+
+  /* ---------- תזכורת לעובד בוואטסאפ (קליק אחד, ללא עלות) ---------- */
+  const phoneOfUid = (uid) => { const u = userByUid(uid); return (u && u.phone) ? ctx.phoneIntl(u.phone) : ''; };
+  function reminderMsgForUser(uid) {
+    const name = nameOfUid(uid);
+    const mine = allTasks.filter((t) => t.assignedUid === uid && OPEN(t));
+    const late = mine.filter(isOverdue), today = mine.filter((t) => isToday(t) && !isOverdue(t));
+    const rest = mine.filter((t) => !isOverdue(t) && !isToday(t));
+    const line = (t) => '• ' + t.title + (t.dueDate ? ' (יעד: ' + fmtDue(t) + ')' : '') + (t.priority === 'urgent' ? ' — דחוף!' : '');
+    let msg = 'היי ' + name + ', תזכורת מהמערכת של הורייזון פסגות 🔔\n';
+    if (late.length) msg += '\nבאיחור:\n' + late.map(line).join('\n') + '\n';
+    if (today.length) msg += '\nלהיום:\n' + today.map(line).join('\n') + '\n';
+    if (!late.length && !today.length && rest.length) msg += '\nמשימות פתוחות:\n' + rest.slice(0, 5).map(line).join('\n') + '\n';
+    msg += '\nהכל מחכה לך במערכת: ' + location.origin + '/crm/';
+    return msg;
+  }
+  function reminderMsgForTask(t) {
+    return 'היי ' + nameOfUid(t.assignedUid) + ', תזכורת למשימה 🔔\n\n' +
+      '• ' + t.title + (t.dueDate ? '\n• יעד: ' + fmtDue(t) : '') +
+      (t.priority === 'urgent' ? '\n• דחוף!' : t.priority === 'high' ? '\n• עדיפות גבוהה' : '') +
+      (t.link ? '\n• לקוח: ' + t.link.name : '') +
+      (t.desc ? '\n\n' + t.desc : '') +
+      '\n\nהמשימה במערכת: ' + location.origin + '/crm/';
+  }
+  async function sendReminder(uid, msg, task) {
+    const phone = phoneOfUid(uid);
+    if (phone) {
+      window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank', 'noopener');
+    } else {
+      try { await navigator.clipboard.writeText(msg); alert('ל"' + nameOfUid(uid) + '" אין טלפון במערכת — ההודעה הועתקה, הדביקו בוואטסאפ.\n(אפשר להוסיף טלפון בטאב "משתמשים")'); }
+      catch (e) { window.prompt('העתיקו את התזכורת:', msg); return; }
+    }
+    if (task) {   // רישום ביומן הפעילות של המשימה
+      try { await fs.updateDoc(fs.doc(db, 'tasks', task.id), { activity: act(task, 'שלח תזכורת בוואטסאפ ל' + nameOfUid(uid)) }); } catch (e) {}
+    }
+  }
+
   /* ---------- כרטיס משימה ---------- */
   function assigneeOptions(selected) {
     let list = users().filter((u) => u.uid);
@@ -395,7 +434,7 @@ export function initTasks(ctx) {
     $('tm-private').checked = false; updatePrivateVisibility();
     ['tm-title', 'tm-desc', 'tm-assignee', 'tm-due', 'tm-due-time', 'tm-prio', 'tm-repeat', 'tm-link-search', 'tm-status'].forEach((id) => { $(id).disabled = false; });
     $('tm-comments-wrap').hidden = true; $('tm-activity-wrap').hidden = true;
-    $('tm-done').hidden = true; $('tm-delete').hidden = true; $('tm-save').hidden = false; $('tm-save').textContent = 'יצירת משימה';
+    $('tm-done').hidden = true; $('tm-delete').hidden = true; $('tm-remind').hidden = true; $('tm-save').hidden = false; $('tm-save').textContent = 'יצירת משימה';
     $('task-modal').hidden = false; setTimeout(() => $('tm-title').focus(), 50);
   }
   function openTask(t) {
@@ -419,6 +458,7 @@ export function initTasks(ctx) {
     $('tm-comment-input').disabled = !prog; $('tm-comment-add').disabled = !prog;
     renderComments(t); renderActivity(t);
     $('tm-done').hidden = !(prog && OPEN(t)); $('tm-delete').hidden = !canDelete(t);
+    $('tm-remind').hidden = !(isMgr() && OPEN(t) && t.assignedUid !== me().uid);
     $('tm-save').textContent = 'שמירה'; $('tm-save').hidden = !(full || prog);
     $('task-modal').hidden = false;
   }
@@ -444,6 +484,7 @@ export function initTasks(ctx) {
     catch (e) { alert('שגיאה: ' + e.message); }
   }
   $('tm-done').addEventListener('click', async () => { if (current) { await completeTask(current); closeModal(); } });
+  $('tm-remind').addEventListener('click', () => { if (current) sendReminder(current.assignedUid, reminderMsgForTask(current), current); });
   $('tm-delete').addEventListener('click', async () => {
     if (!current || !confirm('למחוק את המשימה לצמיתות? (אפשר במקום זה לסמן "בוטלה" ולשמור היסטוריה)')) return;
     try { await fs.deleteDoc(fs.doc(db, 'tasks', current.id)); closeModal(); } catch (e) { alert('שגיאה: ' + e.message); }

@@ -536,3 +536,7 @@ tbody tr.lead-row:hover td { background: var(--color-cream-soft); }
 /* "הלקוח סיים להעלות" */
 .client-done-flag, .cm-client-done { margin-top: 6px; font-size: var(--fs-xs); font-weight: 700; color: #23794A; background: rgba(46,158,91,.1); border: 1px solid rgba(46,158,91,.3); border-radius: var(--radius-md); padding: 5px 10px; }
 .cm-client-done { margin: 0 0 var(--space-sm); font-size: var(--fs-sm); }
+
+/* תזכורת לעובד */
+.team-actions { display: flex; gap: 6px; }
+.team-actions .btn-ghost { padding: .35em .9em; font-size: var(--fs-xs); }

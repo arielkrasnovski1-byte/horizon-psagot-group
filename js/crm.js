@@ -96,7 +96,7 @@ async function boot() {
   /* ---------- משימות (js/crm-tasks.js) ---------- */
   let tasks = null;
   const taskCtx = {
-    fs, db, $, esc, track, nowISO, fmtDate, todayStr, toDateObj, displayName, serviceLabel,
+    fs, db, $, esc, track, nowISO, fmtDate, todayStr, toDateObj, displayName, serviceLabel, phoneIntl,
     users: () => allUsers, role: () => currentRole, me: () => ({ email: currentEmail, uid: currentUid }),
     leads: () => allLeads, cases: () => allCases, currentLead: () => currentLead, currentCase: () => currentCase,
   };
@@ -132,7 +132,7 @@ async function boot() {
   function renderUsers(ownerExists, isOwner) {
     $('owner-claim').hidden = ownerExists;
     const body = $('users-body');
-    if (!allUsers.length) { body.innerHTML = '<tr><td colspan="5" class="empty-state">אין משתמשים.</td></tr>'; return; }
+    if (!allUsers.length) { body.innerHTML = '<tr><td colspan="6" class="empty-state">אין משתמשים.</td></tr>'; return; }
     body.innerHTML = allUsers.map((u) => {
       const role = normRole(u.role); const isSelf = u.uid === currentUid;
       const roleCell = (isOwner && !isSelf)
@@ -141,8 +141,13 @@ async function boot() {
       const nameCell = isOwner
         ? `<input class="name-edit" data-name-uid="${u.uid}" value="${esc(u.name || '')}" placeholder="${esc((u.email || '').split('@')[0])}">`
         : esc(u.name || (u.email || '').split('@')[0]);
+      // טלפון: בעלים עורך לכולם, וכל משתמש עורך את שלו (משמש לתזכורות וואטסאפ במשימות)
+      const phoneCell = (isOwner || isSelf)
+        ? `<input class="name-edit" data-phone-uid="${u.uid}" value="${esc(u.phone || '')}" placeholder="050-0000000" inputmode="tel" style="direction:ltr;text-align:right">`
+        : (u.phone ? `<span style="direction:ltr">${esc(u.phone)}</span>` : '—');
       return `<tr class="user-row"><td class="lead-name-cell" data-label="שם">${nameCell}</td>`+
         `<td class="lead-contact" data-label="אימייל" style="direction:ltr;text-align:right">${esc(u.email || '')}</td>`+
+        `<td data-label="טלפון">${phoneCell}</td>`+
         `<td data-label="תפקיד">${roleCell}</td>`+
         `<td class="lead-date" data-label="כניסה אחרונה">${u.lastSeen ? fmtDate(u.lastSeen) : '—'}</td>`+
         `<td class="actions-cell"><div class="row-actions">`+
@@ -158,6 +163,7 @@ async function boot() {
     }));
     body.querySelectorAll('[data-role-uid]').forEach((s) => s.addEventListener('change', () => fs.updateDoc(fs.doc(db, 'crm_users', s.dataset.roleUid), { role: s.value })));
     body.querySelectorAll('[data-name-uid]').forEach((inp) => inp.addEventListener('change', () => fs.updateDoc(fs.doc(db, 'crm_users', inp.dataset.nameUid), { name: inp.value.trim() })));
+    body.querySelectorAll('[data-phone-uid]').forEach((inp) => inp.addEventListener('change', () => fs.updateDoc(fs.doc(db, 'crm_users', inp.dataset.phoneUid), { phone: inp.value.trim() }).catch((e) => alert('שגיאה בשמירת הטלפון: ' + e.message))));
     body.querySelectorAll('[data-del-user]').forEach((b) => b.addEventListener('click', () => {
       if (confirm('להסיר את המשתמש מהרשימה?\n(לחסימת התחברות מלאה — יש למחוק אותו גם ב-Firebase Console → Authentication)')) fs.deleteDoc(fs.doc(db, 'crm_users', b.dataset.delUser));
     }));
