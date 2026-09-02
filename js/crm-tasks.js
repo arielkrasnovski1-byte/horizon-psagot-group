@@ -311,7 +311,7 @@ export function initTasks(ctx) {
   function renderBell() {
     const items = bellItems(), unread = items.filter((i) => i.ts > bellSeen).length;
     const c = $('bell-count'); c.textContent = unread; c.hidden = !unread;
-    document.title = (unread ? `(${unread}) ` : '') + 'ניהול — הורייזון פסגות גרופ';
+    document.title = (unread ? `(${unread}) ` : '') + 'Desk — הורייזון פסגות גרופ';
     const p = $('bell-panel');
     p.innerHTML = `<div class="bell-head">התראות</div>` + (items.length ? items.map((i) => `<div class="bell-item ${i.cls}${i.ts > bellSeen ? ' unread' : ''}" data-task="${i.t.id}"><span>${esc(i.text)}</span><small>${fmtDate(new Date(i.ts))}</small></div>`).join('') : '<div class="bell-empty">אין התראות חדשות.</div>');
     p.querySelectorAll('[data-task]').forEach((r) => r.addEventListener('click', () => { $('bell-panel').hidden = true; openTask(allTasks.find((t) => t.id === r.dataset.task)); }));
@@ -319,7 +319,7 @@ export function initTasks(ctx) {
   $('bell-btn').addEventListener('click', (e) => {
     e.stopPropagation();
     const p = $('bell-panel'); p.hidden = !p.hidden;
-    if (!p.hidden) { bellSeen = Date.now(); try { localStorage.setItem(bellKey(), String(bellSeen)); } catch (x) {} $('bell-count').hidden = true; document.title = 'ניהול — הורייזון פסגות גרופ'; }
+    if (!p.hidden) { bellSeen = Date.now(); try { localStorage.setItem(bellKey(), String(bellSeen)); } catch (x) {} $('bell-count').hidden = true; document.title = 'Desk — הורייזון פסגות גרופ'; }
   });
   document.addEventListener('click', (e) => { if (!e.target.closest('#bell-panel') && !e.target.closest('#bell-btn')) $('bell-panel').hidden = true; });
 
