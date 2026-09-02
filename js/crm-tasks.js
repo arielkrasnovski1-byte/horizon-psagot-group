@@ -528,6 +528,10 @@ export function initTasks(ctx) {
       const items = c.items || [];
       const rejected = items.filter((i) => i.status === 'rejected');
       rejected.forEach((i) => mk('auto_rej_' + c.id + '_' + String(i.key).replace(/[^\w-]/g, ''), base(uid, 'לעדכן את הלקוח: מסמך נדחה — ' + (i.label || ''), `בתיק של ${c.clientName || ''} נדחה המסמך "${i.label || ''}"${i.rejectReason ? ' (' + i.rejectReason + ')' : ''}. יש לוודא שהלקוח יודע ומעלה מחדש.`, { type: 'case', id: c.id, name: c.clientName || '' }, 'normal', 'case_rejected')));
+      if (c.clientDoneAt) {
+        const stg = c.clientDoneStage === 2 ? '2' : '1';
+        mk('auto_done_' + c.id + '_s' + stg, base(uid, 'לבדוק תיק — הלקוח סיים להעלות: ' + (c.clientName || ''), 'הלקוח סימן בפורטל שסיים להעלות את כל המסמכים' + (stg === '2' ? ' (שלב 2)' : '') + '. יש לעבור על התיק ולאשר/לדחות.', { type: 'case', id: c.id, name: c.clientName || '' }, 'high', 'case_done'));
+      }
       const toReview = items.filter((i) => i.status === 'pending' && (i.files || []).length);
       const reviewOpen = allTasks.some((t) => t.auto === 'case_review' && OPEN(t) && t.link && t.link.id === c.id);
       if (toReview.length && !reviewOpen) {

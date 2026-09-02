@@ -539,6 +539,7 @@ async function boot() {
         '<div class="case-progress"><div class="case-progress-bar"><span style="width:' + p + '%"></span></div><em>' + p + '%</em></div>' +
         '<div class="case-card-sent' + (c.lastSentAt ? ' ok' : '') + '">' +
           (c.lastSentAt ? '✓ נשלח ללקוח ' + fmtDate(c.lastSentAt) : 'טרם נשלח ללקוח') + '</div>' +
+          (c.clientDoneAt && !isClosed(c) ? '<div class="client-done-flag">📤 הלקוח סיים להעלות (' + fmtDate(c.clientDoneAt) + ') — ממתין לבדיקה</div>' : '') +
         '</div>';
     }).join('');
     grid.querySelectorAll('.case-card').forEach((el) =>
@@ -606,6 +607,8 @@ async function boot() {
       (c.clientEmail ? ' · <span style="direction:ltr">' + esc(c.clientEmail) + '</span>' : '') +
       (c.isBusiness ? ' · בעל עסק' : '');
     $('cm-stage2-btn').textContent = c.stage2Open ? 'סגירת שלב 2' : 'פתיחת שלב 2 ללקוח';
+    $('cm-client-done').hidden = !(c.clientDoneAt && !isClosed(c));
+    if (c.clientDoneAt) $('cm-client-done').textContent = '📤 הלקוח סימן שסיים להעלות את המסמכים (' + fmtDate(c.clientDoneAt) + (c.clientDoneStage === 2 ? ' · שלב 2' : '') + ') — ממתין לבדיקה שלכם.';
     renderClosedState(c);
     renderSendBar(c);
     fillDocCatalog();
@@ -762,7 +765,11 @@ async function boot() {
   $('cm-stage2-btn').addEventListener('click', async () => {
     if (!currentCase) return;
     try {
-      await fs.updateDoc(fs.doc(db, 'cases', currentCase.id), { stage2Open: !currentCase.stage2Open });
+      const opening = !currentCase.stage2Open;
+      // פתיחת שלב 2 = נדרשים מסמכים חדשים → מאפסים את "הלקוח סיים"
+      const upd2 = opening ? { stage2Open: true, clientDoneAt: '', clientDoneStage: '' } : { stage2Open: false };
+      await fs.updateDoc(fs.doc(db, 'cases', currentCase.id), upd2);
+      if (opening) { currentCase.clientDoneAt = ''; currentCase.clientDoneStage = ''; $('cm-client-done').hidden = true; }
       currentCase.stage2Open = !currentCase.stage2Open;
       $('cm-stage2-btn').textContent = currentCase.stage2Open ? 'סגירת שלב 2' : 'פתיחת שלב 2 ללקוח';
       renderSendBar(currentCase);

@@ -532,3 +532,7 @@ tbody tr.lead-row:hover td { background: var(--color-cream-soft); }
 .auto-note.digest .icon-btn { width: 28px; height: 28px; margin-inline-start: 4px; }
 #notif-btn { padding: .55em 1em; font-size: var(--fs-sm); }
 #notif-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* "הלקוח סיים להעלות" */
+.client-done-flag, .cm-client-done { margin-top: 6px; font-size: var(--fs-xs); font-weight: 700; color: #23794A; background: rgba(46,158,91,.1); border: 1px solid rgba(46,158,91,.3); border-radius: var(--radius-md); padding: 5px 10px; }
+.cm-client-done { margin: 0 0 var(--space-sm); font-size: var(--fs-sm); }

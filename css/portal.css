@@ -113,3 +113,15 @@
 /* תיק סגור — הודעה ללקוח */
 .case-closed-note { margin: var(--space-md) 0; padding: .9rem 1rem; border-radius: var(--radius-sm); background: rgba(0,0,0,.04); border-inline-start: 3px solid var(--color-warm-gray, #8a8a8a); font-size: var(--fs-sm); line-height: 1.6; }
 .case-closed-note b { display: block; margin-bottom: .2rem; }
+
+/* החלפת קובץ */
+.file-row { display: inline-flex; align-items: center; gap: .35rem; max-width: 100%; }
+.file-swap { font-size: var(--fs-xs, .76rem); color: var(--color-warm-gray); border: 1px solid var(--color-border); border-radius: 999px; padding: .18rem .55rem; cursor: pointer; white-space: nowrap; transition: all .2s; }
+.file-swap:hover { color: var(--color-rose-gold-deep, #9C7B4C); border-color: var(--color-rose-gold); }
+
+/* "סיימתי להעלות" */
+.done-btn { margin-top: var(--space-md, 1rem); background: #2E9E5B; }
+.done-btn:hover { filter: brightness(1.06); }
+.done-sub { text-align: center; color: var(--color-warm-gray); font-size: var(--fs-xs, .8rem); margin: .5rem 0 0; }
+.done-note { margin-top: var(--space-md, 1rem); padding: .9rem 1rem; border-radius: var(--radius-md, 12px); background: rgba(46,158,91,.1); border: 1px solid rgba(46,158,91,.3); color: #23794A; font-size: var(--fs-sm, .9rem); line-height: 1.6; }
+.done-hint { margin-top: var(--space-md, 1rem); padding: .8rem 1rem; border-radius: var(--radius-md, 12px); background: var(--color-cream-soft, #F7F2E9); border: 1px solid var(--color-border); color: var(--color-warm-gray); font-size: var(--fs-sm, .88rem); text-align: center; }

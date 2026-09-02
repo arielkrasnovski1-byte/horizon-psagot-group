@@ -212,17 +212,82 @@ import { serviceLabel } from '/js/case-templates.js';
     if (c.stage2Open && s2.length) {
       html += '<section class="doc-group stage2"><h3>שלב נוסף — מסמכים משלימים</h3>' + s2.map((it) => itemRow(c, it)).join('') + '</section>';
     }
+    html += doneBox(c);
     html += '<p class="case-foot">כל המסמכים נשמרים באופן מאובטח ומוצפן. לשאלות — <a href="/contact/">צרו קשר</a>.</p>';
     $('case-detail').innerHTML = html;
 
-    // חיווט העלאות
+    // חיווט העלאות + החלפות + כפתור סיום
     $('case-detail').querySelectorAll('input[type=file]').forEach((inp) => {
       inp.addEventListener('change', () => {
-        const key = inp.dataset.key;
-        const idx = (c.items || []).findIndex((x) => x.key === key);
-        if (idx >= 0 && inp.files && inp.files.length) uploadFiles(c, idx, Array.from(inp.files));
+        if (!inp.files || !inp.files.length) return;
+        if (inp.dataset.swapKey !== undefined) {
+          const idx = (c.items || []).findIndex((x) => x.key === inp.dataset.swapKey);
+          if (idx >= 0) replaceFile(c, idx, +inp.dataset.swapFi, inp.files[0]);
+          return;
+        }
+        const idx = (c.items || []).findIndex((x) => x.key === inp.dataset.key);
+        if (idx >= 0) uploadFiles(c, idx, Array.from(inp.files));
       });
     });
+    const doneBtn = $('client-done-btn');
+    if (doneBtn) doneBtn.addEventListener('click', () => submitDone(c));
+  }
+
+  /* ---------- "סיימתי להעלות" ---------- */
+  const currentStage = (c) => (c.stage2Open ? 2 : 1);
+  function doneBox(c) {
+    if (c.status === 'closed') return '';
+    const items = visibleItems(c);
+    const missing = items.filter((it) => !(it.files && it.files.length)).length;
+    // כבר נשלח לבדיקה בשלב הנוכחי
+    if (c.clientDoneAt && (c.clientDoneStage || 1) === currentStage(c)) {
+      const d = new Date(c.clientDoneAt);
+      return '<div class="done-note">✓ <b>התיק נשלח לבדיקה</b> (' + d.toLocaleDateString('he-IL') + '). הצוות שלנו עובר על המסמכים ויחזור אליך. אפשר עדיין להוסיף או להחליף קבצים.</div>';
+    }
+    if (missing > 0) {
+      return '<div class="done-hint">נותרו עוד <b>' + missing + '</b> מסמכים להעלאה — כשתסיימו יופיע כאן כפתור השליחה לבדיקה.</div>';
+    }
+    return '<button class="portal-btn done-btn" id="client-done-btn" type="button">✓ סיימתי להעלות — שליחה לבדיקה</button>' +
+      '<p class="done-sub">כל המסמכים הועלו. לחיצה מעדכנת את הצוות שאפשר להתחיל בבדיקה.</p>';
+  }
+  async function submitDone(c) {
+    const btn = $('client-done-btn'); if (btn) { btn.disabled = true; btn.textContent = 'שולח…'; }
+    try {
+      await fsMod.updateDoc(fsMod.doc(db, 'cases', c.id), { clientDoneAt: new Date().toISOString(), clientDoneStage: currentStage(c) });
+      // onSnapshot יציג את אישור השליחה
+    } catch (e) {
+      if (btn) { btn.disabled = false; btn.textContent = '✓ סיימתי להעלות — שליחה לבדיקה'; }
+      alert('השליחה נכשלה. נסו שוב.');
+      if (window.console) console.warn('submitDone error', e);
+    }
+  }
+
+  /* ---------- החלפת קובץ קיים ---------- */
+  async function replaceFile(c, idx, fi, file) {
+    if (c.status === 'closed') { alert('התיק סגור — לא ניתן לשנות מסמכים.'); return; }
+    const item = c.items[idx];
+    const oldFile = (item.files || [])[fi];
+    if (!oldFile) return;
+    const prog = $('case-detail').querySelector('[data-prog="' + cssEsc(item.key) + '"]');
+    if (prog) { prog.hidden = false; prog.classList.remove('err'); prog.textContent = 'מחליף את ' + oldFile.name + '…'; }
+    try {
+      if (file.size > 20 * 1024 * 1024) throw new Error('הקובץ ' + file.name + ' גדול מ-20MB.');
+      const safe = file.name.replace(/[^\w.\-\u0590-\u05FF ]/g, '_');
+      const path = 'client-cases/' + c.id + '/' + item.key + '/' + Date.now() + '-' + safe;
+      const sref = stMod.ref(storage, path);
+      await stMod.uploadBytes(sref, file, { contentType: file.type });
+      const url = await stMod.getDownloadURL(sref);
+      const files = (item.files || []).slice();
+      files[fi] = { name: file.name, path, url, size: file.size, at: new Date().toISOString() };
+      const items = (c.items || []).slice();
+      items[idx] = { ...item, status: 'received', rejectReason: '', files };
+      await fsMod.updateDoc(fsMod.doc(db, 'cases', c.id), { items });
+      // מחיקת הקובץ הישן מהאחסון — לא קריטי אם נכשל
+      if (oldFile.path) { try { await stMod.deleteObject(stMod.ref(storage, oldFile.path)); } catch (e) {} }
+    } catch (e) {
+      if (prog) { prog.hidden = false; prog.textContent = (e && e.message) ? e.message : 'ההחלפה נכשלה. נסו שוב.'; prog.classList.add('err'); }
+      if (window.console) console.warn('replace error', e);
+    }
   }
 
   function statusPill(st) {
@@ -232,8 +297,11 @@ import { serviceLabel } from '/js/case-templates.js';
   }
 
   function itemRow(c, it) {
-    const files = (it.files || []).map((f) =>
-      '<a class="file-chip" href="' + esc(f.url) + '" target="_blank" rel="noopener">📄 ' + esc(f.name) + '</a>').join('');
+    const closed = c.status === 'closed';
+    const files = (it.files || []).map((f, fi) =>
+      '<span class="file-row"><a class="file-chip" href="' + esc(f.url) + '" target="_blank" rel="noopener">📄 ' + esc(f.name) + '</a>' +
+      (closed ? '' : '<label class="file-swap" title="החלפת הקובץ בקובץ אחר">↻ החלפה<input type="file" accept="image/*,application/pdf" data-swap-key="' + esc(it.key) + '" data-swap-fi="' + fi + '" hidden></label>') +
+      '</span>').join('');
     const reject = it.status === 'rejected' && it.rejectReason
       ? '<div class="reject-reason">סיבת הדחייה: ' + esc(it.rejectReason) + ' — נא להעלות מחדש.</div>' : '';
     return '<div class="doc-item ' + esc(it.status) + '">' +
