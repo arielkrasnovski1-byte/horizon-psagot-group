@@ -2,7 +2,7 @@
    analytics.js — Google Analytics 4 (G-49Y3FBJ101)
    ------------------------------------------------------------
    נטען בעמודי האתר הציבוריים בלבד. הממשקים הפנימיים
-   (/crm, /portal, /admin) אינם נמדדים — אין ערך במדידת הצוות
+   (/desk, /crm, /portal, /admin) אינם נמדדים — אין ערך במדידת הצוות
    והלקוחות המחוברים, ואין סיבה לשלוח את הניווט שלהם לגוגל.
    מלבד צפיות בעמודים נמדדים אירועי יצירת קשר: וואטסאפ,
    טלפון, מייל ושליחת טופס (generate_lead, מתוך form.js).
@@ -10,7 +10,7 @@
 (function () {
   var ID = 'G-49Y3FBJ101';       // Google Analytics 4
   var ADS = 'AW-18392878388';    // Google Ads — אותו gtag.js משרת את שניהם
-  if (/^\/(crm|portal|admin)(\/|$)/.test(location.pathname)) return;
+  if (/^\/(crm|desk|portal|admin)(\/|$)/.test(location.pathname)) return;
 
   window.dataLayer = window.dataLayer || [];
   function gtag() { window.dataLayer.push(arguments); }

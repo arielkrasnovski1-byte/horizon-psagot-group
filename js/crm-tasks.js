@@ -364,7 +364,7 @@ export function initTasks(ctx) {
     if (late.length) msg += '\nבאיחור:\n' + late.map(line).join('\n') + '\n';
     if (today.length) msg += '\nלהיום:\n' + today.map(line).join('\n') + '\n';
     if (!late.length && !today.length && rest.length) msg += '\nמשימות פתוחות:\n' + rest.slice(0, 5).map(line).join('\n') + '\n';
-    msg += '\nהכל מחכה לך במערכת: ' + location.origin + '/crm/';
+    msg += '\nהכל מחכה לך במערכת: ' + location.origin + '/desk/';
     return msg;
   }
   function reminderMsgForTask(t) {
@@ -373,7 +373,7 @@ export function initTasks(ctx) {
       (t.priority === 'urgent' ? '\n• דחוף!' : t.priority === 'high' ? '\n• עדיפות גבוהה' : '') +
       (t.link ? '\n• לקוח: ' + t.link.name : '') +
       (t.desc ? '\n\n' + t.desc : '') +
-      '\n\nהמשימה במערכת: ' + location.origin + '/crm/';
+      '\n\nהמשימה במערכת: ' + location.origin + '/desk/';
   }
   async function sendReminder(uid, msg, task) {
     const phone = phoneOfUid(uid);
