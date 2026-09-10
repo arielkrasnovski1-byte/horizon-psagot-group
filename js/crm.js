@@ -921,8 +921,7 @@ async function boot() {
       for (const file of files) {
         if (file.size > 20 * 1024 * 1024) throw new Error('הקובץ ' + file.name + ' גדול מ-20MB.');
         if (!/^(image\/|application\/pdf$)/.test(file.type)) throw new Error('הקובץ ' + file.name + ' אינו PDF או תמונה.');
-        const safe = file.name.replace(/[^\w.\-\u0590-\u05FF ]/g, '_');
-        const path = 'client-cases/' + c.id + '/' + item.key + '/' + Date.now() + '-' + safe;
+        const path = storagePath(c, item, file.name);
         const sref = st.ref(storage, path);
         await st.uploadBytes(sref, file, { contentType: file.type });
         const url = await st.getDownloadURL(sref);

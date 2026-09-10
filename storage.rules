@@ -35,6 +35,17 @@ service firebase.storage {
         && (isStaff() || ((phoneMatch(caseId) || emailMatch(caseId)) && caseOpen(caseId)));
     }
 
+    // מבנה חדש (2026-09-10): clients/{שם לקוח}/{caseId}/{שם מסמך}/{קובץ}
+    // שם הלקוח הוא רק תיקייה קריאה — ההרשאה נאכפת לפי caseId בדיוק כמו קודם.
+    match /clients/{clientName}/{caseId}/{allPaths=**} {
+      allow read: if canAccess(caseId);
+      allow delete: if canWrite(caseId);
+      allow write: if canWrite(caseId)
+                   && request.resource.size < 20 * 1024 * 1024
+                   && request.resource.contentType.matches('(image/.*|application/pdf)');
+    }
+
+    // מבנה ישן — קבצים שהועלו לפני 2026-09-10 נשארים כאן וממשיכים לעבוד
     match /client-cases/{caseId}/{allPaths=**} {
       allow read: if canAccess(caseId);
       allow delete: if canWrite(caseId);

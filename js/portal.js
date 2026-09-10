@@ -4,7 +4,7 @@
    טוען את התיק/ים של הלקוח, מציג צ'ק-ליסט, ומאפשר העלאת קבצים ל-Firebase Storage.
    ============================================================ */
 import { firebaseConfig, isConfigured } from '/js/firebase-config.js';
-import { serviceLabel } from '/js/case-templates.js';
+import { serviceLabel, storagePath } from '/js/case-templates.js';
 
 (async function () {
   'use strict';
@@ -272,8 +272,7 @@ import { serviceLabel } from '/js/case-templates.js';
     if (prog) { prog.hidden = false; prog.classList.remove('err'); prog.textContent = 'מחליף את ' + oldFile.name + '…'; }
     try {
       if (file.size > 20 * 1024 * 1024) throw new Error('הקובץ ' + file.name + ' גדול מ-20MB.');
-      const safe = file.name.replace(/[^\w.\-\u0590-\u05FF ]/g, '_');
-      const path = 'client-cases/' + c.id + '/' + item.key + '/' + Date.now() + '-' + safe;
+      const path = storagePath(c, item, file.name);
       const sref = stMod.ref(storage, path);
       await stMod.uploadBytes(sref, file, { contentType: file.type });
       const url = await stMod.getDownloadURL(sref);
@@ -326,8 +325,7 @@ import { serviceLabel } from '/js/case-templates.js';
       const uploaded = [];
       for (const file of files) {
         if (file.size > 20 * 1024 * 1024) throw new Error('הקובץ ' + file.name + ' גדול מ-20MB.');
-        const safe = file.name.replace(/[^\w.\-\u0590-\u05FF ]/g, '_');
-        const path = 'client-cases/' + c.id + '/' + item.key + '/' + Date.now() + '-' + safe;
+        const path = storagePath(c, item, file.name);
         const sref = stMod.ref(storage, path);
         await stMod.uploadBytes(sref, file, { contentType: file.type });
         const url = await stMod.getDownloadURL(sref);
