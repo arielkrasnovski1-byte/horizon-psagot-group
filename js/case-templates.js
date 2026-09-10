@@ -201,3 +201,16 @@ export function docCatalog() {
   });
   return groups;
 }
+
+/* ---------- נתיב Storage לפי שם לקוח ----------
+   clients/{שם הלקוח}/{caseId}/{שם המסמך}/{זמן}-{שם הקובץ}
+   שם הלקוח = תיקייה קריאה בקונסולת Firebase; caseId = המקטע שלפיו נאכפות ההרשאות (storage.rules). */
+export function safeSeg(s, max) {
+  return String(s || '').replace(/[\/\\#?\[\]*:"<>|%\x00-\x1f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max || 60);
+}
+export function storagePath(c, item, fileName) {
+  const client = safeSeg(c.clientName) || 'ללא שם';
+  const doc = safeSeg(item.label) || String(item.key || 'doc');
+  const file = safeSeg(fileName, 100) || 'file';
+  return 'clients/' + client + '/' + c.id + '/' + doc + '/' + Date.now() + '-' + file;
+}

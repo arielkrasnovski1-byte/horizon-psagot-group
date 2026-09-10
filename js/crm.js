@@ -4,7 +4,7 @@
    ייצוא, פולו-אפ) · עסקאות · מאמרים (בגל הבא)
    ============================================================ */
 import { firebaseConfig, isConfigured } from '/js/firebase-config.js';
-import { SERVICE_TYPES, buildItems, serviceLabel, docCatalog } from '/js/case-templates.js';
+import { SERVICE_TYPES, buildItems, serviceLabel, docCatalog, storagePath, safeSeg } from '/js/case-templates.js';
 import { initTasks } from '/js/crm-tasks.js';
 
 const $ = (id) => document.getElementById(id);
@@ -472,9 +472,10 @@ async function boot() {
   function renderSentNote(c) {
     const n = $('cm-sent'); if (!n) return;
     const via = c.lastSentVia === 'email' ? 'במייל' : c.lastSentVia === 'whatsapp' ? 'בוואטסאפ' : '';
-    n.textContent = c.lastSentAt
+    n.textContent = (c.lastSentAt
       ? ('נשלח ' + via + ' ' + fmtDate(c.lastSentAt) + (c.lastSentBy ? ' · ' + displayName(c.lastSentBy) : ''))
-      : 'טרם נשלח ללקוח';
+      : 'טרם נשלח ללקוח') +
+      (c.lastReminderAt ? ' · תזכורת ' + (c.reminderCount > 1 ? '(' + c.reminderCount + ') ' : '') + fmtDate(c.lastReminderAt) : '');
     n.className = 'cm-sent' + (c.lastSentAt ? ' ok' : '');
   }
   function renderSendBar(c) {
@@ -497,6 +498,93 @@ async function boot() {
       } catch (e) { window.prompt('העתיקו את ההודעה:', caseMessage(c)); }
     };
     renderSentNote(c);
+    const rm = $('cm-remind');
+    rm.disabled = isClosed(c) || !(c.clientPhone || c.clientEmail);
+    rm.onclick = () => sendReminder(c);
+    $('cm-zip').onclick = () => downloadAllFiles(c);
+  }
+  /* ---- תזכורת ללקוח על מסמכים חסרים (וואטסאפ אם יש טלפון, אחרת מייל) ---- */
+  function reminderMessage(c) {
+    const missing = caseMissingItems(c);
+    return 'שלום ' + (c.clientName || '') + ',\n' +
+      'תזכורת קטנה מהורייזון פסגות גרופ 🙂\n' +
+      'כדי שנוכל להתקדם בתיק שלך, עדיין חסרים לנו המסמכים הבאים:\n' +
+      missing.map((it) => '\u2022 ' + it.label).join('\n') + '\n\n' +
+      'להעלאה מהנייד, בקישור המאובטח:\n' + PORTAL_URL + '\n' +
+      'הכניסה בקוד חד-פעמי (SMS או מייל) — ללא סיסמה.\n\n' +
+      'נשמח לקבל אותם בהקדם. תודה!\nהורייזון פסגות גרופ';
+  }
+  async function sendReminder(c) {
+    const missing = caseMissingItems(c);
+    if (!missing.length) { alert('לא חסרים מסמכים בתיק — אין על מה להזכיר.'); return; }
+    const msg = reminderMessage(c);
+    let via;
+    if (c.clientPhone && (!c.clientEmail || confirm('לשלוח את התזכורת בוואטסאפ?\n(ביטול = שליחה במייל)'))) {
+      via = 'whatsapp';
+      window.open('https://wa.me/' + phoneIntl(c.clientPhone) + '?text=' + encodeURIComponent(msg), '_blank', 'noopener');
+    } else if (c.clientEmail) {
+      via = 'email';
+      window.location.href = 'mailto:' + c.clientEmail + '?subject=' + encodeURIComponent('תזכורת — מסמכים חסרים בתיק | הורייזון פסגות גרופ') + '&body=' + encodeURIComponent(msg);
+    } else return;
+    const at = nowISO();
+    const upd = { lastReminderAt: at, lastReminderBy: currentEmail, lastReminderVia: via, reminderCount: fs.increment(1) };
+    try { await fs.updateDoc(fs.doc(db, 'cases', c.id), upd); } catch (e) { console.warn(e); }
+    Object.assign(c, { lastReminderAt: at, lastReminderBy: currentEmail, lastReminderVia: via, reminderCount: (c.reminderCount || 0) + 1 });
+    renderSentNote(c);
+  }
+  /* ---- הורדת כל מסמכי התיק כ-ZIP (JSZip מ-CDN, נטען רק בלחיצה) ----
+     דורש הגדרת CORS חד-פעמית על ה-bucket (ראו cors.json + README-STORAGE-CORS.md) */
+  let jszipP = null;
+  function loadJSZip() {
+    if (window.JSZip) return Promise.resolve(window.JSZip);
+    if (!jszipP) jszipP = new Promise((res, rej) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+      s.onload = () => res(window.JSZip); s.onerror = () => { jszipP = null; rej(new Error('טעינת ספריית ה-ZIP נכשלה')); };
+      document.head.appendChild(s);
+    });
+    return jszipP;
+  }
+  async function downloadAllFiles(c) {
+    const all = [];
+    (c.items || []).forEach((it) => (it.files || []).forEach((f) => { if (f.url) all.push({ it, f }); }));
+    if (!all.length) { alert('אין עדיין קבצים בתיק.'); return; }
+    const btn = $('cm-zip'), orig = btn.textContent;
+    btn.disabled = true;
+    const say = (t) => { btn.textContent = t; };
+    try {
+      say('מכין ZIP…');
+      const JSZip = await loadJSZip();
+      const zip = new JSZip();
+      const root = zip.folder(safeSeg(c.clientName) || 'תיק');
+      const used = new Set();
+      let n = 0;
+      for (const { it, f } of all) {
+        n++; say('מוריד ' + n + '/' + all.length + '…');
+        const r = await fetch(f.url);
+        if (!r.ok) throw new Error('HTTP ' + r.status + ' עבור ' + f.name);
+        const blob = await r.blob();
+        const folder = safeSeg(it.label) || 'מסמך';
+        let name = safeSeg(f.name, 100) || 'file', k = folder + '/' + name, i = 2;
+        while (used.has(k)) { const m = name.match(/^(.*?)(\.[^.]+)?$/); k = folder + '/' + m[1] + ' (' + i++ + ')' + (m[2] || ''); }
+        used.add(k);
+        root.file(k, blob, { date: f.at ? new Date(f.at) : new Date() });
+      }
+      say('אורז…');
+      const out = await zip.generateAsync({ type: 'blob' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(out);
+      a.download = (safeSeg(c.clientName) || 'תיק') + ' — מסמכים.zip';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+    } catch (e) {
+      console.warn('zip', e);
+      const cors = e instanceof TypeError;   // fetch שנכשל בלי תשובה = חסימת CORS
+      alert(cors
+        ? 'ההורדה המרוכזת נחסמה על-ידי הדפדפן: ה-bucket עדיין לא מוגדר ל-CORS.\nזו הגדרה חד-פעמית (הוראות בקובץ README-STORAGE-CORS.md בפרויקט).\nבינתיים אפשר להוריד כל קובץ בנפרד בלחיצה עליו.'
+        : 'ההורדה נכשלה: ' + (e.message || e));
+    }
+    btn.disabled = false; btn.textContent = orig;
   }
 
   function listenCases() {
@@ -804,6 +892,7 @@ async function boot() {
     $('cm-add-stage').disabled = closed;
     $('cm-send-wa').disabled = closed || !c.clientPhone;
     $('cm-send-mail').disabled = closed || !c.clientEmail;
+    $('cm-remind').disabled = closed || !(c.clientPhone || c.clientEmail);
     $('cm-stage2-btn').disabled = closed;
   }
   $('cm-close-btn').addEventListener('click', async () => {
