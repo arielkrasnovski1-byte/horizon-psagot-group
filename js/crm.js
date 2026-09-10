@@ -608,13 +608,90 @@ async function boot() {
   const isClosed = (c) => c.status === 'closed';
   let casesFilter = 'active';   // active | closed | all
   let casesTypeF = '', casesQ = '';   // סינון לפי תחום + חיפוש חופשי
+  /* תצוגה + מיון — נשמרים בדפדפן (localStorage) */
+  const CASE_SORTS = [
+    ['newest', 'חדשים קודם'], ['oldest', 'ישנים קודם'], ['name', 'שם א-ב'],
+    ['attention', 'דורשים טיפול קודם'], ['progress_low', 'התקדמות: נמוכה → גבוהה'], ['progress_high', 'התקדמות: גבוהה → נמוכה'],
+    ['activity', 'פעילות אחרונה'],
+  ];
+  const CASE_VIEWS = [['cards', '▦ כרטיסים'], ['table', '☰ טבלה'], ['groups', '⊞ לפי תחום']];
+  const pref = (k, def, allowed) => { try { const v = localStorage.getItem(k); return allowed.includes(v) ? v : def; } catch (e) { return def; } };
+  let casesSort = pref('hp_cases_sort', 'newest', CASE_SORTS.map((x) => x[0]));
+  let casesView = pref('hp_cases_view', 'cards', CASE_VIEWS.map((x) => x[0]));
+  const savePref = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+  const T = (ts) => toDateObj(ts)?.getTime() || 0;
+  // "דורש טיפול": הלקוח סיים > מסמכים ממתינים לבדיקה > טרם נשלח ללקוח > השאר
+  function caseAttention(c) {
+    if (isClosed(c)) return 0;
+    if (c.clientDoneAt) return 4;
+    if ((c.items || []).some((it) => it.status === 'pending' && (it.files || []).length)) return 3;
+    if (!c.lastSentAt) return 2;
+    return 1;
+  }
+  function caseActivity(c) {
+    let t = Math.max(T(c.createdAt), T(c.lastSentAt), T(c.lastReminderAt), T(c.clientDoneAt), T(c.lawyerSentAt), T(c.closedAt));
+    (c.items || []).forEach((it) => (it.files || []).forEach((f) => { t = Math.max(t, T(f.at)); }));
+    return t;
+  }
+  function sortCases(rows) {
+    const r = rows.slice();
+    const byName = (a, b) => String(a.clientName || '').localeCompare(String(b.clientName || ''), 'he');
+    switch (casesSort) {
+      case 'oldest': return r.sort((a, b) => T(a.createdAt) - T(b.createdAt));
+      case 'name': return r.sort(byName);
+      case 'attention': return r.sort((a, b) => caseAttention(b) - caseAttention(a) || caseActivity(b) - caseActivity(a));
+      case 'progress_low': return r.sort((a, b) => casePct(a) - casePct(b) || byName(a, b));
+      case 'progress_high': return r.sort((a, b) => casePct(b) - casePct(a) || byName(a, b));
+      case 'activity': return r.sort((a, b) => caseActivity(b) - caseActivity(a));
+      default: return r.sort((a, b) => T(b.createdAt) - T(a.createdAt));
+    }
+  }
   function filteredCases() {
     let rows = allCases;
     if (casesFilter === 'closed') rows = rows.filter(isClosed);
     else if (casesFilter !== 'all') rows = rows.filter((c) => !isClosed(c));
     if (casesTypeF) rows = rows.filter((c) => c.serviceType === casesTypeF);
     if (casesQ) rows = rows.filter((c) => [c.clientName, c.clientPhone, c.clientEmail, serviceLabel(c.serviceType)].filter(Boolean).join(' ').toLowerCase().includes(casesQ));
-    return rows;
+    return sortCases(rows);
+  }
+  function caseCardHTML(c) {
+    const p = casePct(c);
+    const contact = esc(c.clientPhone || c.clientEmail || '');
+    return '<div class="case-card' + (isClosed(c) ? ' closed' : '') + '" data-case="' + c.id + '">' +
+      '<div class="case-card-head"><b>' + esc(c.clientName || '—') + '</b>' +
+      (isClosed(c) ? '<span class="src-badge case-badge-closed">סגור</span>'
+        : c.stage2Open ? '<span class="src-badge src-manual">שלב 2</span>' : '') + '</div>' +
+      '<div class="case-card-svc">' + esc(serviceLabel(c.serviceType)) + '</div>' +
+      '<div class="case-card-contact" style="direction:ltr;text-align:right">' + contact + '</div>' +
+      '<div class="case-progress"><div class="case-progress-bar"><span style="width:' + p + '%"></span></div><em>' + p + '%</em></div>' +
+      '<div class="case-card-sent' + (c.lastSentAt ? ' ok' : '') + '">' +
+        (c.lastSentAt ? '✓ נשלח ללקוח ' + fmtDate(c.lastSentAt) : 'טרם נשלח ללקוח') + '</div>' +
+        (c.clientDoneAt && !isClosed(c) ? '<div class="client-done-flag">📤 הלקוח סיים להעלות (' + fmtDate(c.clientDoneAt) + ') — ממתין לבדיקה</div>' : '') +
+      '</div>';
+  }
+  function caseStatusText(c) {
+    if (isClosed(c)) return '<span class="src-badge case-badge-closed">סגור</span>';
+    const a = caseAttention(c);
+    return a === 4 ? '<span class="case-st st-done">📤 לבדיקה</span>'
+      : a === 3 ? '<span class="case-st st-review">ממתין לבדיקה</span>'
+      : a === 2 ? '<span class="case-st st-unsent">טרם נשלח</span>'
+      : c.stage2Open ? '<span class="src-badge src-manual">שלב 2</span>' : '<span class="case-st st-ok">בתהליך</span>';
+  }
+  function caseTableHTML(list) {
+    return '<div class="leads-table-wrap cases-table-wrap"><table class="leads cases-table"><thead><tr>' +
+      '<th>לקוח</th><th>תחום</th><th>יצירת קשר</th><th>התקדמות</th><th>סטטוס</th><th>נשלח</th><th>פעילות אחרונה</th><th>נפתח</th></tr></thead><tbody>' +
+      list.map((c) => {
+        const p = casePct(c), act = caseActivity(c);
+        return '<tr class="case-row' + (isClosed(c) ? ' closed' : '') + '" data-case="' + c.id + '">' +
+          '<td><b>' + esc(c.clientName || '—') + '</b></td>' +
+          '<td>' + esc(serviceLabel(c.serviceType)) + '</td>' +
+          '<td style="direction:ltr;text-align:right">' + esc(c.clientPhone || c.clientEmail || '') + '</td>' +
+          '<td><div class="case-progress"><div class="case-progress-bar"><span style="width:' + p + '%"></span></div><em>' + p + '%</em></div></td>' +
+          '<td>' + caseStatusText(c) + '</td>' +
+          '<td>' + (c.lastSentAt ? '✓ ' + fmtDate(c.lastSentAt) : '—') + (c.lastReminderAt ? '<br><small>תזכורת ' + fmtDate(c.lastReminderAt) + '</small>' : '') + '</td>' +
+          '<td>' + (act ? fmtDate(act) : '—') + '</td>' +
+          '<td>' + (c.createdAt ? fmtDate(c.createdAt) : '—') + '</td></tr>';
+      }).join('') + '</tbody></table></div>';
   }
   function renderCases() {
     const grid = $('cases-grid');
@@ -628,8 +705,12 @@ async function boot() {
       ].map(([k, l, n]) => '<button type="button" class="cases-fbtn' + (casesFilter === k ? ' on' : '') + '" data-cf="' + k + '">' + l + ' (' + n + ')</button>').join('') +
         '<select class="user-filter" id="cases-type-f"><option value="">כל התחומים</option>' +
         SERVICE_TYPES.map((t) => '<option value="' + t.key + '"' + (casesTypeF === t.key ? ' selected' : '') + '>' + esc(t.label) + '</option>').join('') + '</select>' +
-        '<input type="search" class="lead-search cases-search" id="cases-q" placeholder="חיפוש שם / טלפון…" value="' + esc(casesQ) + '">';
+        '<input type="search" class="lead-search cases-search" id="cases-q" placeholder="חיפוש שם / טלפון…" value="' + esc(casesQ) + '">' +
+        '<select class="user-filter" id="cases-sort" title="מיון">' + CASE_SORTS.map(([k, l]) => '<option value="' + k + '"' + (casesSort === k ? ' selected' : '') + '>' + l + '</option>').join('') + '</select>' +
+        '<div class="cases-viewsw" role="group" aria-label="תצוגה">' + CASE_VIEWS.map(([k, l]) => '<button type="button" class="cases-fbtn' + (casesView === k ? ' on' : '') + '" data-cv="' + k + '" title="' + l.slice(2) + '">' + l + '</button>').join('') + '</div>';
       fbar.querySelectorAll('[data-cf]').forEach((b) => b.onclick = () => { casesFilter = b.dataset.cf; renderCases(); });
+      fbar.querySelectorAll('[data-cv]').forEach((b) => b.onclick = () => { casesView = b.dataset.cv; savePref('hp_cases_view', casesView); renderCases(); });
+      fbar.querySelector('#cases-sort').addEventListener('change', (e) => { casesSort = e.target.value; savePref('hp_cases_sort', casesSort); renderCases(); });
       fbar.querySelector('#cases-type-f').addEventListener('change', (e) => { casesTypeF = e.target.value; renderCases(); });
       const qEl = fbar.querySelector('#cases-q');
       qEl.addEventListener('input', (e) => { casesQ = e.target.value.trim().toLowerCase(); renderCases(); const el = $('cases-q'); el.focus(); el.setSelectionRange(el.value.length, el.value.length); });
@@ -637,22 +718,17 @@ async function boot() {
     const list = filteredCases();
     if (!allCases.length) { grid.innerHTML = '<div class="empty-state"><p>אין תיקים עדיין. פתחו תיק חדש כדי לשלוח ללקוח קישור להעלאת מסמכים.</p></div>'; return; }
     if (!list.length) { grid.innerHTML = '<div class="empty-state"><p>אין תיקים בקטגוריה הזו.</p></div>'; return; }
-    grid.innerHTML = list.map((c) => {
-      const p = casePct(c);
-      const contact = esc(c.clientPhone || c.clientEmail || '');
-      return '<div class="case-card' + (isClosed(c) ? ' closed' : '') + '" data-case="' + c.id + '">' +
-        '<div class="case-card-head"><b>' + esc(c.clientName || '—') + '</b>' +
-        (isClosed(c) ? '<span class="src-badge case-badge-closed">סגור</span>'
-          : c.stage2Open ? '<span class="src-badge src-manual">שלב 2</span>' : '') + '</div>' +
-        '<div class="case-card-svc">' + esc(serviceLabel(c.serviceType)) + '</div>' +
-        '<div class="case-card-contact" style="direction:ltr;text-align:right">' + contact + '</div>' +
-        '<div class="case-progress"><div class="case-progress-bar"><span style="width:' + p + '%"></span></div><em>' + p + '%</em></div>' +
-        '<div class="case-card-sent' + (c.lastSentAt ? ' ok' : '') + '">' +
-          (c.lastSentAt ? '✓ נשלח ללקוח ' + fmtDate(c.lastSentAt) : 'טרם נשלח ללקוח') + '</div>' +
-          (c.clientDoneAt && !isClosed(c) ? '<div class="client-done-flag">📤 הלקוח סיים להעלות (' + fmtDate(c.clientDoneAt) + ') — ממתין לבדיקה</div>' : '') +
-        '</div>';
-    }).join('');
-    grid.querySelectorAll('.case-card').forEach((el) =>
+    grid.className = casesView === 'cards' ? 'editor-grid' : 'cases-view-' + casesView;
+    if (casesView === 'table') grid.innerHTML = caseTableHTML(list);
+    else if (casesView === 'groups') {
+      // קבוצה לכל תחום, בסדר של SERVICE_TYPES; בתוך הקבוצה — לפי המיון שנבחר
+      const groups = SERVICE_TYPES.map((t) => ({ t, rows: list.filter((c) => c.serviceType === t.key) })).filter((g) => g.rows.length);
+      const other = list.filter((c) => !SERVICE_TYPES.some((t) => t.key === c.serviceType));
+      if (other.length) groups.push({ t: { key: '', label: 'אחר' }, rows: other });
+      grid.innerHTML = groups.map((g) =>
+        '<section class="cases-group"><h3>' + esc(g.t.label) + ' <span>' + g.rows.length + '</span></h3><div class="editor-grid">' + g.rows.map(caseCardHTML).join('') + '</div></section>').join('');
+    } else grid.innerHTML = list.map(caseCardHTML).join('');
+    grid.querySelectorAll('[data-case]').forEach((el) =>
       el.addEventListener('click', () => openCaseModal(allCases.find((x) => x.id === el.dataset.case))));
     if (pendingOpenCase) {
       const fresh = allCases.find((x) => x.id === pendingOpenCase);

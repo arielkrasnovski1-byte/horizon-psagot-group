@@ -577,3 +577,22 @@ tbody tr.lead-row:hover td { background: var(--color-cream-soft); }
 .cm-item-actions .cm-upload { color: var(--color-navy-deep); border-color: var(--color-rose-gold); }
 .cm-upload-prog { font-size: var(--fs-xs); color: var(--color-warm-gray); margin-top: .35rem; }
 .cm-upload-prog.err { color: #C0392B; }
+
+/* ---- תצוגות תיקים: מיון / כרטיסים / טבלה / לפי תחום ---- */
+.cases-viewsw { display: inline-flex; gap: 4px; margin-inline-start: auto; }
+#cases-sort { max-width: 220px; }
+.cases-view-table, .cases-view-groups { display: block; }
+.cases-table { min-width: 900px; }
+.cases-table .case-progress { min-width: 120px; margin: 0; }
+.case-row { cursor: pointer; }
+.case-row.closed td { opacity: .6; }
+.case-row td small { color: var(--color-warm-gray); font-size: var(--fs-xs); }
+.case-st { display: inline-block; font-size: var(--fs-xs); font-weight: 700; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+.case-st.st-done { color: #23794A; background: rgba(46,158,91,.12); }
+.case-st.st-review { color: #1F7A9E; background: rgba(31,122,158,.12); }
+.case-st.st-unsent { color: #8A6D3B; background: rgba(201,164,122,.18); }
+.case-st.st-ok { color: var(--color-charcoal-soft); background: rgba(0,0,0,.05); }
+.cases-group { margin-bottom: var(--space-lg); }
+.cases-group h3 { font-family: var(--font-heading); color: var(--color-navy-deep); font-size: var(--fs-lg); margin: 0 0 var(--space-sm); padding-bottom: .3rem; border-bottom: 2px solid var(--color-rose-gold); display: flex; align-items: center; gap: .5rem; }
+.cases-group h3 span { font-family: inherit; font-size: var(--fs-xs); font-weight: 700; background: var(--color-navy-deep); color: #fff; border-radius: 999px; padding: 2px 8px; }
+@media (max-width: 640px) { .cases-viewsw { margin-inline-start: 0; } .cases-view-table .leads-table-wrap { overflow-x: auto; background: var(--color-white); border: 1px solid var(--color-border); } }
