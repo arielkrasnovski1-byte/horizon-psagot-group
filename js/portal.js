@@ -3,8 +3,8 @@
    כניסה: SMS (Phone Auth) או מייל (Email-link). לאחר כניסה:
    טוען את התיק/ים של הלקוח, מציג צ'ק-ליסט, ומאפשר העלאת קבצים ל-Firebase Storage.
    ============================================================ */
-import { firebaseConfig, isConfigured } from '/js/firebase-config.js';
-import { serviceLabel, storagePath } from '/js/case-templates.js';
+import { firebaseConfig, isConfigured } from '/js/firebase-config.js?v=20260910b';
+import { serviceLabel, storagePath } from '/js/case-templates.js?v=20260910b';
 
 (async function () {
   'use strict';
