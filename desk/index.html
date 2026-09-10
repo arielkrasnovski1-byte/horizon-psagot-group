@@ -383,6 +383,8 @@
       </div>
       <div class="cm-closed-note" id="cm-closed-note" hidden></div>
       <div class="cm-client-done" id="cm-client-done" hidden></div>
+      <div class="cm-lawyer-note" id="cm-lawyer-note" hidden></div>
+      <input type="file" id="cm-file" multiple accept="image/*,application/pdf" hidden>
 
       <div id="cm-items"></div>
 
@@ -404,6 +406,40 @@
       <div class="modal-actions">
         <button class="btn-ghost" id="cm-delete" style="color:var(--color-error)">מחיקת תיק</button>
         <button class="btn-ghost" id="cm-cancel">סגירה</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== העברת מסמכים לעו״ד — בחירת מסמכים ===== -->
+  <div class="modal-overlay" id="lawyer-modal" hidden>
+    <div class="modal lead-card">
+      <div class="lead-card-head">
+        <div>
+          <h3>📎 העברת מסמכים לעו״ד</h3>
+          <div class="lc-sub" id="lw-sub"></div>
+        </div>
+        <button class="icon-btn" id="lw-close" title="סגירה">✕</button>
+      </div>
+      <div class="lw-pickbar">
+        <span class="cm-add-title" style="margin:0">אילו מסמכים להעביר?</span>
+        <button class="btn-ghost lw-mini" type="button" id="lw-all">בחירת הכל</button>
+        <button class="btn-ghost lw-mini" type="button" id="lw-none">ניקוי</button>
+        <span class="lw-count" id="lw-count"></span>
+      </div>
+      <div class="lw-items" id="lw-items"></div>
+      <label class="lw-check"><input type="checkbox" id="lw-missing" checked> לציין בהודעה גם מסמכים שטרם התקבלו מהלקוח</label>
+      <div class="field-row" style="margin-top:.7rem">
+        <div class="field"><label>אימייל עו״ד</label><input type="email" id="lw-email" placeholder="lawyer@example.com" dir="ltr"></div>
+        <div class="field"><label>טלפון עו״ד (וואטסאפ)</label><input type="tel" id="lw-phone" placeholder="05X-XXXXXXX" dir="ltr"></div>
+      </div>
+      <div class="field"><label>הערה לעו״ד (לא חובה)</label><textarea id="lw-note" rows="2" placeholder="למשל: נא לטפל בדחיפות, הדיון נקבע ל-15/10"></textarea></div>
+      <div class="field"><label>תצוגה מקדימה של ההודעה</label><textarea id="lw-preview" class="lw-preview" readonly rows="9"></textarea></div>
+      <div class="field-hint">המסמכים עוברים כקישורי הורדה מאובטחים בתוך ההודעה (לא כקבצים מצורפים). מי שמחזיק בקישור יכול להוריד את הקובץ — שלחו רק לעו״ד המטפל.</div>
+      <div class="modal-actions lw-actions">
+        <button class="crm-btn" style="width:auto" type="button" id="lw-wa">📲 שליחה בוואטסאפ</button>
+        <button class="btn-ghost" type="button" id="lw-mail">✉️ שליחה במייל</button>
+        <button class="btn-ghost" type="button" id="lw-copy">העתקת ההודעה</button>
+        <button class="btn-ghost" type="button" id="lw-cancel">סגירה</button>
       </div>
     </div>
   </div>

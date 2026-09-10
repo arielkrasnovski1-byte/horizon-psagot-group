@@ -508,13 +508,17 @@ tbody tr.lead-row:hover td { background: var(--color-cream-soft); }
 .bell-btn svg { width: 18px; height: 18px; }
 .bell-count { position: absolute; top: -4px; inset-inline-end: -4px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: var(--radius-full); background: #C0392B; color: #fff; font-size: 11px; font-weight: 700; display: grid; place-items: center; }
 .bell-count[hidden] { display: none; }
-.bell-panel { position: absolute; top: calc(100% + 8px); inset-inline-start: 0; width: min(380px, 92vw); max-height: 70vh; overflow-y: auto; background: var(--color-white); color: var(--color-charcoal); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); z-index: 900; text-align: start; }
+.bell-panel { position: absolute; top: calc(100% + 8px); inset-inline-end: 0; width: min(380px, 92vw); max-height: 70vh; overflow-y: auto; background: var(--color-white); color: var(--color-charcoal); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); z-index: 900; text-align: start; }
 .bell-panel[hidden] { display: none; }
 .bell-head { font-weight: 700; color: var(--color-navy-deep); padding: 10px 14px; border-bottom: 1px solid var(--color-border); font-size: var(--fs-sm); }
 .bell-item { padding: 9px 14px; border-bottom: 1px solid var(--color-border); cursor: pointer; font-size: var(--fs-sm); display: flex; flex-direction: column; gap: 2px; border-inline-start: 3px solid transparent; }
 .bell-item:hover { background: var(--color-cream-soft); }
 .bell-item.unread { background: rgba(201,164,122,.08); font-weight: 600; }
 .bell-item.late { border-inline-start-color: #C0392B; } .bell-item.assign { border-inline-start-color: #2E9E5B; } .bell-item.done { border-inline-start-color: var(--color-warm-gray); } .bell-item.comment { border-inline-start-color: #8E7CC3; }
+.bell-item.upload { border-inline-start-color: #1F7A9E; } .bell-item.cdone { border-inline-start-color: var(--color-rose-gold-deep); } .bell-item.lawyer { border-inline-start-color: #8E7CC3; }
+.bell-item .bell-kind { font-size: 10px; font-weight: 700; letter-spacing: .02em; color: var(--color-warm-gray); text-transform: uppercase; }
+.bell-item.upload .bell-kind { color: #1F7A9E; } .bell-item.cdone .bell-kind { color: var(--color-rose-gold-deep); } .bell-item.late .bell-kind { color: #C0392B; } .bell-item.assign .bell-kind { color: #2E9E5B; }
+@media (max-width: 640px) { .bell-panel { position: fixed; top: 60px; inset-inline: 4vw; width: auto; max-height: 75vh; } }
 .bell-item small { color: var(--color-warm-gray); font-size: var(--fs-xs); font-weight: 400; }
 .bell-empty { padding: 20px; color: var(--color-warm-gray); text-align: center; font-size: var(--fs-sm); }
 
@@ -545,3 +549,31 @@ tbody tr.lead-row:hover td { background: var(--color-cream-soft); }
 .cases-filter { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: var(--space-md); }
 .cases-search { max-width: 260px; height: 40px; }
 #cases-type-f { height: 40px; max-width: 240px; }
+
+/* ---- העברת מסמכים לעו״ד — בחירת מסמכים ---- */
+.lw-pickbar { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; margin-bottom: .5rem; }
+.lw-mini { padding: .25rem .7rem; font-size: var(--fs-xs); }
+.lw-count { font-size: var(--fs-xs); color: var(--color-warm-gray); margin-inline-start: auto; }
+.lw-items { max-height: 32vh; overflow-y: auto; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: .2rem .7rem; margin-bottom: .6rem; background: var(--color-white); }
+.lw-items h5 { font-size: var(--fs-xs); color: var(--color-warm-gray); margin: .55rem 0 .15rem; font-weight: 600; }
+.lw-item { display: flex; align-items: flex-start; gap: .55rem; padding: .45rem 0; border-bottom: 1px dashed var(--color-border); cursor: pointer; }
+.lw-item:last-child { border-bottom: 0; }
+.lw-item input { margin-top: .25rem; flex: 0 0 auto; }
+.lw-item > span { flex: 1 1 auto; min-width: 0; }
+.lw-item b { font-size: var(--fs-sm); color: var(--color-navy-deep); display: block; }
+.lw-item small { font-size: var(--fs-xs); color: var(--color-warm-gray); display: block; overflow: hidden; text-overflow: ellipsis; }
+.lw-item .pill { flex: 0 0 auto; }
+.lw-check { display: flex; align-items: center; gap: .45rem; font-size: var(--fs-sm); cursor: pointer; }
+.lw-preview { font-size: var(--fs-xs); font-family: inherit; white-space: pre-wrap; direction: rtl; line-height: 1.5; }
+.lw-actions { flex-wrap: wrap; }
+.cm-lawyer-note { margin: 0 0 var(--space-sm); font-size: var(--fs-sm); color: #5B4A8A; background: rgba(142,124,195,.1); border: 1px solid rgba(142,124,195,.35); border-radius: var(--radius-md); padding: 5px 10px; }
+
+/* ---- העלאת/מחיקת קבצים ע"י הצוות בכרטיס התיק ---- */
+.file-chip-wrap { display: inline-flex; align-items: center; gap: .1rem; max-width: 100%; }
+.file-chip.staff { border-style: dashed; }
+.file-del { border: 0; background: none; color: var(--color-warm-gray); cursor: pointer; font-size: 12px; padding: 0 .35rem; line-height: 1; }
+.file-del:hover { color: #C0392B; }
+.cm-item-actions { flex-wrap: wrap; }
+.cm-item-actions .cm-upload { color: var(--color-navy-deep); border-color: var(--color-rose-gold); }
+.cm-upload-prog { font-size: var(--fs-xs); color: var(--color-warm-gray); margin-top: .35rem; }
+.cm-upload-prog.err { color: #C0392B; }

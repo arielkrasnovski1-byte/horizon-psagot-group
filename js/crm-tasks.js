@@ -305,16 +305,43 @@ export function initTasks(ctx) {
         if (isOverdue(t)) items.push({ ts: new Date(t.dueDate + 'T' + (t.dueTime || '23:59')).getTime(), cls: 'late', text: `${nameOfUid(t.assignedUid)} באיחור: ${t.title}`, t });
       }
     });
+    // אירועי תיקים: העלאות של לקוחות, "סיימתי להעלות", העברה לעו״ד — לפותח התיק ולמנהלים
+    const myEmail = me().email;
+    (ctx.cases ? ctx.cases() : []).forEach((c) => {
+      if (c.status === 'closed') return;
+      if (!(isMgr() || c.createdBy === myEmail)) return;
+      const name = c.clientName || 'לקוח';
+      (c.items || []).forEach((it) => {
+        const cf = (it.files || []).filter((f) => !f.by);          // רק העלאות של הלקוח (לא של הצוות)
+        if (!cf.length) return;
+        const ts = Math.max(...cf.map((f) => toDateObj(f.at)?.getTime() || 0));
+        items.push({ ts, cls: 'upload', kind: 'מסמך חדש', text: `${name} העלה: ${it.label || ''}${cf.length > 1 ? ' (' + cf.length + ' קבצים)' : ''}${it.status === 'pending' ? ' — ממתין לבדיקה' : ''}`, c });
+      });
+      if (c.clientDoneAt) items.push({ ts: toDateObj(c.clientDoneAt)?.getTime() || 0, cls: 'cdone', kind: 'תיק לבדיקה', text: `${name} סיים להעלות את כל המסמכים${c.clientDoneStage === 2 ? ' (שלב 2)' : ''}`, c });
+      if (c.lawyerSentAt && isMgr() && c.lawyerSentBy !== myEmail) items.push({ ts: toDateObj(c.lawyerSentAt)?.getTime() || 0, cls: 'lawyer', kind: 'הועבר לעו״ד', text: `${displayName(c.lawyerSentBy)} העביר מסמכים לעו״ד — ${name}`, c });
+    });
     const weekAgo = Date.now() - 7 * 864e5;
     return items.filter((i) => i.ts >= weekAgo || i.cls === 'late').sort((a, b) => b.ts - a.ts).slice(0, 40);
+  }
+  const KIND = { late: 'באיחור', assign: 'משימה חדשה', done: 'הושלמה', comment: 'תגובה' };
+  let knownBell = null;   // מפתחות אירועי תיקים שכבר ראינו — להתראת דפדפן על חדשים בלבד
+  function notifyNewCaseEvents(items) {
+    const key = (i) => i.cls + ':' + i.c.id + ':' + i.ts;
+    const now = new Set(items.filter((i) => i.c).map(key));
+    if (knownBell) items.forEach((i) => { if (i.c && !knownBell.has(key(i)) && i.ts > Date.now() - 6e5) notify('Desk — ' + (i.kind || 'תיק לקוח'), i.text, 'case-' + i.c.id); });
+    knownBell = now;
   }
   function renderBell() {
     const items = bellItems(), unread = items.filter((i) => i.ts > bellSeen).length;
     const c = $('bell-count'); c.textContent = unread; c.hidden = !unread;
     document.title = (unread ? `(${unread}) ` : '') + 'Desk — הורייזון פסגות גרופ';
     const p = $('bell-panel');
-    p.innerHTML = `<div class="bell-head">התראות</div>` + (items.length ? items.map((i) => `<div class="bell-item ${i.cls}${i.ts > bellSeen ? ' unread' : ''}" data-task="${i.t.id}"><span>${esc(i.text)}</span><small>${fmtDate(new Date(i.ts))}</small></div>`).join('') : '<div class="bell-empty">אין התראות חדשות.</div>');
+    p.innerHTML = `<div class="bell-head">התראות</div>` + (items.length ? items.map((i) =>
+      `<div class="bell-item ${i.cls}${i.ts > bellSeen ? ' unread' : ''}" ${i.t ? 'data-task="' + i.t.id + '"' : 'data-case="' + i.c.id + '"'}><span class="bell-kind">${esc(i.kind || KIND[i.cls] || '')}</span><span>${esc(i.text)}</span><small>${fmtDate(new Date(i.ts))}</small></div>`).join('')
+      : '<div class="bell-empty">אין התראות חדשות.</div>');
     p.querySelectorAll('[data-task]').forEach((r) => r.addEventListener('click', () => { $('bell-panel').hidden = true; openTask(allTasks.find((t) => t.id === r.dataset.task)); }));
+    p.querySelectorAll('[data-case]').forEach((r) => r.addEventListener('click', () => { $('bell-panel').hidden = true; if (ctx.openCase) ctx.openCase(r.dataset.case); }));
+    notifyNewCaseEvents(items);
   }
   $('bell-btn').addEventListener('click', (e) => {
     e.stopPropagation();

@@ -99,6 +99,7 @@ async function boot() {
     fs, db, $, esc, track, nowISO, fmtDate, todayStr, toDateObj, displayName, serviceLabel, phoneIntl,
     users: () => allUsers, role: () => currentRole, me: () => ({ email: currentEmail, uid: currentUid }),
     leads: () => allLeads, cases: () => allCases, currentLead: () => currentLead, currentCase: () => currentCase,
+    openCase: (id) => { const c = allCases.find((x) => x.id === id); if (c) openCaseModal(c); },
   };
 
   /* רשימת בעלי גישה — לבחירת מטפל, סינון וניהול משתמשים + הרשאות */
@@ -504,6 +505,11 @@ async function boot() {
         .sort((a, b) => (toDateObj(b.createdAt)?.getTime() || 0) - (toDateObj(a.createdAt)?.getTime() || 0));
       renderCases();
       if (allLeads.length) renderLeads();   // עדכון סימון "יש תיק" בשורות הלידים
+      if (currentCase && !$('case-modal').hidden) {   // כרטיס פתוח — רענון חי כשהלקוח מעלה
+        const fresh = allCases.find((x) => x.id === currentCase.id);
+        if (fresh) { currentCase = fresh; renderCaseItems(fresh); renderSendBar(fresh); renderLawyerNote(fresh); }
+      }
+      if (tasks) tasks.refresh();           // הפעמון מציג גם אירועי מסמכים
     }, (err) => { console.warn(err); $('cases-grid').innerHTML = '<p class="empty-state">שגיאה בטעינה. בדקו כללי אבטחה.</p>'; }));
   }
   function casePct(c) {
@@ -627,6 +633,7 @@ async function boot() {
     if (c.clientDoneAt) $('cm-client-done').textContent = '📤 הלקוח סימן שסיים להעלות את המסמכים (' + fmtDate(c.clientDoneAt) + (c.clientDoneStage === 2 ? ' · שלב 2' : '') + ') — ממתין לבדיקה שלכם.';
     renderClosedState(c);
     renderSendBar(c);
+    renderLawyerNote(c);
     fillDocCatalog();
     $('cm-add-pick').value = ''; $('cm-add-custom').value = ''; $('cm-add-custom').hidden = true;
     $('cm-add-stage').value = c.stage2Open ? '2' : '1';
@@ -691,9 +698,12 @@ async function boot() {
 
   function renderCaseItems(c) {
     const items = c.items || [];
+    const closed = isClosed(c);
     const row = (it, gi) => {
-      const files = (it.files || []).map((f) =>
-        '<a class="file-chip" href="' + esc(f.url) + '" target="_blank" rel="noopener">📄 ' + esc(f.name) + '</a>').join('');
+      const files = (it.files || []).map((f, fi) =>
+        '<span class="file-chip-wrap"><a class="file-chip' + (f.by ? ' staff' : '') + '" href="' + esc(f.url) + '" target="_blank" rel="noopener" title="' +
+          esc((f.by ? 'הועלה ע״י ' + displayName(f.by) : 'הועלה ע״י הלקוח') + (f.at ? ' · ' + fmtDate(f.at) : '')) + '">📄 ' + esc(f.name) + '</a>' +
+        (closed ? '' : '<button class="file-del" type="button" data-fdel="' + gi + ':' + fi + '" title="מחיקת הקובץ מהתיק">✕</button>') + '</span>').join('');
       const st = it.status === 'received' ? '<span class="pill received">✓ התקבל</span>'
         : it.status === 'rejected' ? '<span class="pill rejected">✕ נדחה</span>'
         : '<span class="pill pending">ממתין</span>';
@@ -705,8 +715,9 @@ async function boot() {
           '<button class="btn-ghost" data-approve="' + gi + '">אישור</button>' +
           '<button class="btn-ghost" data-reject="' + gi + '">דחייה</button>' +
           (it.status !== 'pending' ? '<button class="btn-ghost" data-reset="' + gi + '">איפוס</button>' : '') +
+          (closed ? '' : '<button class="btn-ghost cm-upload" data-upload="' + gi + '" title="העלאת קובץ בשם הלקוח (PDF / תמונה)">⬆ העלאת קובץ</button>') +
           '<button class="btn-ghost cm-remove" data-remove="' + gi + '" title="הסרת המסמך מהתיק">הסרה</button>' +
-        '</div></div>';
+        '</div><div class="cm-upload-prog" data-uprog="' + gi + '" hidden></div></div>';
     };
     const s1 = items.map((it, i) => ({ it, i })).filter((x) => x.it.stage === 1);
     const s2 = items.map((it, i) => ({ it, i })).filter((x) => x.it.stage === 2);
@@ -725,6 +736,53 @@ async function boot() {
     $('cm-items').querySelectorAll('[data-reject]').forEach((b) => b.onclick = () => {
       const r = prompt('סיבת הדחייה (תוצג ללקוח):', ''); if (r === null) return; setStatus(+b.dataset.reject, 'rejected', r.trim());
     });
+    $('cm-items').querySelectorAll('[data-upload]').forEach((b) => b.onclick = () => { uploadIdx = +b.dataset.upload; const inp = $('cm-file'); inp.value = ''; inp.click(); });
+    $('cm-items').querySelectorAll('[data-fdel]').forEach((b) => b.onclick = () => { const [gi, fi] = b.dataset.fdel.split(':').map(Number); deleteCaseFile(gi, fi); });
+  }
+  /* ---- העלאת מסמכים ע"י הצוות (בשם הלקוח) + מחיקת קובץ ---- */
+  let uploadIdx = -1;
+  $('cm-file').addEventListener('change', () => {
+    const files = Array.from($('cm-file').files || []);
+    if (files.length && uploadIdx >= 0) staffUpload(uploadIdx, files);
+  });
+  async function staffUpload(gi, files) {
+    const c = currentCase; if (!c) return;
+    if (isClosed(c)) { alert('התיק סגור — פתחו אותו מחדש כדי להעלות מסמכים.'); return; }
+    const item = (c.items || [])[gi]; if (!item) return;
+    const prog = $('cm-items').querySelector('[data-uprog="' + gi + '"]');
+    const say = (t, err) => { if (prog) { prog.hidden = false; prog.className = 'cm-upload-prog' + (err ? ' err' : ''); prog.textContent = t; } };
+    say('מעלה ' + files.length + ' ' + (files.length === 1 ? 'קובץ' : 'קבצים') + '…');
+    try {
+      const uploaded = [];
+      for (const file of files) {
+        if (file.size > 20 * 1024 * 1024) throw new Error('הקובץ ' + file.name + ' גדול מ-20MB.');
+        if (!/^(image\/|application\/pdf$)/.test(file.type)) throw new Error('הקובץ ' + file.name + ' אינו PDF או תמונה.');
+        const safe = file.name.replace(/[^\w.\-\u0590-\u05FF ]/g, '_');
+        const path = 'client-cases/' + c.id + '/' + item.key + '/' + Date.now() + '-' + safe;
+        const sref = st.ref(storage, path);
+        await st.uploadBytes(sref, file, { contentType: file.type });
+        const url = await st.getDownloadURL(sref);
+        uploaded.push({ name: file.name, path, url, size: file.size, at: nowISO(), by: currentEmail });
+      }
+      const items = (c.items || []).slice();
+      // הצוות העלה בעצמו = המסמך התקבל
+      items[gi] = { ...item, status: 'received', rejectReason: '', files: [...(item.files || []), ...uploaded] };
+      await fs.updateDoc(fs.doc(db, 'cases', c.id), { items });
+      c.items = items; renderCaseItems(c); renderSendBar(c);
+    } catch (e) { say('ההעלאה נכשלה: ' + (e && e.message ? e.message : e), true); console.warn('staff upload', e); }
+  }
+  async function deleteCaseFile(gi, fi) {
+    const c = currentCase; if (!c) return;
+    const item = (c.items || [])[gi]; const f = item && (item.files || [])[fi]; if (!f) return;
+    if (!confirm('למחוק את הקובץ "' + f.name + '" מהתיק? הקובץ יימחק לצמיתות גם מהאחסון.')) return;
+    try {
+      if (f.path) { try { await st.deleteObject(st.ref(storage, f.path)); } catch (e) { if (e.code !== 'storage/object-not-found') throw e; } }
+      const items = (c.items || []).slice();
+      const files = (item.files || []).filter((_, i) => i !== fi);
+      items[gi] = { ...item, files, status: files.length ? item.status : 'pending', rejectReason: files.length ? item.rejectReason || '' : '' };
+      await fs.updateDoc(fs.doc(db, 'cases', c.id), { items });
+      c.items = items; renderCaseItems(c); renderSendBar(c);
+    } catch (e) { alert('שגיאה במחיקה: ' + e.message); }
   }
   /* ---- סגירת תיק / פתיחה מחדש ---- */
   function renderClosedState(c) {
@@ -775,33 +833,113 @@ async function boot() {
   });
   $('cm-add-custom').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addCaseItem(); } });
   $('cm-add-btn').addEventListener('click', addCaseItem);
-  /* העברת המסמכים שהתקבלו לעורך הדין — הודעה עם קישורי הורדה (ללא backend) */
-  function lawyerMessage(c) {
-    const got = (c.items || []).filter((it) => (it.files || []).length);
+  /* ---- העברת מסמכים לעו״ד: בחירת מסמכים + הודעה עם קישורי הורדה (ללא backend, ללא עלות) ---- */
+  const LW_KEY = 'hp_lawyer_contact';
+  function lwLoadContact() { try { return JSON.parse(localStorage.getItem(LW_KEY) || '{}'); } catch (e) { return {}; } }
+  function lwSaveContact() { try { localStorage.setItem(LW_KEY, JSON.stringify({ email: $('lw-email').value.trim(), phone: $('lw-phone').value.trim() })); } catch (e) {} }
+  function lwSelected() { return Array.from($('lw-items').querySelectorAll('input[data-gi]:checked')).map((i) => +i.dataset.gi); }
+  function lawyerMessage(c, sel) {
+    const items = c.items || [];
+    const got = sel.map((gi) => items[gi]).filter(Boolean);
     let msg = 'שלום, מצורפים מסמכי הלקוח מתיק ' + serviceLabel(c.serviceType) + ' — הורייזון פסגות גרופ\n';
-    msg += 'לקוח: ' + (c.clientName || '') + (c.clientPhone ? ' · ' + c.clientPhone : '') + (c.clientEmail ? ' · ' + c.clientEmail : '') + '\n\n';
+    msg += 'לקוח: ' + (c.clientName || '') + (c.clientPhone ? ' · ' + c.clientPhone : '') + (c.clientEmail ? ' · ' + c.clientEmail : '') + '\n';
+    const note = $('lw-note').value.trim();
+    if (note) msg += '\n' + note + '\n';
+    msg += '\n';
     got.forEach((it) => {
       msg += '▸ ' + it.label + (it.status === 'received' ? '' : ' (טרם אושר)') + ':\n';
       (it.files || []).forEach((f) => { msg += '   ' + f.name + ' — ' + f.url + '\n'; });
     });
-    const missing = (c.items || []).filter((it) => (it.stage === 1 || c.stage2Open) && !(it.files || []).length);
-    if (missing.length) msg += '\nטרם התקבלו: ' + missing.map((it) => it.label).join(', ') + '\n';
+    if (!got.length) msg += '(לא נבחרו מסמכים)\n';
+    if ($('lw-missing').checked) {
+      const missing = items.filter((it) => (it.stage === 1 || c.stage2Open) && !(it.files || []).length);
+      if (missing.length) msg += '\nטרם התקבלו מהלקוח: ' + missing.map((it) => it.label).join(', ') + '\n';
+    }
     msg += '\nבברכה,\n' + displayName(currentEmail) + ' · הורייזון פסגות גרופ';
     return msg;
   }
-  $('cm-lawyer').addEventListener('click', async () => {
+  function lwRefresh() {
     const c = currentCase; if (!c) return;
-    const got = (c.items || []).filter((it) => (it.files || []).length);
-    if (!got.length) { alert('אין עדיין מסמכים בתיק להעברה.'); return; }
-    const msg = lawyerMessage(c);
-    try { await navigator.clipboard.writeText(msg); } catch (e) { window.prompt('העתיקו את ההודעה:', msg); return; }
-    const stamp = { lawyerSentAt: nowISO(), lawyerSentBy: currentEmail };
-    fs.updateDoc(fs.doc(db, 'cases', c.id), stamp).then(() => Object.assign(c, stamp)).catch(() => {});
-    if (confirm('ההודעה עם קישורי כל המסמכים (' + got.length + ' פריטים) הועתקה.\nלפתוח מייל חדש להדבקה?')) {
-      const subj = 'מסמכי לקוח — ' + (c.clientName || '') + ' · ' + serviceLabel(c.serviceType);
-      window.location.href = 'mailto:?subject=' + encodeURIComponent(subj) + (msg.length < 1500 ? '&body=' + encodeURIComponent(msg) : '');
+    const sel = lwSelected();
+    const nFiles = sel.reduce((n, gi) => n + (((c.items || [])[gi] || {}).files || []).length, 0);
+    $('lw-count').textContent = sel.length ? sel.length + ' מסמכים · ' + nFiles + ' קבצים' : 'לא נבחר דבר';
+    $('lw-preview').value = lawyerMessage(c, sel);
+    const none = !sel.length;
+    $('lw-wa').disabled = none; $('lw-mail').disabled = none; $('lw-copy').disabled = none;
+  }
+  function openLawyerModal(c) {
+    const items = c.items || [];
+    const withFiles = items.map((it, gi) => ({ it, gi })).filter((x) => (x.it.files || []).length);
+    if (!withFiles.length) { alert('אין עדיין מסמכים בתיק להעברה.'); return; }
+    $('lw-sub').textContent = (c.clientName || '') + ' · ' + serviceLabel(c.serviceType);
+    const grp = (title, arr) => !arr.length ? '' : '<h5>' + title + '</h5>' + arr.map((x) => {
+      const f = x.it.files || [];
+      const pill = x.it.status === 'received' ? '<span class="pill received">✓ אושר</span>'
+        : x.it.status === 'rejected' ? '<span class="pill rejected">✕ נדחה</span>'
+        : '<span class="pill pending">ממתין לבדיקה</span>';
+      // נדחה — לא מסומן כברירת מחדל
+      return '<label class="lw-item"><input type="checkbox" data-gi="' + x.gi + '"' + (x.it.status === 'rejected' ? '' : ' checked') +
+        '><span><b>' + esc(x.it.label) + '</b><small>' + f.map((y) => esc(y.name)).join(' · ') + '</small></span>' + pill + '</label>';
+    }).join('');
+    $('lw-items').innerHTML = grp('מסמכים ראשוניים', withFiles.filter((x) => x.it.stage !== 2)) + grp('שלב 2 — מסמכים משלימים', withFiles.filter((x) => x.it.stage === 2));
+    const saved = lwLoadContact();
+    $('lw-email').value = saved.email || ''; $('lw-phone').value = saved.phone || '';
+    $('lw-note').value = ''; $('lw-missing').checked = true;
+    lwRefresh();
+    $('lawyer-modal').hidden = false;
+  }
+  $('cm-lawyer').addEventListener('click', () => { if (currentCase) openLawyerModal(currentCase); });
+  $('lw-items').addEventListener('change', lwRefresh);
+  $('lw-note').addEventListener('input', lwRefresh);
+  $('lw-missing').addEventListener('change', lwRefresh);
+  $('lw-all').addEventListener('click', () => { $('lw-items').querySelectorAll('input').forEach((i) => i.checked = true); lwRefresh(); });
+  $('lw-none').addEventListener('click', () => { $('lw-items').querySelectorAll('input').forEach((i) => i.checked = false); lwRefresh(); });
+  const closeLw = () => { $('lawyer-modal').hidden = true; };
+  $('lw-close').addEventListener('click', closeLw);
+  $('lw-cancel').addEventListener('click', closeLw);
+  $('lawyer-modal').addEventListener('click', (e) => { if (e.target === $('lawyer-modal')) closeLw(); });
+  async function lwSend(via) {
+    const c = currentCase; if (!c) return;
+    const sel = lwSelected(); if (!sel.length) return;
+    const msg = lawyerMessage(c, sel);
+    const labels = sel.map((gi) => ((c.items || [])[gi] || {}).label || '');
+    lwSaveContact();
+    const email = $('lw-email').value.trim(), phone = $('lw-phone').value.trim();
+    const long = msg.length >= 1500;   // mailto לא סוחב גוף ארוך — מעתיקים ללוח במקום
+    if (via === 'copy' || (via === 'email' && long)) {
+      try { await navigator.clipboard.writeText(msg); } catch (e) { window.prompt('העתיקו את ההודעה:', msg); }
     }
-  });
+    if (via === 'whatsapp') {
+      window.open('https://wa.me/' + (phone ? phoneIntl(phone) : '') + '?text=' + encodeURIComponent(msg), '_blank', 'noopener');
+    } else if (via === 'email') {
+      const subj = 'מסמכי לקוח — ' + (c.clientName || '') + ' · ' + serviceLabel(c.serviceType);
+      if (long) alert('ההודעה ארוכה — הועתקה ללוח. הדביקו אותה בגוף המייל שייפתח.');
+      window.location.href = 'mailto:' + email + '?subject=' + encodeURIComponent(subj) + (long ? '' : '&body=' + encodeURIComponent(msg));
+    } else {
+      alert('ההודעה עם ' + sel.length + ' מסמכים הועתקה ללוח.');
+    }
+    const entry = { at: nowISO(), by: currentEmail, via, items: labels, to: via === 'email' ? email : via === 'whatsapp' ? phone : '' };
+    const local = { lawyerSentAt: entry.at, lawyerSentBy: currentEmail, lawyerSentVia: via, lawyerSentItems: labels };
+    try {
+      await fs.updateDoc(fs.doc(db, 'cases', c.id), { ...local, lawyerLog: fs.arrayUnion(entry) });
+      Object.assign(c, local, { lawyerLog: [...(c.lawyerLog || []), entry] });
+      renderLawyerNote(c);
+    } catch (e) { console.warn(e); }
+    closeLw();
+  }
+  $('lw-wa').addEventListener('click', () => lwSend('whatsapp'));
+  $('lw-mail').addEventListener('click', () => lwSend('email'));
+  $('lw-copy').addEventListener('click', () => lwSend('copy'));
+  function renderLawyerNote(c) {
+    const n = $('cm-lawyer-note'); if (!n) return;
+    n.hidden = !c.lawyerSentAt;
+    if (!c.lawyerSentAt) return;
+    const via = c.lawyerSentVia === 'email' ? 'במייל' : c.lawyerSentVia === 'whatsapp' ? 'בוואטסאפ' : 'בהעתקה';
+    const its = c.lawyerSentItems || [];
+    const times = (c.lawyerLog || []).length;
+    n.textContent = '📎 הועבר לעו״ד ' + via + ' · ' + fmtDate(c.lawyerSentAt) + (c.lawyerSentBy ? ' · ' + displayName(c.lawyerSentBy) : '') +
+      (its.length ? ' · ' + its.length + ' מסמכים: ' + its.join(', ') : '') + (times > 1 ? ' (העברה מס׳ ' + times + ')' : '');
+  }
   $('cm-close').addEventListener('click', () => $('case-modal').hidden = true);
   $('cm-cancel').addEventListener('click', () => $('case-modal').hidden = true);
   $('case-modal').addEventListener('click', (e) => { if (e.target === $('case-modal')) $('case-modal').hidden = true; });
