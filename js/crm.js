@@ -3,9 +3,9 @@
    פאנל ניהול: לידים (ריבוי משתמשים, כרטיס ליד, חיפוש, דוחות,
    ייצוא, פולו-אפ) · עסקאות · מאמרים (בגל הבא)
    ============================================================ */
-import { firebaseConfig, isConfigured } from '/js/firebase-config.js?v=20260910b';
-import { SERVICE_TYPES, buildItems, serviceLabel, docCatalog, storagePath, safeSeg } from '/js/case-templates.js?v=20260910b';
-import { initTasks } from '/js/crm-tasks.js?v=20260910b';
+import { firebaseConfig, isConfigured } from '/js/firebase-config.js?v=20260911a';
+import { SERVICE_TYPES, buildItems, serviceLabel, docCatalog, storagePath, safeSeg } from '/js/case-templates.js?v=20260911a';
+import { initTasks } from '/js/crm-tasks.js?v=20260911a';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? '' : s).replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -502,6 +502,68 @@ async function boot() {
     rm.disabled = isClosed(c) || !(c.clientPhone || c.clientEmail);
     rm.onclick = () => sendReminder(c);
     $('cm-zip').onclick = () => downloadAllFiles(c);
+    const mg = $('cm-migrate');
+    if (migrating) return;
+    mg.hidden = !(canManageCases && legacyFileCount(c));
+    mg.textContent = '🗂 סידור קבצים לפי שם לקוח (' + legacyFileCount(c) + ')';
+    mg.onclick = async () => {
+      if (!confirm('להעביר ' + legacyFileCount(c) + ' קבצים של התיק לתיקייה על שם הלקוח ב-Storage?\nהקישורים בתיק יתעדכנו אוטומטית.')) return;
+      mg.disabled = true; migrating = true;
+      const r = await migrateCaseFiles(c, (t) => { mg.textContent = t; });
+      mg.disabled = false; migrating = false;
+      alert('הועברו ' + r.moved + ' קבצים' + (r.failed ? ', ' + r.failed + ' נכשלו (ראו קונסול)' : '') + '.');
+      renderCaseItems(c); renderSendBar(c); renderCases();
+    };
+  }
+  /* ---- העברת קבצים ישנים (client-cases/{caseId}/…) למבנה לפי שם לקוח (clients/{שם}/…) ----
+     רץ בדפדפן: הורדה (דורש CORS על ה-bucket) → העלאה לנתיב החדש → עדכון התיק → מחיקת הישן */
+  let migrating = false;
+  const isLegacyPath = (f) => !f.path || !f.path.startsWith('clients/');
+  function legacyFileCount(c) { let n = 0; (c.items || []).forEach((it) => (it.files || []).forEach((f) => { if (isLegacyPath(f)) n++; })); return n; }
+  async function migrateCaseFiles(c, progress) {
+    const items = (c.items || []).map((it) => ({ ...it, files: (it.files || []).slice() }));
+    const total = legacyFileCount(c);
+    let moved = 0, failed = 0;
+    for (const it of items) {
+      for (let i = 0; i < it.files.length; i++) {
+        const f = it.files[i];
+        if (!isLegacyPath(f)) continue;
+        if (progress) progress('מעביר ' + (moved + failed + 1) + '/' + total + '…');
+        try {
+          const r = await fetch(f.url);
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          const blob = await r.blob();
+          const path = storagePath(c, it, f.name);
+          const sref = st.ref(storage, path);
+          await st.uploadBytes(sref, blob, { contentType: blob.type || 'application/pdf' });
+          const url = await st.getDownloadURL(sref);
+          it.files[i] = { ...f, path, url, migratedFrom: f.path || '' };
+          if (f.path) { try { await st.deleteObject(st.ref(storage, f.path)); } catch (e) { console.warn('old delete', e); } }
+          moved++;
+        } catch (e) { failed++; console.warn('migrate failed', f, e); }
+      }
+    }
+    if (moved) {
+      try { await fs.updateDoc(fs.doc(db, 'cases', c.id), { items }); c.items = items; }
+      catch (e) { console.warn(e); alert('הקבצים הועברו אך עדכון התיק נכשל: ' + e.message); }
+    }
+    return { moved, failed };
+  }
+  async function migrateAllCases(btn) {
+    const todo = allCases.filter((c) => legacyFileCount(c));
+    const total = todo.reduce((n, c) => n + legacyFileCount(c), 0);
+    if (!todo.length) return;
+    if (!confirm('להעביר ' + total + ' קבצים ב-' + todo.length + ' תיקים לתיקיות על שם הלקוחות?\nהפעולה עשויה לקחת כמה דקות — אל תסגרו את הדף.')) return;
+    btn.disabled = true; migrating = true;
+    let moved = 0, failed = 0, k = 0;
+    for (const c of todo) {
+      k++;
+      const r = await migrateCaseFiles(c, (t) => { btn.textContent = '🗂 תיק ' + k + '/' + todo.length + ' · ' + t; });
+      moved += r.moved; failed += r.failed;
+    }
+    btn.disabled = false; migrating = false;
+    alert('הסתיים: הועברו ' + moved + ' קבצים' + (failed ? ', ' + failed + ' נכשלו (ראו קונסול)' : '') + '.');
+    renderCases();
   }
   /* ---- תזכורת ללקוח על מסמכים חסרים (וואטסאפ אם יש טלפון, אחרת מייל) ---- */
   function reminderMessage(c) {
@@ -697,7 +759,8 @@ async function boot() {
     const grid = $('cases-grid');
     const counts = { active: allCases.filter((c) => !isClosed(c)).length, closed: allCases.filter(isClosed).length };
     const fbar = $('cases-filter');
-    if (fbar) {
+    const legacyTotal = allCases.reduce((n, c) => n + legacyFileCount(c), 0);
+    if (fbar && !migrating) {   // בזמן העברה לא בונים את הסרגל מחדש (שומר את מד ההתקדמות)
       fbar.innerHTML = [
         ['active', 'פעילים', counts.active],
         ['closed', 'סגורים', counts.closed],
@@ -707,7 +770,9 @@ async function boot() {
         SERVICE_TYPES.map((t) => '<option value="' + t.key + '"' + (casesTypeF === t.key ? ' selected' : '') + '>' + esc(t.label) + '</option>').join('') + '</select>' +
         '<input type="search" class="lead-search cases-search" id="cases-q" placeholder="חיפוש שם / טלפון…" value="' + esc(casesQ) + '">' +
         '<select class="user-filter" id="cases-sort" title="מיון">' + CASE_SORTS.map(([k, l]) => '<option value="' + k + '"' + (casesSort === k ? ' selected' : '') + '>' + l + '</option>').join('') + '</select>' +
-        '<div class="cases-viewsw" role="group" aria-label="תצוגה">' + CASE_VIEWS.map(([k, l]) => '<button type="button" class="cases-fbtn' + (casesView === k ? ' on' : '') + '" data-cv="' + k + '" title="' + l.slice(2) + '">' + l + '</button>').join('') + '</div>';
+        '<div class="cases-viewsw" role="group" aria-label="תצוגה">' + CASE_VIEWS.map(([k, l]) => '<button type="button" class="cases-fbtn' + (casesView === k ? ' on' : '') + '" data-cv="' + k + '" title="' + l.slice(2) + '">' + l + '</button>').join('') + '</div>' +
+        (canManageCases && legacyTotal ? '<button type="button" class="cases-fbtn cases-migrate" id="cases-migrate" title="העברת קבצים שהועלו לפני 10/9/2026 לתיקיות על שם הלקוחות ב-Storage">🗂 סידור קבצים ישנים לפי שם לקוח (' + legacyTotal + ')</button>' : '');
+      const mgAll = fbar.querySelector('#cases-migrate'); if (mgAll) mgAll.onclick = () => migrateAllCases(mgAll);
       fbar.querySelectorAll('[data-cf]').forEach((b) => b.onclick = () => { casesFilter = b.dataset.cf; renderCases(); });
       fbar.querySelectorAll('[data-cv]').forEach((b) => b.onclick = () => { casesView = b.dataset.cv; savePref('hp_cases_view', casesView); renderCases(); });
       fbar.querySelector('#cases-sort').addEventListener('change', (e) => { casesSort = e.target.value; savePref('hp_cases_sort', casesSort); renderCases(); });

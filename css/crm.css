@@ -596,3 +596,6 @@ tbody tr.lead-row:hover td { background: var(--color-cream-soft); }
 .cases-group h3 { font-family: var(--font-heading); color: var(--color-navy-deep); font-size: var(--fs-lg); margin: 0 0 var(--space-sm); padding-bottom: .3rem; border-bottom: 2px solid var(--color-rose-gold); display: flex; align-items: center; gap: .5rem; }
 .cases-group h3 span { font-family: inherit; font-size: var(--fs-xs); font-weight: 700; background: var(--color-navy-deep); color: #fff; border-radius: 999px; padding: 2px 8px; }
 @media (max-width: 640px) { .cases-viewsw { margin-inline-start: 0; } .cases-view-table .leads-table-wrap { overflow-x: auto; background: var(--color-white); border: 1px solid var(--color-border); } }
+
+.cases-migrate { border-color: var(--color-rose-gold); color: var(--color-navy-deep); flex-basis: 100%; text-align: start; }
+.cases-migrate:disabled { opacity: .7; cursor: progress; }
