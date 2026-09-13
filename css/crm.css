@@ -599,3 +599,10 @@ tbody tr.lead-row:hover td { background: var(--color-cream-soft); }
 
 .cases-migrate { border-color: var(--color-rose-gold); color: var(--color-navy-deep); flex-basis: 100%; text-align: start; }
 .cases-migrate:disabled { opacity: .7; cursor: progress; }
+
+/* ---- הסכמה מתועדת ---- */
+.cm-consent { margin: 0 0 var(--space-sm); font-size: var(--fs-sm); border-radius: var(--radius-md); padding: 5px 10px; border: 1px solid transparent; }
+.cm-consent.ok { color: #23794A; background: rgba(46,158,91,.08); border-color: rgba(46,158,91,.3); }
+.cm-consent.warn { color: #8A6D3B; background: rgba(201,164,122,.14); border-color: rgba(201,164,122,.5); font-weight: 600; }
+.case-st.st-noconsent { color: #8A6D3B; background: rgba(201,164,122,.2); }
+.case-card-consent { margin-top: 6px; font-size: var(--fs-xs); font-weight: 700; color: #8A6D3B; background: rgba(201,164,122,.14); border: 1px solid rgba(201,164,122,.45); border-radius: var(--radius-md); padding: 5px 10px; }

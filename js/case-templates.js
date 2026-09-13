@@ -214,3 +214,6 @@ export function storagePath(c, item, fileName) {
   const file = safeSeg(fileName, 100) || 'file';
   return 'clients/' + client + '/' + c.id + '/' + doc + '/' + Date.now() + '-' + file;
 }
+
+/* גרסת נוסח ההסכמה בפורטל — מעלים כשמשנים את הטקסט, כדי שיהיה תיעוד לאיזה נוסח הלקוח הסכים */
+export const CONSENT_VERSION = '2026-09-13.v1';

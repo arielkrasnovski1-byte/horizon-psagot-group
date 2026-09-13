@@ -3,9 +3,9 @@
    פאנל ניהול: לידים (ריבוי משתמשים, כרטיס ליד, חיפוש, דוחות,
    ייצוא, פולו-אפ) · עסקאות · מאמרים (בגל הבא)
    ============================================================ */
-import { firebaseConfig, isConfigured } from '/js/firebase-config.js?v=20260911a';
-import { SERVICE_TYPES, buildItems, serviceLabel, docCatalog, storagePath, safeSeg } from '/js/case-templates.js?v=20260911a';
-import { initTasks } from '/js/crm-tasks.js?v=20260911a';
+import { firebaseConfig, isConfigured } from '/js/firebase-config.js?v=20260913a';
+import { SERVICE_TYPES, buildItems, serviceLabel, docCatalog, storagePath, safeSeg } from '/js/case-templates.js?v=20260913a';
+import { initTasks } from '/js/crm-tasks.js?v=20260913a';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? '' : s).replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -459,6 +459,7 @@ async function boot() {
     return head + body + '\n\n' +
       'להעלאה מהנייד, בקישור המאובטח:\n' + PORTAL_URL + '\n' +
       'הכניסה ' + how + ' — ללא סיסמה.\n\n' +
+      'בכניסה הראשונה תתבקש/י לאשר את הודעת הפרטיות — אחרי זה נפתחת רשימת המסמכים.\n' +
       'בקישור תוכל לראות בכל רגע מה כבר התקבל ומה עוד חסר.\n\n' +
       'בברכה,\nהורייזון פסגות גרופ';
   }
@@ -729,10 +730,12 @@ async function boot() {
       '<div class="case-card-sent' + (c.lastSentAt ? ' ok' : '') + '">' +
         (c.lastSentAt ? '✓ נשלח ללקוח ' + fmtDate(c.lastSentAt) : 'טרם נשלח ללקוח') + '</div>' +
         (c.clientDoneAt && !isClosed(c) ? '<div class="client-done-flag">📤 הלקוח סיים להעלות (' + fmtDate(c.clientDoneAt) + ') — ממתין לבדיקה</div>' : '') +
+        (!c.consentAt && !isClosed(c) ? '<div class="case-card-consent">🔏 ממתין לאישור הודעת הפרטיות בפורטל</div>' : '') +
       '</div>';
   }
   function caseStatusText(c) {
     if (isClosed(c)) return '<span class="src-badge case-badge-closed">סגור</span>';
+    if (!c.consentAt) return '<span class="case-st st-noconsent">ממתין להסכמה</span>';
     const a = caseAttention(c);
     return a === 4 ? '<span class="case-st st-done">📤 לבדיקה</span>'
       : a === 3 ? '<span class="case-st st-review">ממתין לבדיקה</span>'
@@ -863,6 +866,7 @@ async function boot() {
     renderClosedState(c);
     renderSendBar(c);
     renderLawyerNote(c);
+    renderConsentNote(c);
     fillDocCatalog();
     $('cm-add-pick').value = ''; $('cm-add-custom').value = ''; $('cm-add-custom').hidden = true;
     $('cm-add-stage').value = c.stage2Open ? '2' : '1';
@@ -1117,7 +1121,15 @@ async function boot() {
     lwRefresh();
     $('lawyer-modal').hidden = false;
   }
-  $('cm-lawyer').addEventListener('click', () => { if (currentCase) openLawyerModal(currentCase); });
+  $('cm-lawyer').addEventListener('click', () => {
+    const c = currentCase; if (!c) return;
+    if (!c.lawyerConsentAt) {
+      // מדיניות הפרטיות מבטיחה העברה לעו"ד רק באישור מפורש — בלי אישור מתועד אין העברה
+      if (confirm('הלקוח טרם אישר העברת מסמכים לעורך דין.\nלשלוח לו עכשיו בקשת אישור (הוא מאשר בלחיצה אחת בפורטל)?')) requestLawyerConsent(c);
+      return;
+    }
+    openLawyerModal(c);
+  });
   $('lw-items').addEventListener('change', lwRefresh);
   $('lw-note').addEventListener('input', lwRefresh);
   $('lw-missing').addEventListener('change', lwRefresh);
@@ -1159,6 +1171,30 @@ async function boot() {
   $('lw-wa').addEventListener('click', () => lwSend('whatsapp'));
   $('lw-mail').addEventListener('click', () => lwSend('email'));
   $('lw-copy').addEventListener('click', () => lwSend('copy'));
+  /* ---- מצב ההסכמה המתועדת של הלקוח ---- */
+  function consentVia(v) { return !v ? '' : v.startsWith('sms:') ? 'SMS ' + v.slice(4) : v.startsWith('email:') ? 'מייל ' + v.slice(6) : v; }
+  function renderConsentNote(c) {
+    const n = $('cm-consent'); if (!n) return;
+    n.hidden = false;
+    if (c.consentAt) {
+      n.className = 'cm-consent ok';
+      n.textContent = '✅ הסכמה מתועדת ' + fmtDate(c.consentAt) + (c.consentVia ? ' · ' + consentVia(c.consentVia) : '') + (c.consentVersion ? ' · נוסח ' + c.consentVersion : '') +
+        ' · העברה לעו״ד: ' + (c.lawyerConsentAt ? 'אושרה ' + fmtDate(c.lawyerConsentAt) : 'לא אושרה');
+    } else if (isClosed(c)) { n.hidden = true; }
+    else {
+      n.className = 'cm-consent warn';
+      n.textContent = '⚠️ הלקוח טרם אישר את הודעת הפרטיות — התהליך יתחיל רק אחרי אישור בפורטל (מסך ההסכמה מופיע לו בכניסה הראשונה).';
+    }
+  }
+  function requestLawyerConsent(c) {
+    const msg = 'שלום ' + (c.clientName || '') + ',\n' +
+      'כדי שנוכל להעביר את המסמכים שלך לעורך הדין המטפל, נדרש אישורך.\n' +
+      'היכנס/י לאזור האישי ולחץ/י על "אני מאשר/ת העברת המסמכים לעורך דין":\n' + PORTAL_URL + '\n\n' +
+      'תודה,\nהורייזון פסגות גרופ';
+    if (c.clientPhone) window.open('https://wa.me/' + phoneIntl(c.clientPhone) + '?text=' + encodeURIComponent(msg), '_blank', 'noopener');
+    else if (c.clientEmail) window.location.href = 'mailto:' + c.clientEmail + '?subject=' + encodeURIComponent('נדרש אישורך — העברת מסמכים לעורך דין') + '&body=' + encodeURIComponent(msg);
+    else navigator.clipboard && navigator.clipboard.writeText(msg).then(() => alert('אין טלפון/מייל בתיק — ההודעה הועתקה ללוח.'));
+  }
   function renderLawyerNote(c) {
     const n = $('cm-lawyer-note'); if (!n) return;
     n.hidden = !c.lawyerSentAt;

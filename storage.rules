@@ -30,9 +30,13 @@ service firebase.storage {
     function caseOpen(caseId) {
       return firestore.get(/databases/(default)/documents/cases/$(caseId)).data.status != 'closed';
     }
+    // לקוח מעלה רק אחרי שאישר את הודעת הפרטיות בפורטל (consentAt על התיק)
+    function consented(caseId) {
+      return 'consentAt' in firestore.get(/databases/(default)/documents/cases/$(caseId)).data;
+    }
     function canWrite(caseId) {
       return request.auth != null
-        && (isStaff() || ((phoneMatch(caseId) || emailMatch(caseId)) && caseOpen(caseId)));
+        && (isStaff() || ((phoneMatch(caseId) || emailMatch(caseId)) && caseOpen(caseId) && consented(caseId)));
     }
 
     // מבנה חדש (2026-09-10): clients/{שם לקוח}/{caseId}/{שם מסמך}/{קובץ}

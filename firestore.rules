@@ -72,6 +72,17 @@ service cloud.firestore {
     function touchesCaseStatus() {
       return request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'closedAt', 'closedBy']);
     }
+    // הלקוח: עד שיש הסכמה מתועדת (consentAt) הוא רשאי לכתוב רק את שדות ההסכמה עצמם;
+    // ומשניתנה — אינו יכול לשנות/למחוק אותה.
+    function consentKeys() {
+      return ['consentAt', 'consentVersion', 'consentVia', 'consentUA', 'lawyerConsentAt', 'lawyerConsentVersion'];
+    }
+    function clientConsentOK() {
+      return (('consentAt' in resource.data)
+                ? request.resource.data.consentAt == resource.data.consentAt
+                : request.resource.data.diff(resource.data).affectedKeys().hasOnly(consentKeys()))
+          && (!('lawyerConsentAt' in resource.data) || request.resource.data.lawyerConsentAt == resource.data.lawyerConsentAt);
+    }
     function ownsCase(data) {
       return (data.clientPhone != null && request.auth.token.phone_number != null
                 && data.clientPhone == request.auth.token.phone_number)
@@ -93,7 +104,8 @@ service cloud.firestore {
                         && request.resource.data.clientPhone == resource.data.clientPhone
                         && request.resource.data.clientEmail == resource.data.clientEmail
                         && request.resource.data.serviceType == resource.data.serviceType
-                        && request.resource.data.createdBy == resource.data.createdBy);
+                        && request.resource.data.createdBy == resource.data.createdBy
+                        && clientConsentOK());
     }
 
     // ---------- משימות (ניהול משימות לצוות) ----------
