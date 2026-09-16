@@ -33,7 +33,7 @@ body { direction: ltr; text-align: left; }
 .nav-link::after { right: auto; left: 0; transform-origin: left; }
 
 /* Mobile menu slides from the right in LTR */
-@media (max-width: 960px) {
+@media (max-width: 1200px) {
   .site-nav {
     inset: 0 auto 0 0;
     transform: translateX(-100%);

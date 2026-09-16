@@ -1559,7 +1559,7 @@
   height: 14px;
 }
 
-@media (max-width: 960px) {
+@media (max-width: 1200px) {
   .lang-toggle {
     color: var(--color-cream);
     border-color: rgba(244, 239, 230, 0.3);

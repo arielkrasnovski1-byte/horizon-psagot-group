@@ -118,6 +118,7 @@
   color: var(--color-charcoal);
   font-weight: 500;
   font-size: 0.9375rem;
+  white-space: nowrap;
   transition: color var(--transition-base);
 }
 
@@ -597,12 +598,12 @@
    5. MOBILE RESPONSIVE
    ============================================================ */
 
-@media (max-width: 1100px) {
+@media (max-width: 1240px) {
   .nav-list { gap: var(--space-sm); }
   .nav-link { font-size: 0.875rem; }
 }
 
-@media (max-width: 960px) {
+@media (max-width: 1200px) {
   .menu-toggle { display: block; }
 
   /* iOS Safari fix: backdrop-filter on .site-header creates a stacking
