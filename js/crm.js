@@ -3,9 +3,9 @@
    פאנל ניהול: לידים (ריבוי משתמשים, כרטיס ליד, חיפוש, דוחות,
    ייצוא, פולו-אפ) · עסקאות · מאמרים (בגל הבא)
    ============================================================ */
-import { firebaseConfig, isConfigured } from '/js/firebase-config.js?v=20260917b';
-import { SERVICE_TYPES, buildItems, serviceLabel, docCatalog, storagePath, safeSeg } from '/js/case-templates.js?v=20260917b';
-import { initTasks } from '/js/crm-tasks.js?v=20260917b';
+import { firebaseConfig, isConfigured } from '/js/firebase-config.js?v=20260917c';
+import { SERVICE_TYPES, buildItems, serviceLabel, docCatalog, storagePath, safeSeg } from '/js/case-templates.js?v=20260917c';
+import { initTasks } from '/js/crm-tasks.js?v=20260917c';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? '' : s).replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -444,23 +444,19 @@ async function boot() {
   function caseMissingItems(c) {
     return (c.items || []).filter((it) => (c.stage2Open ? it.stage === 2 : it.stage === 1) && it.status !== 'received');
   }
+  // הודעה קצרה וכללית — רשימת המסמכים המלאה מחכה ללקוח בתוך האזור האישי
   function caseMessage(c) {
-    const missing = caseMissingItems(c);
-    const list = missing.map((it) => '\u2022 ' + it.label).join('\n');
     const how = c.clientPhone && c.clientEmail
-      ? 'בקוד חד-פעמי שיישלח ב-SMS למספר הזה, או בקישור שיישלח למייל'
-      : c.clientPhone ? 'בקוד חד-פעמי שיישלח ב-SMS למספר הזה'
-      : 'בקישור חד-פעמי שיישלח לכתובת המייל הזו';
-    const head = 'שלום ' + (c.clientName || '') + ',\n\n' +
-      (c.stage2Open
-        ? 'התהליך שלך בהורייזון פסגות גרופ מתקדם, ולשלב הבא נדרשים המסמכים הבאים:'
-        : 'פתחנו עבורך תיק אישי בהורייזון פסגות גרופ.\nכדי להתחיל בתהליך נדרשים המסמכים הבאים:');
-    const body = missing.length ? '\n' + list : '\nכרגע לא חסרים מסמכים — נעדכן אותך בהמשך.';
-    return head + body + '\n\n' +
-      'להעלאה מהנייד, בקישור המאובטח:\n' + PORTAL_URL + '\n' +
-      'הכניסה ' + how + ' — ללא סיסמה.\n\n' +
-      'בכניסה הראשונה תתבקש/י לאשר את הודעת הפרטיות — אחרי זה נפתחת רשימת המסמכים.\n' +
-      'בקישור תוכל לראות בכל רגע מה כבר התקבל ומה עוד חסר.\n\n' +
+      ? 'בקוד חד-פעמי ב-SMS או בקישור למייל'
+      : c.clientPhone ? 'בקוד חד-פעמי ב-SMS'
+      : 'בקישור חד-פעמי למייל';
+    const intro = c.stage2Open
+      ? 'התהליך שלך בהורייזון פסגות גרופ מתקדם, ולשלב הבא נדרשים כמה מסמכים נוספים.'
+      : 'פתחנו עבורך תיק אישי בהורייזון פסגות גרופ.';
+    return 'שלום ' + (c.clientName || '') + ',\n\n' +
+      intro + '\n' +
+      'רשימת המסמכים הנדרשים וההעלאה שלהם, הכל באזור האישי שלך:\n' + PORTAL_URL + '\n\n' +
+      'הכניסה ' + how + ', ללא סיסמה. בכניסה הראשונה מאשרים את הודעת הפרטיות ורשימת המסמכים נפתחת.\n\n' +
       'בברכה,\nהורייזון פסגות גרופ';
   }
   async function markSent(c, via) {
