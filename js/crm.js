@@ -3,9 +3,9 @@
    פאנל ניהול: לידים (ריבוי משתמשים, כרטיס ליד, חיפוש, דוחות,
    ייצוא, פולו-אפ) · עסקאות · מאמרים (בגל הבא)
    ============================================================ */
-import { firebaseConfig, isConfigured } from '/js/firebase-config.js?v=20260917a';
-import { SERVICE_TYPES, buildItems, serviceLabel, docCatalog, storagePath, safeSeg } from '/js/case-templates.js?v=20260917a';
-import { initTasks } from '/js/crm-tasks.js?v=20260917a';
+import { firebaseConfig, isConfigured } from '/js/firebase-config.js?v=20260917b';
+import { SERVICE_TYPES, buildItems, serviceLabel, docCatalog, storagePath, safeSeg } from '/js/case-templates.js?v=20260917b';
+import { initTasks } from '/js/crm-tasks.js?v=20260917b';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? '' : s).replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -314,7 +314,7 @@ async function boot() {
     if (tabBtn) tabBtn.click();
     const existing = caseForLead(lead.id);
     if (existing) { openCaseModal(existing); return; }   // כבר קיים תיק — פותחים אותו
-    openNewCaseForm({ leadId: lead.id, name: lead.name || '', phone: lead.phone || '', email: lead.email || '' });
+    openNewCaseForm({ leadId: lead.id, name: lead.name || '', phone: lead.phone || '', email: lead.email || '', topic: lead.topic || '', audience: lead.audience || '' });
   }
 
   /* ---------- כרטיס ליד ---------- */
@@ -396,7 +396,7 @@ async function boot() {
   $('add-lead').addEventListener('click', () => {
     $('modal-title').textContent = 'לקוח חדש';
     const AUDIENCE = ['משקיע פרטי', 'יזם נדל"ן', 'משפחה / יחיד', 'בעל עסק / חברה', 'זקוק למבנה מימון', 'אחר'];
-    const TOPIC = ['מימון ומשכנתאות', 'הבראה פיננסית', 'ניהול חוב', 'ייעוץ עסקי ואסטרטגיה', 'נדל"ן בישראל', 'נדל"ן בחו"ל', 'התחדשות עירונית', 'אחר'];
+    const TOPIC = ['מימון ומשכנתאות', 'הבראה פיננסית', 'ניהול חוב', 'ייעוץ עסקי ואסטרטגיה', 'חדלות פירעון', 'נדל"ן בישראל', 'נדל"ן בחו"ל', 'התחדשות עירונית', 'אחר'];
     const F = [
       { k: 'name', l: 'שם מלא', t: 'text' }, { k: 'phone', l: 'טלפון', t: 'text' },
       { k: 'email', l: 'אימייל', t: 'text' },
@@ -806,16 +806,30 @@ async function boot() {
 
   // פתיחת תיק חדש (prefill — פתיחה מתוך כרטיס ליד)
   $('add-case').addEventListener('click', () => openNewCaseForm({}));
+  // נושא הליד (מהטופס באתר / מפייסבוק / ידני) → סוג השירות של התיק, כדי שלא יצטרכו לבחור שוב
+  const TOPIC_TO_SERVICE = {
+    'חדלות פירעון': 'insolvency', 'מימון ומשכנתאות': 'mortgage', 'הבראה פיננסית': 'recovery',
+    'ניהול חוב': 'debt', 'ייעוץ עסקי ואסטרטגיה': 'business', 'נדל"ן בישראל': 're_israel',
+    'נדל"ן בחו"ל': 're_abroad', 'התחדשות עירונית': 'urban',
+  };
+  function serviceForTopic(topic) {
+    const t = String(topic || '').trim();
+    if (TOPIC_TO_SERVICE[t]) return TOPIC_TO_SERVICE[t];
+    const hit = Object.keys(TOPIC_TO_SERVICE).find((k) => t.includes(k));
+    return hit ? TOPIC_TO_SERVICE[hit] : '';
+  }
   function openNewCaseForm(prefill) {
     prefill = prefill || {};
     $('modal-title').textContent = 'תיק לקוח חדש';
-    const svcOpts = SERVICE_TYPES.map((s) => '<option value="' + s.key + '">' + esc(s.label) + '</option>').join('');
+    const preSvc = serviceForTopic(prefill.topic);
+    const preBiz = /בעל עסק|חברה/.test(String(prefill.audience || ''));
+    const svcOpts = SERVICE_TYPES.map((s) => '<option value="' + s.key + '"' + (s.key === preSvc ? ' selected' : '') + '>' + esc(s.label) + '</option>').join('');
     $('modal-form').innerHTML =
       '<div class="field"><label>שם הלקוח</label><input type="text" data-k="clientName" value="' + esc(prefill.name || '') + '"></div>' +
       '<div class="field"><label>טלפון (לכניסה ב-SMS)</label><input type="tel" data-k="clientPhone" placeholder="050-0000000" style="direction:ltr" value="' + esc(prefill.phone || '') + '"></div>' +
       '<div class="field"><label>אימייל (לכניסה במייל)</label><input type="email" data-k="clientEmail" placeholder="you@example.com" style="direction:ltr" value="' + esc(prefill.email || '') + '"></div>' +
       '<div class="field"><label>סוג שירות</label><select data-k="serviceType">' + svcOpts + '</select></div>' +
-      '<div class="field"><label style="display:flex;align-items:center;gap:.5rem;font-weight:400"><input type="checkbox" data-k="isBusiness" style="width:auto"> ללקוח יש עסק (מוסיף מסמכים עסקיים)</label></div>';
+      '<div class="field"><label style="display:flex;align-items:center;gap:.5rem;font-weight:400"><input type="checkbox" data-k="isBusiness" style="width:auto"' + (preBiz ? ' checked' : '') + '> ללקוח יש עסק (מוסיף מסמכים עסקיים)</label></div>';
     $('modal').hidden = false;
     $('modal-save').onclick = async () => {
       const g = (k) => { const el = $('modal-form').querySelector('[data-k="' + k + '"]'); return el ? el.value.trim() : ''; };
