@@ -3,9 +3,9 @@
    פאנל ניהול: לידים (ריבוי משתמשים, כרטיס ליד, חיפוש, דוחות,
    ייצוא, פולו-אפ) · עסקאות · מאמרים (בגל הבא)
    ============================================================ */
-import { firebaseConfig, isConfigured } from '/js/firebase-config.js?v=20260913a';
-import { SERVICE_TYPES, buildItems, serviceLabel, docCatalog, storagePath, safeSeg } from '/js/case-templates.js?v=20260913a';
-import { initTasks } from '/js/crm-tasks.js?v=20260913a';
+import { firebaseConfig, isConfigured } from '/js/firebase-config.js?v=20260917a';
+import { SERVICE_TYPES, buildItems, serviceLabel, docCatalog, storagePath, safeSeg } from '/js/case-templates.js?v=20260917a';
+import { initTasks } from '/js/crm-tasks.js?v=20260917a';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? '' : s).replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -1461,16 +1461,29 @@ async function boot() {
         try {
           const r = await fetch(o.seedPath, { cache: 'no-cache' });
           const data = await r.json(); const arr = (data && data[o.seedKey]) || [];
-          const have = new Set(items.map((x) => String(x[o.dedupKey] || '').trim()));
-          let added = 0;
+          const byKey = new Map(items.map((x) => [String(x[o.dedupKey] || '').trim(), x]));
+          let added = 0, updated = 0;
           for (let i = 0; i < arr.length; i++) {
             const key = String(arr[i][o.dedupKey] || '').trim();
-            if (have.has(key)) continue;
             const { id: _slug, ...rest } = arr[i];
-            await fs.addDoc(fs.collection(db, o.name), { ...rest, order: items.length + added });
-            added++;
+            const existing = byKey.get(key);
+            if (!existing) {
+              await fs.addDoc(fs.collection(db, o.name), { ...rest, order: o.syncOrder ? i : items.length + added });
+              added++;
+              continue;
+            }
+            // פריט קיים: מיישרים רק את השדות שהקובץ באתר הוא מקור האמת שלהם
+            // (למאמרים: נתיב התמונה + סדר התצוגה). שאר הטקסטים נשארים כפי שנערכו בדסק.
+            const patch = {};
+            for (const k of (o.syncFields || [])) {
+              if (rest[k] !== undefined && String(existing[k] || '') !== String(rest[k])) patch[k] = rest[k];
+            }
+            if (o.syncOrder && existing.order !== i) patch.order = i;
+            if (Object.keys(patch).length) { await fs.updateDoc(fs.doc(db, o.name, existing.id), patch); updated++; }
           }
-          alert(added ? ('נוספו ' + added + ' פריטים חדשים.') : 'הכל כבר מעודכן — אין מה לייבא.');
+          alert((added || updated)
+            ? ('נוספו ' + added + ' פריטים חדשים, עודכנו ' + updated + ' קיימים (תמונה/סדר).')
+            : 'הכל כבר מעודכן — אין מה לסנכרן.');
         } catch (err) { alert('שגיאה בייבוא: ' + err.message); }
         btn.disabled = false; btn.textContent = orig;
       });
@@ -1513,6 +1526,7 @@ async function boot() {
 
   const articlesCol = contentCollection({
     name: 'articles', gridId: 'articles-grid', addBtnId: 'add-article', syncBtnId: 'sync-articles', dedupKey: 'title_he',
+    syncFields: ['image'], syncOrder: true, // הקובץ באתר קובע תמונה וסדר; טקסטים נערכים בדסק
     labelSingular: 'מאמר', labelPlural: 'מאמרים', seedPath: '/data/articles.json', seedKey: 'articles',
     fields: [
       { k: 'order', l: 'סדר תצוגה', t: 'number', hint: 'מספר קטן יותר = מופיע קודם. אפשר גם מספרים שליליים כדי להקפיץ מאמר לראש הרשימה.' },
