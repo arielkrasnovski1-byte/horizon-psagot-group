@@ -3,8 +3,8 @@
    כניסה: SMS (Phone Auth) או מייל (Email-link). לאחר כניסה:
    טוען את התיק/ים של הלקוח, מציג צ'ק-ליסט, ומאפשר העלאת קבצים ל-Firebase Storage.
    ============================================================ */
-import { firebaseConfig, isConfigured } from '/js/firebase-config.js?v=20260917c';
-import { serviceLabel, storagePath, CONSENT_VERSION } from '/js/case-templates.js?v=20260917c';
+import { firebaseConfig, isConfigured } from '/js/firebase-config.js?v=20260922a';
+import { serviceLabel, storagePath, CONSENT_VERSION } from '/js/case-templates.js?v=20260922a';
 
 (async function () {
   'use strict';
@@ -214,7 +214,6 @@ import { serviceLabel, storagePath, CONSENT_VERSION } from '/js/case-templates.j
       html += '<section class="doc-group stage2"><h3>שלב נוסף — מסמכים משלימים</h3>' + s2.map((it) => itemRow(c, it)).join('') + '</section>';
     }
     html += doneBox(c);
-    html += lawyerConsentBox(c);
     html += '<p class="case-foot">כל המסמכים נשמרים באופן מאובטח ומוצפן. לשאלות — <a href="/contact/">צרו קשר</a>.</p>';
     $('case-detail').innerHTML = html;
 
@@ -233,8 +232,6 @@ import { serviceLabel, storagePath, CONSENT_VERSION } from '/js/case-templates.j
     });
     const doneBtn = $('client-done-btn');
     if (doneBtn) doneBtn.addEventListener('click', () => submitDone(c));
-    const lwBtn = $('lawyer-consent-btn');
-    if (lwBtn) lwBtn.addEventListener('click', () => saveConsent(c, { lawyerConsentAt: new Date().toISOString(), lawyerConsentVersion: CONSENT_VERSION }, lwBtn));
   }
 
   /* ---------- הסכמה מתועדת (חובת יידוע — סעיף 11 לחוק הגנת הפרטיות) ---------- */
@@ -243,7 +240,7 @@ import { serviceLabel, storagePath, CONSENT_VERSION } from '/js/case-templates.j
       '<p><b>מה נאסף:</b> מסמכי זיהוי ומסמכים פיננסיים שתעלו לתיק (למשל תעודת זהות, תלושי שכר, דפי חשבון), וכן שם, טלפון ואימייל לצורך הזיהוי והקשר.</p>' +
       '<p><b>למה:</b> אך ורק לטיפול בעניין שלשמו נפתח התיק. אין חובה חוקית למסור את המסמכים, אך בלעדיהם לא נוכל להתקדם בטיפול.</p>' +
       '<p><b>איפה ומי רואה:</b> המסמכים נשמרים מוצפנים בשירותי הענן של Google (שרתים באירופה) ונגישים רק לאנשי צוות מורשים של הורייזון פסגות גרופ, לפי הצורך בטיפול.</p>' +
-      '<p><b>העברה לעורכי דין:</b> כאשר הטיפול מחייב עורך דין חיצוני, המסמכים יועברו אליו רק באישורכם (ניתן לאשר כאן או מאוחר יותר).</p>' +
+      '<p><b>העברה לעורכי דין:</b> כאשר הטיפול מחייב עורך דין חיצוני העובד עם הורייזון פסגות גרופ, המסמכים הנדרשים יועברו אליו לצורך הטיפול בלבד. כל העברה מתועדת בתיק.</p>' +
       '<p><b>כמה זמן:</b> עד סיום הטיפול ולתקופה הנדרשת על פי דין. ניתן לבקש בכל עת לעיין במידע, לתקנו או למחוק אותו — <a href="mailto:office@horizon-psagot-group.com">office@horizon-psagot-group.com</a>.</p>' +
       '<p>הפירוט המלא במסמך <a href="/privacy/" target="_blank" rel="noopener">מדיניות הפרטיות</a>.</p>' +
       '</div>';
@@ -253,8 +250,7 @@ import { serviceLabel, storagePath, CONSENT_VERSION } from '/js/case-templates.j
       '<div class="case-head"><div><h2>לפני שמתחילים</h2>' +
       (c.clientName ? '<p class="case-sub">שלום ' + esc(c.clientName) + ' 👋 כדי לפתוח את התיק נדרש אישור קצר.</p>' : '') + '</div></div>' +
       consentNoticeHTML() +
-      '<label class="consent-check"><input type="checkbox" id="consent-main"> <span>קראתי את ההודעה ואת מדיניות הפרטיות, ואני מסכים/ה לאיסוף ולשמירת המסמכים והפרטים שלי לצורך הטיפול בתיק.</span></label>' +
-      '<label class="consent-check"><input type="checkbox" id="consent-lawyer"> <span>אני מאשר/ת להעביר את המסמכים לעורך דין חיצוני העובד עם הורייזון פסגות גרופ, ככל שיידרש לטיפול בעניין שלי. <em>(לא חובה — ניתן לאשר גם בהמשך)</em></span></label>' +
+      '<label class="consent-check"><input type="checkbox" id="consent-main"> <span>קראתי את ההודעה ואת מדיניות הפרטיות, ואני מסכים/ה לאיסוף ולשמירת המסמכים והפרטים שלי לצורך הטיפול בתיק, ולהעברתם לעורך דין חיצוני העובד עם הורייזון פסגות גרופ ככל שיידרש לטיפול בעניין שלי.</span></label>' +
       '<div class="portal-error" id="consent-error"></div>' +
       '<button class="portal-btn" id="consent-btn" type="button" disabled>אישור והמשך לתיק</button>' +
       '<p class="done-sub">האישור נשמר בתיק עם תאריך ושעה.</p>';
@@ -263,20 +259,14 @@ import { serviceLabel, storagePath, CONSENT_VERSION } from '/js/case-templates.j
     btn.addEventListener('click', () => {
       if (!main.checked) return;
       const now = new Date().toISOString();
-      const data = { consentAt: now, consentVersion: CONSENT_VERSION, consentVia: consentIdentity(), consentUA: (navigator.userAgent || '').slice(0, 200) };
-      if ($('consent-lawyer').checked) { data.lawyerConsentAt = now; data.lawyerConsentVersion = CONSENT_VERSION; }
+      // הסכמה אחת מכסה גם העברה לעו"ד (נוסח v2) — נשמר גם lawyerConsentAt לתאימות עם תיקים ישנים
+      const data = { consentAt: now, consentVersion: CONSENT_VERSION, consentVia: consentIdentity(), consentUA: (navigator.userAgent || '').slice(0, 200), lawyerConsentAt: now, lawyerConsentVersion: CONSENT_VERSION };
       saveConsent(c, data, btn, $('consent-error'));
     });
   }
   function consentIdentity() {
     const u = auth.currentUser || {};
     return u.phoneNumber ? 'sms:' + u.phoneNumber : u.email ? 'email:' + u.email : '';
-  }
-  function lawyerConsentBox(c) {
-    if (c.status === 'closed' || c.lawyerConsentAt) return '';
-    return '<div class="consent-later"><b>אישור העברה לעורך דין</b>' +
-      '<p>אם הטיפול בעניינך יחייב עורך דין חיצוני, נוכל להעביר אליו את המסמכים רק באישורך.</p>' +
-      '<button class="portal-link" id="lawyer-consent-btn" type="button">✓ אני מאשר/ת העברת המסמכים לעורך דין לפי הצורך</button></div>';
   }
   async function saveConsent(c, data, btn, errEl) {
     if (btn) { btn.disabled = true; }

@@ -216,4 +216,4 @@ export function storagePath(c, item, fileName) {
 }
 
 /* גרסת נוסח ההסכמה בפורטל — מעלים כשמשנים את הטקסט, כדי שיהיה תיעוד לאיזה נוסח הלקוח הסכים */
-export const CONSENT_VERSION = '2026-09-13.v1';
+export const CONSENT_VERSION = '2026-09-22.v2'; // v2: הסכמה אחת כוללת העברה לעו"ד
