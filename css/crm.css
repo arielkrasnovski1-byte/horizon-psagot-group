@@ -642,3 +642,10 @@ tbody tr.lead-row:hover td { background: var(--color-cream-soft); }
 .ig-list { max-height: 44vh; }
 .ig-item.dup { opacity: .55; }
 @media (max-width: 640px) { .inv-filter .inv-tools { margin-inline-start: 0; } .inv-amount-row { grid-template-columns: 1fr 72px; } }
+/* חלוקה לפי תיבת מייל */
+.inv-split { display: inline-flex; flex-wrap: wrap; gap: .5rem; flex-basis: 100%; }
+.inv-sum.acct { cursor: pointer; font: inherit; font-size: var(--fs-sm); font-weight: 700; border-color: rgba(142,124,195,.5); background: rgba(142,124,195,.08); color: #5B4A8A; }
+.inv-sum.acct:hover { border-color: #5B4A8A; }
+.inv-sum.acct i { direction: ltr; unicode-bidi: embed; }
+.ig-acct-row { display: flex; align-items: center; justify-content: space-between; gap: .5rem; flex-wrap: wrap; font-size: var(--fs-sm); background: rgba(142,124,195,.08); border: 1px solid rgba(142,124,195,.35); border-radius: var(--radius-md); padding: 6px 10px; margin-bottom: var(--space-sm); color: #5B4A8A; }
+.ig-acct-row b { font-weight: 700; unicode-bidi: embed; }

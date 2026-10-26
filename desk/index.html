@@ -423,7 +423,7 @@
   <div class="modal-overlay" id="inv-gmail-modal" hidden>
     <div class="modal lead-card">
       <div class="lead-card-head">
-        <div><h3 style="margin:0">ייבוא חשבוניות מהמייל</h3><div class="lc-sub">חיפוש בתיבת office@horizon-psagot-group.com · קריאה בלבד · הקבצים נשמרים בארכיון המאובטח</div></div>
+        <div><h3 style="margin:0">ייבוא חשבוניות מהמייל</h3><div class="lc-sub">חיפוש בתיבת Gmail של הארגון (office או חשבון אחר) · קריאה בלבד · כל חשבונית נשמרת עם שם התיבה שממנה הגיעה</div></div>
         <button class="icon-btn" id="inv-gmail-close" type="button" title="סגירה">✕</button>
       </div>
       <div id="ig-setup" class="inv-setup" hidden>
@@ -437,6 +437,7 @@
         <p>ההוראות המלאות: README-INVOICES-GMAIL.md בתיקיית האתר.</p>
       </div>
       <div id="ig-body" hidden>
+        <div class="ig-acct-row"><span>תיבת מייל: <b id="ig-acct" dir="ltr"></b></span><button type="button" class="btn-ghost lw-mini" id="ig-switch" title="התנתקות מהחשבון הנוכחי ובחירת חשבון Google אחר בחיפוש הבא">⇄ החלפת חשבון</button></div>
         <div class="field"><label for="ig-q">שאילתת חיפוש (תחביר Gmail)</label><input type="text" id="ig-q" dir="auto"></div>
         <div class="lw-pickbar">
           <select id="ig-range" class="status-select">
@@ -547,6 +548,6 @@
     </div>
   </div>
 
-  <script type="module" src="/js/crm.js?v=20261026b"></script>
+  <script type="module" src="/js/crm.js?v=20261026c"></script>
 </body>
 </html>

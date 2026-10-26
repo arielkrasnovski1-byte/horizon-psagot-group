@@ -27,10 +27,11 @@ export function initInvoices(ctx) {
   let all = [];
   let unsub = null;
   let ownerMode = false;
-  let yearF = '', monthF = '', kindF = '', catF = '', q = '';
+  let yearF = '', monthF = '', kindF = '', catF = '', acctF = '', q = '';
   let current = null;            // החשבונית הפתוחה בכרטיס
   let pendingFile = null;        // קובץ שנבחר בכרטיס "חשבונית חדשה" לפני שמירה
-  let gmailToken = null, gmailResults = [];
+  let gmailToken = null, gmailResults = [], gmailAccount = '', gmailPrompt = '';
+  let backfilled = false;
 
   const p2 = (n) => ('0' + n).slice(-2);
   const num = (v) => { const n = parseFloat(String(v == null ? '' : v).replace(/[^\d.\-]/g, '')); return isNaN(n) ? 0 : n; };
@@ -40,6 +41,11 @@ export function initInvoices(ctx) {
   const isPdf = (f) => /pdf/i.test(f.contentType || f.type || '') || /\.pdf$/i.test(f.fileName || f.name || '');
   const okType = (type, name) => /^(image\/|application\/pdf$)/.test(type || '') || /\.(pdf|jpe?g|png|webp|heic)$/i.test(name || '');
   const missingInfo = (inv) => !inv.supplier || !inv.amount;
+  // מאיזו תיבה הגיעה החשבונית: מייל של החשבון המייבא, או 'manual' להעלאה ידנית.
+  // ייבואים ישנים (לפני שנשמר החשבון) נעשו כולם מ-office.
+  const acctOf = (i) => i.source === 'gmail' ? (i.gmailAccount || GMAIL_LOGIN_HINT) : 'manual';
+  const acctLabel = (a) => a === 'manual' ? 'העלאה ידנית' : a;
+  const acctShort = (a) => a === 'manual' ? 'ידני' : String(a).split('@')[0];
 
   /* ============================================================
      הרשאה: הטאב והמנוי קיימים רק לבעלים
@@ -54,6 +60,8 @@ export function initInvoices(ctx) {
     unsub = fs.onSnapshot(fs.collection(db, 'invoices'), (snap) => {
       all = snap.docs.map((d) => ({ ...d.data(), id: d.id }));
       render();
+      // השלמה חד-פעמית: ייבואים שנעשו לפני שמירת שם התיבה — כולם מ-office
+      if (!backfilled) { backfilled = true; all.filter((i) => i.source === 'gmail' && !i.gmailAccount).forEach((i) => fs.updateDoc(fs.doc(db, 'invoices', i.id), { gmailAccount: GMAIL_LOGIN_HINT }).catch(() => {})); }
       if (current) { const c = all.find((x) => x.id === current.id); if (c) current = c; }
     }, (err) => {
       console.warn('invoices listen', err);
@@ -72,6 +80,7 @@ export function initInvoices(ctx) {
       if (monthF && String(i.month || '') !== monthF) return false;
       if (kindF && (i.kind || 'expense') !== kindF) return false;
       if (catF && (i.category || '') !== catF) return false;
+      if (acctF && acctOf(i) !== acctF) return false;
       if (qq) {
         const hay = [i.supplier, i.number, i.fileName, i.note, i.category, i.gmailSubject, i.gmailFrom].map((s) => String(s || '').toLowerCase()).join(' ');
         if (!hay.includes(qq)) return false;
@@ -107,7 +116,7 @@ export function initInvoices(ctx) {
       `<td><span class="inv-kind ${kind}">${INVOICE_KINDS[kind]}</span></td>` +
       `<td class="inv-amt">${i.amount ? fmtMoney(i.amount, i.currency) : '—'}</td>` +
       `<td>${i.url ? `<a class="file-chip" href="${esc(i.url)}" target="_blank" rel="noopener" title="${esc(i.fileName || '')}">${isPdf(i) ? '📄' : '🖼'} ${esc((i.fileName || 'קובץ').slice(0, 28))}</a>` : '—'}</td>` +
-      `<td><small>${i.source === 'gmail' ? '✉ מייל' : '⬆ ידני'}</small></td>` +
+      `<td><small title="${esc(acctLabel(acctOf(i)))}">${i.source === 'gmail' ? '✉ ' + esc(acctShort(acctOf(i))) : '⬆ ידני'}</small></td>` +
       `<td class="inv-actions"><button class="icon-btn" data-inv-edit="${i.id}" title="עריכת פרטים">✎</button><button class="icon-btn danger" data-inv-del="${i.id}" title="מחיקה">✕</button></td>` +
       '</tr>';
   }
@@ -115,11 +124,13 @@ export function initInvoices(ctx) {
     const bar = $('inv-filter');
     const years = [...new Set(all.map((i) => i.year).filter(Boolean))].sort((a, b) => b - a);
     const cats = [...new Set(all.map((i) => i.category).filter(Boolean))].sort();
+    const accts = [...new Set(all.map(acctOf))].sort((a, b) => (a === 'manual') - (b === 'manual') || a.localeCompare(b));
     bar.innerHTML =
       `<select id="inv-year" class="status-select"><option value="">כל השנים</option>${years.map((y) => `<option value="${y}"${String(y) === yearF ? ' selected' : ''}>${y}</option>`).join('')}</select>` +
       `<select id="inv-month" class="status-select"><option value="">כל החודשים</option>${MONTHS_HE.map((m, k) => `<option value="${k + 1}"${String(k + 1) === monthF ? ' selected' : ''}>${m}</option>`).join('')}</select>` +
       `<select id="inv-kind" class="status-select"><option value="">הוצאות והכנסות</option>${Object.keys(INVOICE_KINDS).map((k) => `<option value="${k}"${k === kindF ? ' selected' : ''}>${INVOICE_KINDS[k]}</option>`).join('')}</select>` +
       `<select id="inv-cat" class="status-select"><option value="">כל הקטגוריות</option>${cats.map((c) => `<option value="${esc(c)}"${c === catF ? ' selected' : ''}>${esc(c)}</option>`).join('')}</select>` +
+      `<select id="inv-acct" class="status-select"><option value="">כל התיבות</option>${accts.map((a) => `<option value="${esc(a)}"${a === acctF ? ' selected' : ''}>${esc(acctLabel(a))}</option>`).join('')}</select>` +
       `<input type="search" id="inv-q" class="search-input cases-search" placeholder="חיפוש ספק / מספר / קובץ…" value="${esc(q)}">` +
       `<span class="cases-viewsw inv-tools">` +
       `<button type="button" class="cases-fbtn" id="inv-csv" title="ייצוא הטבלה המסוננת לאקסל">📊 ייצוא CSV</button>` +
@@ -129,6 +140,7 @@ export function initInvoices(ctx) {
     bar.querySelector('#inv-month').onchange = (e) => { monthF = e.target.value; render(); };
     bar.querySelector('#inv-kind').onchange = (e) => { kindF = e.target.value; render(); };
     bar.querySelector('#inv-cat').onchange = (e) => { catF = e.target.value; render(); };
+    bar.querySelector('#inv-acct').onchange = (e) => { acctF = e.target.value; render(); };
     const qi = bar.querySelector('#inv-q');
     qi.oninput = () => { q = qi.value; const pos = qi.selectionStart; render(); const n = $('inv-q'); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (e) {} } };
     bar.querySelector('#inv-csv').onclick = exportCSV;
@@ -143,8 +155,15 @@ export function initInvoices(ctx) {
       const s = sums[cur];
       return `<span class="inv-sum"><i>הוצאות</i> ${fmtMoney(s.expense, cur)}</span>` + (s.income ? `<span class="inv-sum in"><i>הכנסות</i> ${fmtMoney(s.income, cur)}</span>` : '');
     });
+    // חלוקה לפי תיבת מייל (מוצג כשיש יותר מתיבה אחת ואין סינון לפי תיבה)
+    const byAcct = {};
+    rows.forEach((i) => { const a = acctOf(i); byAcct[a] = byAcct[a] || { n: 0, sum: 0 }; byAcct[a].n++; if ((i.currency || 'ILS') === 'ILS' && i.kind !== 'income') byAcct[a].sum += num(i.amount); });
+    const acctKeys = Object.keys(byAcct);
+    const split = (!acctF && acctKeys.length > 1)
+      ? `<span class="inv-split">${acctKeys.sort((a, b) => (a === 'manual') - (b === 'manual') || a.localeCompare(b)).map((a) => `<button type="button" class="inv-sum acct" data-acct="${esc(a)}" title="סינון לפי תיבה זו"><i>${esc(acctLabel(a))}</i> ${byAcct[a].n} · ${fmtMoney(byAcct[a].sum, 'ILS')}</button>`).join('')}</span>` : '';
     el.innerHTML = `<span class="inv-sum"><i>מסמכים</i> ${rows.length}${rows.length !== all.length ? ' / ' + all.length : ''}</span>` + parts.join('') +
-      (miss ? `<span class="inv-sum warn"><i>חסרים פרטים</i> ${miss}</span>` : '');
+      (miss ? `<span class="inv-sum warn"><i>חסרים פרטים</i> ${miss}</span>` : '') + split;
+    el.querySelectorAll('[data-acct]').forEach((b) => b.onclick = () => { acctF = b.dataset.acct; render(); });
   }
 
   /* ============================================================
@@ -230,7 +249,7 @@ export function initInvoices(ctx) {
       ? `<a class="file-chip" href="${esc(inv.url)}" target="_blank" rel="noopener">${isPdf(inv) ? '📄' : '🖼'} ${esc(inv.fileName || 'קובץ')}</a> <small>${fmtSize(inv.size)} · ${inv.source === 'gmail' ? 'יובא מהמייל' : 'הועלה'} ${fmtDate(inv.uploadedAt)}${inv.uploadedBy ? ' · ' + esc(displayName(inv.uploadedBy)) : ''}</small>`
       : '<small>לא נבחר קובץ</small>';
     M('src').innerHTML = inv && inv.source === 'gmail'
-      ? `<div class="inv-gmail-src">✉ <b>${esc(inv.gmailFrom || '')}</b> · ${esc(inv.gmailSubject || '')}${inv.gmailDate ? ' · ' + fmtDate(inv.gmailDate) : ''}</div>` : '';
+      ? `<div class="inv-gmail-src">✉ <b>${esc(inv.gmailFrom || '')}</b> · ${esc(inv.gmailSubject || '')}${inv.gmailDate ? ' · ' + fmtDate(inv.gmailDate) : ''}<br><small>תיבה: ${esc(acctOf(inv))}</small></div>` : '';
     M('delete').hidden = !inv;
     M('replace-lbl').textContent = inv ? 'החלפת הקובץ' : 'בחירת קובץ (PDF / תמונה)';
     M('err').textContent = '';
@@ -293,7 +312,7 @@ export function initInvoices(ctx) {
     const rows = filtered(); if (!rows.length) { alert('אין שורות לייצוא.'); return; }
     const cols = [['תאריך', (i) => fmtDay(i.date)], ['ספק / לקוח', (i) => i.supplier], ['מספר חשבונית', (i) => i.number], ['סוג', (i) => INVOICE_KINDS[i.kind] || 'הוצאה'],
       ['קטגוריה', (i) => i.category], ['סכום', (i) => i.amount || 0], ['מטבע', (i) => i.currency || 'ILS'], ['שולם', (i) => i.paid === false ? 'לא' : 'כן'],
-      ['הערה', (i) => i.note], ['קובץ', (i) => i.fileName], ['קישור', (i) => i.url], ['מקור', (i) => i.source === 'gmail' ? 'מייל' : 'ידני'], ['נושא המייל', (i) => i.gmailSubject], ['שולח המייל', (i) => i.gmailFrom]];
+      ['הערה', (i) => i.note], ['קובץ', (i) => i.fileName], ['קישור', (i) => i.url], ['מקור', (i) => i.source === 'gmail' ? 'מייל' : 'ידני'], ['תיבת מייל', (i) => i.source === 'gmail' ? acctOf(i) : ''], ['נושא המייל', (i) => i.gmailSubject], ['שולח המייל', (i) => i.gmailFrom]];
     const cell = (v) => { const s = String(v == null ? '' : v); return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
     const csv = '﻿' + cols.map((c) => cell(c[0])).join(',') + '\r\n' + rows.map((i) => cols.map((c) => cell(c[1](i))).join(',')).join('\r\n');
     const a = document.createElement('a');
@@ -337,8 +356,11 @@ export function initInvoices(ctx) {
     G('list').innerHTML = '';
     G('status').textContent = '';
     G('import').disabled = true;
+    renderAcct();
     $('inv-gmail-modal').hidden = false;
   }
+  function renderAcct() { G('acct').textContent = gmailAccount || 'עדיין לא מחובר — בלחיצה על חיפוש ייפתח חלון התחברות של Google'; }
+  G('switch').addEventListener('click', () => { gmailToken = null; gmailAccount = ''; gmailPrompt = 'select_account'; renderAcct(); G('status').textContent = 'בחיפוש הבא תתבקשו לבחור חשבון Google אחר.'; });
   const closeGmail = () => { $('inv-gmail-modal').hidden = true; };
   $('inv-gmail-close').addEventListener('click', closeGmail);
   G('cancel').addEventListener('click', closeGmail);
@@ -356,8 +378,8 @@ export function initInvoices(ctx) {
     await loadGIS();
     return new Promise((res, rej) => {
       const client = google.accounts.oauth2.initTokenClient({
-        client_id: GMAIL_CLIENT_ID, scope: GMAIL_SCOPE, hint: GMAIL_LOGIN_HINT, prompt: '',
-        callback: (r) => { if (r.error) { rej(new Error(r.error_description || r.error)); return; } gmailToken = { token: r.access_token, exp: Date.now() + (Number(r.expires_in) || 3600) * 1000 }; res(r.access_token); },
+        client_id: GMAIL_CLIENT_ID, scope: GMAIL_SCOPE, prompt: gmailPrompt, ...(gmailPrompt ? {} : { hint: GMAIL_LOGIN_HINT }),
+        callback: (r) => { if (r.error) { rej(new Error(r.error_description || r.error)); return; } gmailToken = { token: r.access_token, exp: Date.now() + (Number(r.expires_in) || 3600) * 1000 }; gmailPrompt = ''; res(r.access_token); },
         error_callback: (e) => rej(new Error(e && e.type === 'popup_closed' ? 'חלון ההתחברות נסגר' : (e && e.message) || 'שגיאת התחברות ל-Google')),
       });
       client.requestAccessToken();
@@ -381,12 +403,15 @@ export function initInvoices(ctx) {
     return out;
   }
   const alreadyImported = (msgId, name) => all.some((i) => i.gmailMessageId === msgId && i.fileName === name);
+  // אותה חשבונית שהגיעה לשתי תיבות: אותו שם קובץ + אותו גודל + אותו יום — מסומנת "קיים בתיבה אחרת"
+  const inOtherAcct = (r) => all.some((i) => i.source === 'gmail' && acctOf(i) !== gmailAccount && i.fileName === r.att.name && i.size === r.att.size && i.gmailDate && i.gmailDate.slice(0, 10) === (r.date || '').slice(0, 10));
 
   G('search').addEventListener('click', async () => {
     const range = G('range').value;
     const qq = G('q').value.trim() + (range ? ' newer_than:' + range : '');
     G('status').textContent = 'מתחבר ל-Gmail…'; G('list').innerHTML = ''; G('import').disabled = true; gmailResults = [];
     try {
+      if (!gmailAccount) { const prof = await gapi('profile'); gmailAccount = String(prof.emailAddress || '').toLowerCase(); renderAcct(); }
       let ids = [], pageToken = '';
       do {
         const r = await gapi('messages', { q: qq, maxResults: 100, ...(pageToken ? { pageToken } : {}) });
@@ -412,10 +437,11 @@ export function initInvoices(ctx) {
     G('status').textContent = gmailResults.length ? (gmailResults.length + ' קבצים מצורפים' + (fresh !== gmailResults.length ? ' · ' + (gmailResults.length - fresh) + ' כבר יובאו' : '')) : 'לא נמצאו קבצים מצורפים מתאימים (PDF / תמונה).';
     G('list').innerHTML = gmailResults.map((r, k) => {
       const dup = alreadyImported(r.msgId, r.att.name);
-      return `<label class="lw-item ig-item${dup ? ' dup' : ''}"><input type="checkbox" data-k="${k}"${dup ? ' disabled' : ' checked'}>` +
+      const other = !dup && inOtherAcct(r);
+      return `<label class="lw-item ig-item${dup ? ' dup' : ''}"><input type="checkbox" data-k="${k}"${dup ? ' disabled' : other ? '' : ' checked'}>` +
         `<span><b>${isPdf({ contentType: r.att.mime, fileName: r.att.name }) ? '📄' : '🖼'} ${esc(r.att.name)} <small style="display:inline">${fmtSize(r.att.size)}</small></b>` +
         `<small>${esc(r.from.replace(/<.*>/, '').trim())} · ${esc(r.subject)} · ${fmtDay(r.day)}</small></span>` +
-        (dup ? '<span class="pill received">יובא</span>' : '') + '</label>';
+        (dup ? '<span class="pill received">יובא</span>' : other ? '<span class="pill pending" title="קובץ זהה כבר יובא מתיבה אחרת — לא מסומן כברירת מחדל">קיים בתיבה אחרת</span>' : '') + '</label>';
     }).join('');
     const upd = () => { const n = G('list').querySelectorAll('input:checked:not(:disabled)').length; G('import').disabled = !n; G('import').textContent = 'ייבוא ' + (n ? n + ' קבצים' : 'נבחרים'); };
     G('list').querySelectorAll('input').forEach((c) => c.onchange = upd); upd();
@@ -435,7 +461,7 @@ export function initInvoices(ctx) {
         const blob = new Blob([bytes], { type: r.att.mime || 'application/pdf' });
         const from = r.from.replace(/<.*>/, '').replace(/"/g, '').trim();
         await uploadOne(blob, r.att.name, {
-          source: 'gmail', gmailMessageId: r.msgId, gmailSubject: r.subject, gmailFrom: r.from, gmailDate: r.date,
+          source: 'gmail', gmailAccount, gmailMessageId: r.msgId, gmailSubject: r.subject, gmailFrom: r.from, gmailDate: r.date,
           date: datePartsFromName(r.att.name) || r.day || todayStr(), supplier: from.slice(0, 80),
         });
         done++;
