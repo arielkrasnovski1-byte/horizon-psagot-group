@@ -13,7 +13,14 @@
 export const GMAIL_CLIENT_ID = '579496667206-u63c3v4m3v25r1n15jhabunekdslgr0f.apps.googleusercontent.com';
 const GMAIL_LOGIN_HINT = 'office@horizon-psagot-group.com';
 const GMAIL_SCOPE = 'https://www.googleapis.com/auth/gmail.readonly';
-const GMAIL_DEFAULT_Q = '(חשבונית OR קבלה OR invoice OR receipt OR "חשבונית מס") has:attachment';
+// מצבי חיפוש: ג'ימייל לא מזהה נטיות בעברית (החשבונית/חשבוניות), לכן מילות המפתח מפורטות.
+const GMAIL_QUERIES = {
+  keywords: '(חשבונית OR החשבונית OR חשבוניות OR קבלה OR הקבלה OR קבלות OR "חשבונית מס" OR "אישור תשלום" OR "דרישת תשלום" OR invoice OR invoices OR receipt OR receipts OR "tax invoice" OR billing OR statement OR payment) has:attachment',
+  allpdf: 'has:attachment (filename:pdf OR filename:jpg OR filename:jpeg OR filename:png)',
+  custom: '',
+};
+const GMAIL_DEFAULT_Q = GMAIL_QUERIES.keywords;
+const GMAIL_MAX_MSGS = 1500;
 
 export const INVOICE_KINDS = { expense: 'הוצאה', income: 'הכנסה' };
 export const INVOICE_CATS = ['שכירות ומשרד', 'תוכנה ומנויים', 'פרסום ושיווק', 'רו"ח / עו"ד / ייעוץ', 'תקשורת', 'ציוד', 'נסיעות ואירוח', 'בנק ועמלות', 'ספקים ושכר', 'אחר'];
@@ -352,13 +359,20 @@ export function initInvoices(ctx) {
     gmailResults = [];
     G('setup').hidden = !!GMAIL_CLIENT_ID;
     G('body').hidden = !GMAIL_CLIENT_ID;
-    G('q').value = GMAIL_DEFAULT_Q;
+    G('mode').value = 'keywords'; applyMode();
     G('list').innerHTML = '';
     G('status').textContent = '';
     G('import').disabled = true;
     renderAcct();
     $('inv-gmail-modal').hidden = false;
   }
+  function applyMode() {
+    const m = G('mode').value;
+    if (m !== 'custom') G('q').value = GMAIL_QUERIES[m];
+    G('q').readOnly = m !== 'custom';
+    G('q-wrap').hidden = m !== 'custom';
+  }
+  G('mode').addEventListener('change', applyMode);
   function renderAcct() { G('acct').textContent = gmailAccount || 'עדיין לא מחובר — בלחיצה על חיפוש ייפתח חלון התחברות של Google'; }
   G('switch').addEventListener('click', () => { gmailToken = null; gmailAccount = ''; gmailPrompt = 'select_account'; renderAcct(); G('status').textContent = 'בחיפוש הבא תתבקשו לבחור חשבון Google אחר.'; });
   const closeGmail = () => { $('inv-gmail-modal').hidden = true; };
@@ -397,8 +411,14 @@ export function initInvoices(ctx) {
   function attachmentsOf(payload, out) {
     out = out || [];
     if (!payload) return out;
-    if (payload.filename && payload.body && payload.body.attachmentId && okType(payload.mimeType, payload.filename))
-      out.push({ id: payload.body.attachmentId, name: payload.filename, size: payload.body.size || 0, mime: payload.mimeType });
+    const name = payload.filename || (/pdf/i.test(payload.mimeType || '') ? 'attachment.pdf' : '');
+    const size = (payload.body && payload.body.size) || 0;
+    const isImg = /^image\//i.test(payload.mimeType || '') || /\.(jpe?g|png|webp|heic)$/i.test(name);
+    const inline = (payload.headers || []).some((h) => h.name.toLowerCase() === 'content-disposition' && /^inline/i.test(h.value || ''));
+    // תמונות: מדלגים על לוגואים בחתימה (inline) ועל תמונות קטנות מ-30KB — חשבונית מצולמת גדולה בהרבה
+    const skipImg = isImg && (inline || size < 30 * 1024 || /^(image\d{3}|outlook-|logo|signature|icon)/i.test(name));
+    if (name && payload.body && payload.body.attachmentId && okType(payload.mimeType, name) && !skipImg)
+      out.push({ id: payload.body.attachmentId, name, size, mime: payload.mimeType });
     (payload.parts || []).forEach((p) => attachmentsOf(p, out));
     return out;
   }
@@ -417,7 +437,8 @@ export function initInvoices(ctx) {
         const r = await gapi('messages', { q: qq, maxResults: 100, ...(pageToken ? { pageToken } : {}) });
         ids = ids.concat((r.messages || []).map((m) => m.id)); pageToken = r.nextPageToken || '';
         G('status').textContent = 'נמצאו ' + ids.length + ' מיילים…';
-      } while (pageToken && ids.length < 500);
+      } while (pageToken && ids.length < GMAIL_MAX_MSGS);
+      const capped = !!pageToken;
       if (!ids.length) { G('status').textContent = 'לא נמצאו מיילים מתאימים.'; return; }
       let n = 0;
       for (const id of ids) {
@@ -429,12 +450,12 @@ export function initInvoices(ctx) {
         atts.forEach((a) => gmailResults.push({ msgId: id, att: a, from: hdr(m, 'from'), subject: hdr(m, 'subject'), date: isNaN(d) ? '' : d.toISOString(), day: isNaN(d) ? '' : `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}` }));
       }
       gmailResults.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-      renderGmailList();
+      renderGmailList(capped ? ' · הוצגו ' + GMAIL_MAX_MSGS + ' המיילים האחרונים בלבד — צמצמו את הטווח כדי לראות את השאר' : '');
     } catch (e) { G('status').textContent = 'שגיאה: ' + (e.message || e); console.warn('gmail search', e); }
   });
-  function renderGmailList() {
+  function renderGmailList(extra) {
     const fresh = gmailResults.filter((r) => !alreadyImported(r.msgId, r.att.name)).length;
-    G('status').textContent = gmailResults.length ? (gmailResults.length + ' קבצים מצורפים' + (fresh !== gmailResults.length ? ' · ' + (gmailResults.length - fresh) + ' כבר יובאו' : '')) : 'לא נמצאו קבצים מצורפים מתאימים (PDF / תמונה).';
+    G('status').textContent = (gmailResults.length ? (gmailResults.length + ' קבצים מצורפים' + (fresh !== gmailResults.length ? ' · ' + (gmailResults.length - fresh) + ' כבר יובאו' : '')) : 'לא נמצאו קבצים מצורפים מתאימים (PDF / תמונה).') + (extra || '');
     G('list').innerHTML = gmailResults.map((r, k) => {
       const dup = alreadyImported(r.msgId, r.att.name);
       const other = !dup && inOtherAcct(r);

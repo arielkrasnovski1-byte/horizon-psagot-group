@@ -438,7 +438,16 @@
       </div>
       <div id="ig-body" hidden>
         <div class="ig-acct-row"><span>תיבת מייל: <b id="ig-acct" dir="ltr"></b></span><button type="button" class="btn-ghost lw-mini" id="ig-switch" title="התנתקות מהחשבון הנוכחי ובחירת חשבון Google אחר בחיפוש הבא">⇄ החלפת חשבון</button></div>
-        <div class="field"><label for="ig-q">שאילתת חיפוש (תחביר Gmail)</label><input type="text" id="ig-q" dir="auto"></div>
+        <div class="field-row">
+          <div class="field"><label for="ig-mode">מה לחפש</label>
+            <select id="ig-mode">
+              <option value="keywords">מיילים עם מילות מפתח של חשבונית / קבלה / invoice (מומלץ להתחלה)</option>
+              <option value="allpdf">כל המיילים עם PDF או תמונה מצורפת (תופס הכל — מורידים סימון ממה שלא רלוונטי)</option>
+              <option value="custom">שאילתה חופשית (תחביר Gmail)</option>
+            </select>
+          </div>
+        </div>
+        <div class="field" id="ig-q-wrap" hidden><label for="ig-q">שאילתה (למשל from:billing@google.com has:attachment)</label><input type="text" id="ig-q" dir="auto"></div>
         <div class="lw-pickbar">
           <select id="ig-range" class="status-select">
             <option value="3m">3 חודשים אחרונים</option>
@@ -548,6 +557,6 @@
     </div>
   </div>
 
-  <script type="module" src="/js/crm.js?v=20261026c"></script>
+  <script type="module" src="/js/crm.js?v=20261026d"></script>
 </body>
 </html>
