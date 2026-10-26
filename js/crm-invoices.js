@@ -391,15 +391,37 @@ export function initInvoices(ctx) {
       client.requestAccessToken();
     });
   }
+  // ויסות קצב: מכסת Gmail היא 15,000 יחידות לדקה למשתמש (כל קריאה ≈ 5) → עד ~40 קריאות בשנייה בבטחה
+  const RATE = 35; let stamps = [];
+  async function throttle() {
+    for (;;) {
+      const now = Date.now(); stamps = stamps.filter((t) => now - t < 1000);
+      if (stamps.length < RATE) { stamps.push(now); return; }
+      await new Promise((r) => setTimeout(r, 1000 - (now - stamps[0]) + 5));
+    }
+  }
+  let quotaPause = 0;   // כשגוגל מחזיר "quota exceeded" — כל הקריאות ממתינות יחד
   async function gapi(path, params, retry) {
     const token = await getGmailToken();
+    while (Date.now() < quotaPause) await new Promise((r) => setTimeout(r, 500));
+    await throttle();
     const sp = new URLSearchParams();
     Object.entries(params || {}).forEach(([k, v]) => (Array.isArray(v) ? v : [v]).forEach((x) => sp.append(k, x)));
     const url = 'https://gmail.googleapis.com/gmail/v1/users/me/' + path + (params ? '?' + sp : '');
     const r = await fetch(url, { headers: { Authorization: 'Bearer ' + token } });
     if (r.status === 401) { gmailToken = null; throw new Error('ההרשאה פגה — נסו שוב.'); }
-    if ((r.status === 429 || r.status >= 500) && (retry || 0) < 4) { await new Promise((w) => setTimeout(w, 600 * Math.pow(2, retry || 0))); return gapi(path, params, (retry || 0) + 1); }
-    if (!r.ok) { let msg = 'HTTP ' + r.status; try { const j = await r.json(); msg = (j.error && j.error.message) || msg; } catch (e) {} throw new Error(msg); }
+    if (!r.ok) {
+      let msg = 'HTTP ' + r.status; try { const j = await r.json(); msg = (j.error && j.error.message) || msg; } catch (e) {}
+      const quota = r.status === 429 || /quota|rate ?limit|too many/i.test(msg);
+      if ((quota || r.status >= 500) && (retry || 0) < 10) {
+        // מכסה לדקה: עוצרים את כולם ל-20–30 שניות ומנסים שוב; שגיאת שרת: המתנה קצרה
+        const wait = quota ? 20000 + Math.random() * 10000 : Math.min(8000, 500 * Math.pow(2, retry || 0));
+        if (quota) { quotaPause = Math.max(quotaPause, Date.now() + wait); if (scanning) G('status').textContent = 'Gmail ביקש להאט — ממתין ' + Math.round(wait / 1000) + ' שניות וממשיך אוטומטית…'; }
+        await new Promise((w) => setTimeout(w, wait));
+        return gapi(path, params, (retry || 0) + 1);
+      }
+      throw new Error(msg);
+    }
     return r.json();
   }
   // הרצה במקביל (עד N בו-זמנית) עם דיווח התקדמות
@@ -463,7 +485,7 @@ export function initInvoices(ctx) {
   G('search').addEventListener('click', async () => {
     if (scanning) return;
     scanning = true; G('search').disabled = true;
-    G('status').textContent = 'מתחבר ל-Gmail…'; G('list').innerHTML = ''; G('import').disabled = true; gmailResults = []; gmailBody = [];
+    G('status').textContent = 'מתחבר ל-Gmail…'; G('list').innerHTML = ''; G('import').disabled = true; G('import').textContent = 'ייבוא נבחרים'; gmailResults = []; gmailBody = [];
     try {
       if (!gmailAccount) { const prof = await gapi('profile'); gmailAccount = String(prof.emailAddress || '').toLowerCase(); renderAcct(); }
       const skip = importedMsgIds();
@@ -471,28 +493,32 @@ export function initInvoices(ctx) {
       const a = await listIds('has:attachment (filename:pdf OR filename:jpg OR filename:jpeg OR filename:png OR filename:webp OR filename:heic)', GMAIL_MAX_MSGS);
       const aIds = a.ids.filter((id) => !skip.has(id));
       let skippedA = a.ids.length - aIds.length;
-      await pmap(aIds, 8, async (id) => {
+      await pmap(aIds, 6, async (id) => {
         const m = await gapi('messages/' + id, { format: 'full' });
         const atts = attachmentsOf(m.payload);
         if (!atts.length) return;
         const d = new Date(Number(m.internalDate)), from = hdr(m, 'from'), subject = hdr(m, 'subject');
         atts.forEach((att) => gmailResults.push({ msgId: id, att, from, subject, snippet: m.snippet || '', date: isNaN(d) ? '' : d.toISOString(), day: dayOf(d), fileName: att.name }));
-      }, (n) => { G('status').textContent = 'שלב 1/2 · קורא מיילים עם קבצים ' + n + '/' + aIds.length + '…'; });
+      }, (n) => { if (Date.now() >= quotaPause) G('status').textContent = 'שלב 1/2 · קורא מיילים עם קבצים ' + n + '/' + aIds.length + (aIds.length > 600 ? ' (בתיבה גדולה זה כמה דקות — אפשר להשאיר פתוח)' : '') + '…'; });
       // שלב 2: מיילים שנראים כמו חשבונית בלי קובץ מצורף (נשמרים כ-PDF של המייל)
       const b = await listIds(GMAIL_KEYWORDS + ' -has:attachment', GMAIL_MAX_BODY);
       const bIds = b.ids.filter((id) => !skip.has(id));
-      await pmap(bIds, 8, async (id) => {
+      await pmap(bIds, 6, async (id) => {
         const m = await gapi('messages/' + id, { format: 'metadata', metadataHeaders: ['From', 'Subject'] });
         const d = new Date(Number(m.internalDate));
         gmailBody.push({ msgId: id, from: hdr(m, 'from'), subject: hdr(m, 'subject'), snippet: m.snippet || '', date: isNaN(d) ? '' : d.toISOString(), day: dayOf(d) });
-      }, (n) => { G('status').textContent = 'שלב 2/2 · בודק מיילים ללא קובץ ' + n + '/' + bIds.length + '…'; });
+      }, (n) => { if (Date.now() >= quotaPause) G('status').textContent = 'שלב 2/2 · בודק מיילים ללא קובץ ' + n + '/' + bIds.length + '…'; });
       gmailResults.sort((x, y) => (y.date || '').localeCompare(x.date || ''));
       gmailBody.sort((x, y) => (y.date || '').localeCompare(x.date || ''));
       const notes = [];
       if (skippedA + (b.ids.length - bIds.length)) notes.push((skippedA + (b.ids.length - bIds.length)) + ' מיילים כבר יובאו בעבר ודולגו');
       if (a.capped || b.capped) notes.push('התיבה גדולה מאוד — נסרקו ' + GMAIL_MAX_MSGS + ' המיילים האחרונים עם קבצים; ייבאו אותם והריצו שוב לסריקת השאר');
       renderGmailList(notes.length ? ' · ' + notes.join(' · ') : '');
-    } catch (e) { G('status').textContent = 'שגיאה: ' + (e.message || e); console.warn('gmail scan', e); }
+    } catch (e) {
+      console.warn('gmail scan', e);
+      if (gmailResults.length || gmailBody.length) renderGmailList(' · הסריקה נעצרה באמצע (' + (e.message || e) + ') — אפשר לייבא את מה שנמצא ולהריץ שוב');
+      else G('status').textContent = 'שגיאה: ' + (e.message || e);
+    }
     scanning = false; G('search').disabled = false;
   });
 
