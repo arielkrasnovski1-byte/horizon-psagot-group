@@ -649,3 +649,7 @@ tbody tr.lead-row:hover td { background: var(--color-cream-soft); }
 .inv-sum.acct i { direction: ltr; unicode-bidi: embed; }
 .ig-acct-row { display: flex; align-items: center; justify-content: space-between; gap: .5rem; flex-wrap: wrap; font-size: var(--fs-sm); background: rgba(142,124,195,.08); border: 1px solid rgba(142,124,195,.35); border-radius: var(--radius-md); padding: 6px 10px; margin-bottom: var(--space-sm); color: #5B4A8A; }
 .ig-acct-row b { font-weight: 700; unicode-bidi: embed; }
+.ig-sec { font-size: var(--fs-xs); color: var(--color-navy-deep); background: rgba(201,164,122,.14); margin: .4rem -0.7rem .2rem; padding: .35rem .7rem; font-weight: 700; }
+.ig-item[hidden] { display: none; }
+.ig-body b { font-weight: 600; }
+#ig-filter { height: 36px; }

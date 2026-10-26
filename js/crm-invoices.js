@@ -13,14 +13,10 @@
 export const GMAIL_CLIENT_ID = '579496667206-u63c3v4m3v25r1n15jhabunekdslgr0f.apps.googleusercontent.com';
 const GMAIL_LOGIN_HINT = 'office@horizon-psagot-group.com';
 const GMAIL_SCOPE = 'https://www.googleapis.com/auth/gmail.readonly';
-// מצבי חיפוש: ג'ימייל לא מזהה נטיות בעברית (החשבונית/חשבוניות), לכן מילות המפתח מפורטות.
-const GMAIL_QUERIES = {
-  keywords: '(חשבונית OR החשבונית OR חשבוניות OR קבלה OR הקבלה OR קבלות OR "חשבונית מס" OR "אישור תשלום" OR "דרישת תשלום" OR invoice OR invoices OR receipt OR receipts OR "tax invoice" OR billing OR statement OR payment) has:attachment',
-  allpdf: 'has:attachment (filename:pdf OR filename:jpg OR filename:jpeg OR filename:png)',
-  custom: '',
-};
-const GMAIL_DEFAULT_Q = GMAIL_QUERIES.keywords;
-const GMAIL_MAX_MSGS = 1500;
+// מילות מפתח למיילים ללא קובץ מצורף. ג'ימייל לא מזהה נטיות בעברית (החשבונית/חשבוניות), לכן הן מפורטות.
+const GMAIL_KEYWORDS = '(חשבונית OR החשבונית OR חשבוניות OR קבלה OR הקבלה OR קבלות OR "חשבונית מס" OR "אישור תשלום" OR "דרישת תשלום" OR invoice OR invoices OR receipt OR receipts OR "tax invoice" OR billing OR statement OR payment OR subscription OR order)';
+const GMAIL_MAX_MSGS = 4000;  // מיילים עם קבצים מצורפים שנסרקים בסבב אחד
+const GMAIL_MAX_BODY = 1500;  // מיילים ללא קובץ מצורף שנבדקים (לפי מילות מפתח)
 
 export const INVOICE_KINDS = { expense: 'הוצאה', income: 'הכנסה' };
 export const INVOICE_CATS = ['שכירות ומשרד', 'תוכנה ומנויים', 'פרסום ושיווק', 'רו"ח / עו"ד / ייעוץ', 'תקשורת', 'ציוד', 'נסיעות ואירוח', 'בנק ועמלות', 'ספקים ושכר', 'אחר'];
@@ -37,7 +33,7 @@ export function initInvoices(ctx) {
   let yearF = '', monthF = '', kindF = '', catF = '', acctF = '', q = '';
   let current = null;            // החשבונית הפתוחה בכרטיס
   let pendingFile = null;        // קובץ שנבחר בכרטיס "חשבונית חדשה" לפני שמירה
-  let gmailToken = null, gmailResults = [], gmailAccount = '', gmailPrompt = '';
+  let gmailToken = null, gmailResults = [], gmailBody = [], gmailAccount = '', gmailPrompt = '';
   let backfilled = false;
 
   const p2 = (n) => ('0' + n).slice(-2);
@@ -256,7 +252,7 @@ export function initInvoices(ctx) {
       ? `<a class="file-chip" href="${esc(inv.url)}" target="_blank" rel="noopener">${isPdf(inv) ? '📄' : '🖼'} ${esc(inv.fileName || 'קובץ')}</a> <small>${fmtSize(inv.size)} · ${inv.source === 'gmail' ? 'יובא מהמייל' : 'הועלה'} ${fmtDate(inv.uploadedAt)}${inv.uploadedBy ? ' · ' + esc(displayName(inv.uploadedBy)) : ''}</small>`
       : '<small>לא נבחר קובץ</small>';
     M('src').innerHTML = inv && inv.source === 'gmail'
-      ? `<div class="inv-gmail-src">✉ <b>${esc(inv.gmailFrom || '')}</b> · ${esc(inv.gmailSubject || '')}${inv.gmailDate ? ' · ' + fmtDate(inv.gmailDate) : ''}<br><small>תיבה: ${esc(acctOf(inv))}</small></div>` : '';
+      ? `<div class="inv-gmail-src">✉ <b>${esc(inv.gmailFrom || '')}</b> · ${esc(inv.gmailSubject || '')}${inv.gmailDate ? ' · ' + fmtDate(inv.gmailDate) : ''}<br><small>תיבה: ${esc(acctOf(inv))}${inv.emailPrint ? ' · נשמר כ-PDF מגוף המייל (ללא קובץ מצורף)' : ''}</small></div>` : '';
     M('delete').hidden = !inv;
     M('replace-lbl').textContent = inv ? 'החלפת הקובץ' : 'בחירת קובץ (PDF / תמונה)';
     M('err').textContent = '';
@@ -350,32 +346,28 @@ export function initInvoices(ctx) {
   }
 
   /* ============================================================
-     ייבוא מ-Gmail — חיפוש מיילים עם קבצים מצורפים, בחירה, ייבוא
-     רץ כולו בדפדפן (Google Identity Services + Gmail REST, קריאה בלבד).
+     ייבוא מ-Gmail — כפתור אחד, בלי אפשרויות:
+     סורק את כל התיבה מההתחלה · כל קובץ מצורף (PDF/תמונה) + כל מייל שנראה כמו חשבונית גם בלי קובץ
+     (CapCut, Apple, Google, Meta…) · מדרג לבד מה חשבונית · מה שזוהה מסומן, השאר מוצג לבחירה.
+     מיילים שכבר יובאו לא נסרקים שוב. רץ כולו בדפדפן (Google Identity Services + Gmail REST, קריאה בלבד).
      ============================================================ */
   const G = (id) => $('ig-' + id);
+  let scanning = false;
   $('inv-gmail').addEventListener('click', openGmail);
   function openGmail() {
-    gmailResults = [];
+    gmailResults = []; gmailBody = [];
     G('setup').hidden = !!GMAIL_CLIENT_ID;
     G('body').hidden = !GMAIL_CLIENT_ID;
-    G('mode').value = 'keywords'; applyMode();
     G('list').innerHTML = '';
     G('status').textContent = '';
     G('import').disabled = true;
+    G('filter').value = '';
     renderAcct();
     $('inv-gmail-modal').hidden = false;
   }
-  function applyMode() {
-    const m = G('mode').value;
-    if (m !== 'custom') G('q').value = GMAIL_QUERIES[m];
-    G('q').readOnly = m !== 'custom';
-    G('q-wrap').hidden = m !== 'custom';
-  }
-  G('mode').addEventListener('change', applyMode);
-  function renderAcct() { G('acct').textContent = gmailAccount || 'עדיין לא מחובר — בלחיצה על חיפוש ייפתח חלון התחברות של Google'; }
-  G('switch').addEventListener('click', () => { gmailToken = null; gmailAccount = ''; gmailPrompt = 'select_account'; renderAcct(); G('status').textContent = 'בחיפוש הבא תתבקשו לבחור חשבון Google אחר.'; });
-  const closeGmail = () => { $('inv-gmail-modal').hidden = true; };
+  function renderAcct() { G('acct').textContent = gmailAccount || 'עדיין לא מחובר — בלחיצה על סריקה ייפתח חלון התחברות של Google'; }
+  G('switch').addEventListener('click', () => { gmailToken = null; gmailAccount = ''; gmailPrompt = 'select_account'; renderAcct(); G('status').textContent = 'בסריקה הבאה תתבקשו לבחור חשבון Google אחר.'; });
+  const closeGmail = () => { if (scanning && !confirm('הסריקה עדיין רצה. לסגור בכל זאת?')) return; $('inv-gmail-modal').hidden = true; };
   $('inv-gmail-close').addEventListener('click', closeGmail);
   G('cancel').addEventListener('click', closeGmail);
   $('inv-gmail-modal').addEventListener('click', (e) => { if (e.target === $('inv-gmail-modal')) closeGmail(); });
@@ -399,13 +391,33 @@ export function initInvoices(ctx) {
       client.requestAccessToken();
     });
   }
-  async function gapi(path, params) {
+  async function gapi(path, params, retry) {
     const token = await getGmailToken();
-    const url = 'https://gmail.googleapis.com/gmail/v1/users/me/' + path + (params ? '?' + new URLSearchParams(params) : '');
+    const sp = new URLSearchParams();
+    Object.entries(params || {}).forEach(([k, v]) => (Array.isArray(v) ? v : [v]).forEach((x) => sp.append(k, x)));
+    const url = 'https://gmail.googleapis.com/gmail/v1/users/me/' + path + (params ? '?' + sp : '');
     const r = await fetch(url, { headers: { Authorization: 'Bearer ' + token } });
     if (r.status === 401) { gmailToken = null; throw new Error('ההרשאה פגה — נסו שוב.'); }
+    if ((r.status === 429 || r.status >= 500) && (retry || 0) < 4) { await new Promise((w) => setTimeout(w, 600 * Math.pow(2, retry || 0))); return gapi(path, params, (retry || 0) + 1); }
     if (!r.ok) { let msg = 'HTTP ' + r.status; try { const j = await r.json(); msg = (j.error && j.error.message) || msg; } catch (e) {} throw new Error(msg); }
     return r.json();
+  }
+  // הרצה במקביל (עד N בו-זמנית) עם דיווח התקדמות
+  async function pmap(items, n, fn, onStep) {
+    let i = 0, done = 0; const out = new Array(items.length);
+    await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => {
+      while (i < items.length) { const k = i++; try { out[k] = await fn(items[k], k); } catch (e) { out[k] = null; console.warn('gmail item', e); } done++; if (onStep) onStep(done); }
+    }));
+    return out;
+  }
+  async function listIds(q, cap) {
+    let ids = [], pageToken = '';
+    do {
+      const r = await gapi('messages', { q, maxResults: 500, ...(pageToken ? { pageToken } : {}) });
+      ids = ids.concat((r.messages || []).map((m) => m.id)); pageToken = r.nextPageToken || '';
+      G('status').textContent = 'נמצאו ' + ids.length + ' מיילים…';
+    } while (pageToken && ids.length < cap);
+    return { ids, capped: !!pageToken };
   }
   const hdr = (msg, name) => { const h = ((msg.payload || {}).headers || []).find((x) => x.name.toLowerCase() === name); return h ? h.value : ''; };
   function attachmentsOf(payload, out) {
@@ -422,73 +434,191 @@ export function initInvoices(ctx) {
     (payload.parts || []).forEach((p) => attachmentsOf(p, out));
     return out;
   }
+  /* ---- דירוג: האם זה נראה כמו חשבונית? ----
+     חזק = מילה מפורשת בנושא/בשם הקובץ · בינוני = שולח של חיובים/ספק מוכר · חלש = סכומים בתקציר */
+  const RX_STRONG = /חשבונית|קבלה|אישור תשלום|דרישת תשלום|invoice|receipt|tax[ -]?invoice|payment (confirmation|received|successful)|your (order|purchase|subscription|payment)|order confirmation|billing statement|statement of account/i;
+  const RX_SENDER = /billing|invoice|receipt|payment|pay(ments)?@|accounts?@|finance|noreply@(apple|google|meta|facebookmail|capcut|bytedance|canva|adobe|microsoft|wix|godaddy|namecheap|cloudflare|monday|notion|zoom|slack|openai|anthropic|make|elementor|shopify|aws|amazon|digitalocean|hostinger|paypal|stripe|cardcom|tranzila|icount|greeninvoice|morning|ezcount|sumit|bezeq|partner|cellcom|hot|pelephone|golan|019|012|013)|apple\.com|google\.com|facebookmail\.com|capcut|bytedance|canva\.com|adobe\.com|paypal|stripe|cardcom|tranzila|icount|greeninvoice|ezcount|sumit|morning|בזק|פרטנר|סלקום|הוט|פלאפון|חברת החשמל|עיריית|מי /i;
+  const RX_WEAK = /סה["״]?כ|סכום|לתשלום|שולם|total|amount|paid|₪|nis|ils|\$\s?\d|\d\s?\$|usd|eur|€/i;
+  const RX_NOT = /newsletter|unsubscribe|webinar|promo|sale|discount|הנחה|מבצע|ניוזלטר|הרשמה|job|career|resume|קורות חיים|linkedin|facebook notification|security alert|verify your|verification code|קוד אימות|password/i;
+  function invoiceScore(x) {
+    const subj = x.subject || '', from = x.from || '', fname = x.fileName || '', snip = x.snippet || '';
+    let s = 0;
+    if (RX_STRONG.test(subj) || RX_STRONG.test(fname)) s += 2;
+    if (RX_SENDER.test(from)) s += 1;
+    if (RX_WEAK.test(snip) || RX_WEAK.test(subj)) s += 1;
+    if (/\.pdf$/i.test(fname) && /^(inv|rec|חש|קב|bill|order|\d{4,})/i.test(fname)) s += 1;
+    if (RX_NOT.test(subj) && !RX_STRONG.test(subj)) s -= 2;
+    return s;
+  }
+  const likely = (x) => invoiceScore(x) >= 2;
   const alreadyImported = (msgId, name) => all.some((i) => i.gmailMessageId === msgId && i.fileName === name);
-  // אותה חשבונית שהגיעה לשתי תיבות: אותו שם קובץ + אותו גודל + אותו יום — מסומנת "קיים בתיבה אחרת"
+  const alreadyPrinted = (msgId) => all.some((i) => i.gmailMessageId === msgId && i.emailPrint);
+  const importedMsgIds = () => new Set(all.filter((i) => i.gmailMessageId).map((i) => i.gmailMessageId));
+  // אותה חשבונית שהגיעה לשתי תיבות: אותו שם קובץ + אותו גודל + אותו יום — לא מסומנת כברירת מחדל
   const inOtherAcct = (r) => all.some((i) => i.source === 'gmail' && acctOf(i) !== gmailAccount && i.fileName === r.att.name && i.size === r.att.size && i.gmailDate && i.gmailDate.slice(0, 10) === (r.date || '').slice(0, 10));
+  const fromName = (f) => String(f || '').replace(/<.*>/, '').replace(/"/g, '').trim();
+  const dayOf = (d) => isNaN(d) ? '' : `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`;
 
+  /* ---- הסריקה המלאה ---- */
   G('search').addEventListener('click', async () => {
-    const range = G('range').value;
-    const qq = G('q').value.trim() + (range ? ' newer_than:' + range : '');
-    G('status').textContent = 'מתחבר ל-Gmail…'; G('list').innerHTML = ''; G('import').disabled = true; gmailResults = [];
+    if (scanning) return;
+    scanning = true; G('search').disabled = true;
+    G('status').textContent = 'מתחבר ל-Gmail…'; G('list').innerHTML = ''; G('import').disabled = true; gmailResults = []; gmailBody = [];
     try {
       if (!gmailAccount) { const prof = await gapi('profile'); gmailAccount = String(prof.emailAddress || '').toLowerCase(); renderAcct(); }
-      let ids = [], pageToken = '';
-      do {
-        const r = await gapi('messages', { q: qq, maxResults: 100, ...(pageToken ? { pageToken } : {}) });
-        ids = ids.concat((r.messages || []).map((m) => m.id)); pageToken = r.nextPageToken || '';
-        G('status').textContent = 'נמצאו ' + ids.length + ' מיילים…';
-      } while (pageToken && ids.length < GMAIL_MAX_MSGS);
-      const capped = !!pageToken;
-      if (!ids.length) { G('status').textContent = 'לא נמצאו מיילים מתאימים.'; return; }
-      let n = 0;
-      for (const id of ids) {
-        G('status').textContent = 'קורא מייל ' + (++n) + '/' + ids.length + '…';
+      const skip = importedMsgIds();
+      // שלב 1: כל המיילים עם PDF/תמונה מצורפים — כל ההיסטוריה
+      const a = await listIds('has:attachment (filename:pdf OR filename:jpg OR filename:jpeg OR filename:png OR filename:webp OR filename:heic)', GMAIL_MAX_MSGS);
+      const aIds = a.ids.filter((id) => !skip.has(id));
+      let skippedA = a.ids.length - aIds.length;
+      await pmap(aIds, 8, async (id) => {
         const m = await gapi('messages/' + id, { format: 'full' });
         const atts = attachmentsOf(m.payload);
-        if (!atts.length) continue;
+        if (!atts.length) return;
+        const d = new Date(Number(m.internalDate)), from = hdr(m, 'from'), subject = hdr(m, 'subject');
+        atts.forEach((att) => gmailResults.push({ msgId: id, att, from, subject, snippet: m.snippet || '', date: isNaN(d) ? '' : d.toISOString(), day: dayOf(d), fileName: att.name }));
+      }, (n) => { G('status').textContent = 'שלב 1/2 · קורא מיילים עם קבצים ' + n + '/' + aIds.length + '…'; });
+      // שלב 2: מיילים שנראים כמו חשבונית בלי קובץ מצורף (נשמרים כ-PDF של המייל)
+      const b = await listIds(GMAIL_KEYWORDS + ' -has:attachment', GMAIL_MAX_BODY);
+      const bIds = b.ids.filter((id) => !skip.has(id));
+      await pmap(bIds, 8, async (id) => {
+        const m = await gapi('messages/' + id, { format: 'metadata', metadataHeaders: ['From', 'Subject'] });
         const d = new Date(Number(m.internalDate));
-        atts.forEach((a) => gmailResults.push({ msgId: id, att: a, from: hdr(m, 'from'), subject: hdr(m, 'subject'), date: isNaN(d) ? '' : d.toISOString(), day: isNaN(d) ? '' : `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}` }));
-      }
-      gmailResults.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-      renderGmailList(capped ? ' · הוצגו ' + GMAIL_MAX_MSGS + ' המיילים האחרונים בלבד — צמצמו את הטווח כדי לראות את השאר' : '');
-    } catch (e) { G('status').textContent = 'שגיאה: ' + (e.message || e); console.warn('gmail search', e); }
+        gmailBody.push({ msgId: id, from: hdr(m, 'from'), subject: hdr(m, 'subject'), snippet: m.snippet || '', date: isNaN(d) ? '' : d.toISOString(), day: dayOf(d) });
+      }, (n) => { G('status').textContent = 'שלב 2/2 · בודק מיילים ללא קובץ ' + n + '/' + bIds.length + '…'; });
+      gmailResults.sort((x, y) => (y.date || '').localeCompare(x.date || ''));
+      gmailBody.sort((x, y) => (y.date || '').localeCompare(x.date || ''));
+      const notes = [];
+      if (skippedA + (b.ids.length - bIds.length)) notes.push((skippedA + (b.ids.length - bIds.length)) + ' מיילים כבר יובאו בעבר ודולגו');
+      if (a.capped || b.capped) notes.push('התיבה גדולה מאוד — נסרקו ' + GMAIL_MAX_MSGS + ' המיילים האחרונים עם קבצים; ייבאו אותם והריצו שוב לסריקת השאר');
+      renderGmailList(notes.length ? ' · ' + notes.join(' · ') : '');
+    } catch (e) { G('status').textContent = 'שגיאה: ' + (e.message || e); console.warn('gmail scan', e); }
+    scanning = false; G('search').disabled = false;
   });
-  function renderGmailList(extra) {
-    const fresh = gmailResults.filter((r) => !alreadyImported(r.msgId, r.att.name)).length;
-    G('status').textContent = (gmailResults.length ? (gmailResults.length + ' קבצים מצורפים' + (fresh !== gmailResults.length ? ' · ' + (gmailResults.length - fresh) + ' כבר יובאו' : '')) : 'לא נמצאו קבצים מצורפים מתאימים (PDF / תמונה).') + (extra || '');
-    G('list').innerHTML = gmailResults.map((r, k) => {
-      const dup = alreadyImported(r.msgId, r.att.name);
-      const other = !dup && inOtherAcct(r);
-      return `<label class="lw-item ig-item${dup ? ' dup' : ''}"><input type="checkbox" data-k="${k}"${dup ? ' disabled' : other ? '' : ' checked'}>` +
-        `<span><b>${isPdf({ contentType: r.att.mime, fileName: r.att.name }) ? '📄' : '🖼'} ${esc(r.att.name)} <small style="display:inline">${fmtSize(r.att.size)}</small></b>` +
-        `<small>${esc(r.from.replace(/<.*>/, '').trim())} · ${esc(r.subject)} · ${fmtDay(r.day)}</small></span>` +
-        (dup ? '<span class="pill received">יובא</span>' : other ? '<span class="pill pending" title="קובץ זהה כבר יובא מתיבה אחרת — לא מסומן כברירת מחדל">קיים בתיבה אחרת</span>' : '') + '</label>';
-    }).join('');
-    const upd = () => { const n = G('list').querySelectorAll('input:checked:not(:disabled)').length; G('import').disabled = !n; G('import').textContent = 'ייבוא ' + (n ? n + ' קבצים' : 'נבחרים'); };
-    G('list').querySelectorAll('input').forEach((c) => c.onchange = upd); upd();
-    G('all').onclick = () => { G('list').querySelectorAll('input:not(:disabled)').forEach((c) => c.checked = true); upd(); };
-    G('none').onclick = () => { G('list').querySelectorAll('input').forEach((c) => c.checked = false); upd(); };
+
+  function itemHTML(r, k, isBody) {
+    const dup = isBody ? alreadyPrinted(r.msgId) : alreadyImported(r.msgId, r.att.name);
+    const other = !isBody && !dup && inOtherAcct(r);
+    const on = !dup && !other && likely(r);
+    const txt = esc((r.from + ' ' + r.subject + ' ' + (isBody ? r.snippet : r.att.name)).toLowerCase());
+    const head = isBody
+      ? `📧 ${esc(fromName(r.from))} <small style="display:inline">${fmtDay(r.day)}</small>`
+      : `${isPdf({ contentType: r.att.mime, fileName: r.att.name }) ? '📄' : '🖼'} ${esc(r.att.name)} <small style="display:inline">${fmtSize(r.att.size)} · ${fmtDay(r.day)}</small>`;
+    const sub = isBody ? `${esc(r.subject)}${r.snippet ? ' — ' + esc(r.snippet.slice(0, 90)) : ''}` : `${esc(fromName(r.from))} · ${esc(r.subject)}`;
+    const tag = dup ? '<span class="pill received">יובא</span>' : other ? '<span class="pill pending" title="קובץ זהה כבר יובא מתיבה אחרת">קיים בתיבה אחרת</span>' : isBody ? '<span class="pill pending" title="אין קובץ מצורף — המייל עצמו יישמר כ-PDF">מייל→PDF</span>' : '';
+    return `<label class="lw-item ig-item${dup ? ' dup' : ''}" data-txt="${txt}" data-on="${on ? 1 : 0}"><input type="checkbox" data-${isBody ? 'b' : 'k'}="${k}"${dup ? ' disabled' : on ? ' checked' : ''}><span><b>${head}</b><small>${sub}</small></span>${tag}</label>`;
   }
+  function renderGmailList(extra) {
+    const items = gmailResults.map((r, k) => ({ r, k, body: false })).concat(gmailBody.map((r, k) => ({ r, k, body: true })));
+    const isDup = (it) => it.body ? alreadyPrinted(it.r.msgId) : alreadyImported(it.r.msgId, it.r.att.name);
+    const yes = items.filter((it) => !isDup(it) && likely(it.r) && !(it.body ? false : inOtherAcct(it.r)));
+    const maybe = items.filter((it) => !isDup(it) && !yes.includes(it));
+    const dups = items.filter(isDup);
+    const byDate = (x, y) => (y.r.date || '').localeCompare(x.r.date || '');
+    const sec = (title, arr) => arr.length ? `<h5 class="ig-sec">${title} (${arr.length})</h5>` + arr.sort(byDate).map((it) => itemHTML(it.r, it.k, it.body)).join('') : '';
+    G('status').textContent = (items.length ? `זוהו ${yes.length} חשבוניות · עוד ${maybe.length} פריטים לבדיקה` + (dups.length ? ` · ${dups.length} כבר יובאו` : '') : 'לא נמצאו קבצים מצורפים או מיילים של חשבוניות.') + (extra || '');
+    G('list').innerHTML =
+      sec('✅ זוהו כחשבוניות — מסומנות לייבוא', yes) +
+      sec('❓ לא בטוח — עברו ברשימה וסמנו מה שרלוונטי (קבצים מצורפים אחרים ומיילים עם מילות תשלום)', maybe) +
+      sec('כבר בארכיון', dups);
+    const upd = () => { const n = G('list').querySelectorAll('input:checked:not(:disabled)').length; G('import').disabled = !n; G('import').textContent = 'ייבוא ' + (n ? n + ' פריטים' : 'נבחרים'); };
+    G('list').querySelectorAll('input').forEach((c) => c.onchange = upd); upd();
+    const visible = () => Array.from(G('list').querySelectorAll('.ig-item')).filter((el) => !el.hidden);
+    const applyFilter = () => { const f = G('filter').value.trim().toLowerCase(); G('list').querySelectorAll('.ig-item').forEach((el) => { el.hidden = !!f && !(el.dataset.txt || '').includes(f); }); };
+    G('filter').oninput = applyFilter; applyFilter();
+    G('all').onclick = () => { visible().forEach((el) => { const c = el.querySelector('input'); if (!c.disabled) c.checked = true; }); upd(); };
+    G('none').onclick = () => { visible().forEach((el) => { el.querySelector('input').checked = false; }); upd(); };
+  }
+
+  /* ---- שמירת מייל כ-PDF (html2canvas + jsPDF, נטענים לפי צורך) ---- */
+  const libP = {};
+  function loadLib(key, src, ready) {
+    if (ready()) return Promise.resolve();
+    if (!libP[key]) libP[key] = new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.onload = res; el.onerror = () => { libP[key] = null; rej(new Error('טעינת ' + key + ' נכשלה')); }; document.head.appendChild(el); });
+    return libP[key];
+  }
+  const b64 = (d) => { const bin = atob(String(d || '').replace(/-/g, '+').replace(/_/g, '/')); const u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; };
+  const b64text = (d) => new TextDecoder('utf-8').decode(b64(d));
+  function bodyPart(payload, mime) {
+    if (!payload) return '';
+    if ((payload.mimeType || '').toLowerCase() === mime && payload.body && payload.body.data) return b64text(payload.body.data);
+    for (const p of payload.parts || []) { const r = bodyPart(p, mime); if (r) return r; }
+    return '';
+  }
+  async function emailToPdfBlob(msgId, info) {
+    await Promise.all([
+      loadLib('html2canvas', 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', () => !!window.html2canvas),
+      loadLib('jspdf', 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', () => !!(window.jspdf && window.jspdf.jsPDF)),
+    ]);
+    const m = await gapi('messages/' + msgId, { format: 'full' });
+    let html = bodyPart(m.payload, 'text/html');
+    if (!html) { const t = bodyPart(m.payload, 'text/plain') || m.snippet || ''; html = '<pre style="white-space:pre-wrap;font:14px/1.6 sans-serif">' + esc(t) + '</pre>'; }
+    // ניקוי: בלי סקריפטים/טפסים/אירועים — רק תצוגה
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    doc.querySelectorAll('script,iframe,object,embed,form,link,meta,base').forEach((n) => n.remove());
+    doc.querySelectorAll('*').forEach((n) => { Array.from(n.attributes).forEach((at) => { if (/^on/i.test(at.name) || (at.name === 'href' && /^javascript:/i.test(at.value))) n.removeAttribute(at.name); }); });
+    const styles = Array.from(doc.querySelectorAll('style')).map((st) => st.outerHTML).join('');
+    const box = document.createElement('div');
+    box.style.cssText = 'position:fixed;left:-20000px;top:0;width:794px;background:#fff;color:#000;padding:28px;box-sizing:border-box;direction:ltr;font:14px/1.5 Arial,sans-serif;z-index:-1';
+    box.innerHTML = styles + '<div style="border-bottom:1px solid #ccc;padding-bottom:10px;margin-bottom:14px;font:12px/1.6 Arial,sans-serif;color:#333;direction:ltr">' +
+      '<div><b>From:</b> ' + esc(info.from) + '</div><div><b>Subject:</b> ' + esc(info.subject) + '</div><div><b>Date:</b> ' + esc(info.date ? new Date(info.date).toLocaleString('en-GB') : '') + '</div>' +
+      '<div><b>Gmail account:</b> ' + esc(gmailAccount) + ' · message id ' + esc(msgId) + '</div></div>' + doc.body.innerHTML;
+    box.querySelectorAll('img').forEach((im) => { im.setAttribute('crossorigin', 'anonymous'); im.style.maxWidth = '100%'; });
+    document.body.appendChild(box);
+    try {
+      await new Promise((r) => setTimeout(r, 400));   // לתת לתמונות להיטען
+      const canvas = await window.html2canvas(box, { scale: 1.5, useCORS: true, allowTaint: false, logging: false, backgroundColor: '#ffffff', imageTimeout: 4000 });
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({ unit: 'pt', format: 'a4' });
+      const pw = pdf.internal.pageSize.getWidth(), ph = pdf.internal.pageSize.getHeight();
+      const pageH = Math.floor(canvas.width * ph / pw);
+      let y = 0, first = true;
+      while (y < canvas.height) {
+        const h = Math.min(pageH, canvas.height - y);
+        const slice = document.createElement('canvas'); slice.width = canvas.width; slice.height = h;
+        slice.getContext('2d').drawImage(canvas, 0, y, canvas.width, h, 0, 0, canvas.width, h);
+        if (!first) pdf.addPage(); first = false;
+        pdf.addImage(slice.toDataURL('image/jpeg', 0.85), 'JPEG', 0, 0, pw, h * pw / canvas.width);
+        y += h;
+      }
+      return pdf.output('blob');
+    } finally { box.remove(); }
+  }
+
+  /* ---- ייבוא הנבחרים ---- */
   G('import').addEventListener('click', async () => {
-    const picks = Array.from(G('list').querySelectorAll('input:checked:not(:disabled)')).map((c) => gmailResults[Number(c.dataset.k)]);
-    if (!picks.length) return;
-    G('import').disabled = true; let done = 0, failed = 0;
+    const checked = Array.from(G('list').querySelectorAll('input:checked:not(:disabled)'));
+    const picks = checked.filter((c) => c.dataset.k != null).map((c) => gmailResults[Number(c.dataset.k)]);
+    const bodyPicks = checked.filter((c) => c.dataset.b != null).map((c) => gmailBody[Number(c.dataset.b)]);
+    if (!picks.length && !bodyPicks.length) return;
+    G('import').disabled = true; scanning = true; let done = 0, failed = 0;
+    const total = picks.length + bodyPicks.length;
     for (const r of picks) {
-      G('status').textContent = 'מייבא ' + (done + failed + 1) + '/' + picks.length + ' — ' + r.att.name + '…';
+      G('status').textContent = 'מייבא ' + (done + failed + 1) + '/' + total + ' — ' + r.att.name + '…';
       try {
         const a = await gapi('messages/' + r.msgId + '/attachments/' + r.att.id);
-        const bin = atob(String(a.data || '').replace(/-/g, '+').replace(/_/g, '/'));
-        const bytes = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-        const blob = new Blob([bytes], { type: r.att.mime || 'application/pdf' });
-        const from = r.from.replace(/<.*>/, '').replace(/"/g, '').trim();
+        const blob = new Blob([b64(a.data)], { type: r.att.mime || 'application/pdf' });
         await uploadOne(blob, r.att.name, {
           source: 'gmail', gmailAccount, gmailMessageId: r.msgId, gmailSubject: r.subject, gmailFrom: r.from, gmailDate: r.date,
-          date: datePartsFromName(r.att.name) || r.day || todayStr(), supplier: from.slice(0, 80),
+          date: datePartsFromName(r.att.name) || r.day || todayStr(), supplier: fromName(r.from).slice(0, 80),
         });
         done++;
       } catch (e) { failed++; console.warn('gmail import', r, e); }
     }
-    G('status').textContent = 'יובאו ' + done + ' קבצים' + (failed ? ', ' + failed + ' נכשלו (ראו קונסול)' : '') + '. הספק מולא לפי שם השולח — כדאי לעבור ולמלא סכומים.';
+    for (const r of bodyPicks) {
+      G('status').textContent = 'שומר מייל כ-PDF ' + (done + failed + 1) + '/' + total + ' — ' + fromName(r.from) + '…';
+      try {
+        const blob = await emailToPdfBlob(r.msgId, r);
+        const name = ((r.day || todayStr()) + ' ' + safeSeg(fromName(r.from), 30) + ' ' + safeSeg(r.subject, 40)).replace(/\s+/g, ' ').trim() + '.pdf';
+        await uploadOne(blob, name, {
+          source: 'gmail', emailPrint: true, gmailAccount, gmailMessageId: r.msgId, gmailSubject: r.subject, gmailFrom: r.from, gmailDate: r.date,
+          date: r.day || todayStr(), supplier: fromName(r.from).slice(0, 80),
+        });
+        done++;
+      } catch (e) { failed++; console.warn('email print', r, e); }
+    }
+    scanning = false;
+    G('status').textContent = 'יובאו ' + done + ' פריטים' + (failed ? ', ' + failed + ' נכשלו (ראו קונסול)' : '') + '. הספק מולא לפי שם השולח — כדאי לעבור ולמלא סכומים.';
     renderGmailList();
   });
 

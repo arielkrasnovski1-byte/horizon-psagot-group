@@ -437,29 +437,15 @@
         <p>ההוראות המלאות: README-INVOICES-GMAIL.md בתיקיית האתר.</p>
       </div>
       <div id="ig-body" hidden>
-        <div class="ig-acct-row"><span>תיבת מייל: <b id="ig-acct" dir="ltr"></b></span><button type="button" class="btn-ghost lw-mini" id="ig-switch" title="התנתקות מהחשבון הנוכחי ובחירת חשבון Google אחר בחיפוש הבא">⇄ החלפת חשבון</button></div>
-        <div class="field-row">
-          <div class="field"><label for="ig-mode">מה לחפש</label>
-            <select id="ig-mode">
-              <option value="keywords">מיילים עם מילות מפתח של חשבונית / קבלה / invoice (מומלץ להתחלה)</option>
-              <option value="allpdf">כל המיילים עם PDF או תמונה מצורפת (תופס הכל — מורידים סימון ממה שלא רלוונטי)</option>
-              <option value="custom">שאילתה חופשית (תחביר Gmail)</option>
-            </select>
-          </div>
-        </div>
-        <div class="field" id="ig-q-wrap" hidden><label for="ig-q">שאילתה (למשל from:billing@google.com has:attachment)</label><input type="text" id="ig-q" dir="auto"></div>
+        <div class="ig-acct-row"><span>תיבת מייל: <b id="ig-acct" dir="ltr"></b></span><button type="button" class="btn-ghost lw-mini" id="ig-switch" title="התנתקות מהחשבון הנוכחי ובחירת חשבון Google אחר בסריקה הבאה">⇄ החלפת חשבון</button></div>
+        <p class="cases-hint" style="margin-bottom:.6rem">הסריקה עוברת על <b>כל התיבה מההתחלה</b>: כל קובץ PDF או תמונה שצורפו למייל, וגם מיילים של חשבוניות בלי קובץ מצורף (CapCut, Apple, Google, Meta וכדומה — נשמרים כ-PDF של המייל). מה שזוהה כחשבונית מסומן מראש; מה שלא בטוח מוצג בנפרד לבחירה. מיילים שכבר יובאו מדולגים.</p>
         <div class="lw-pickbar">
-          <select id="ig-range" class="status-select">
-            <option value="3m">3 חודשים אחרונים</option>
-            <option value="1y" selected>שנה אחרונה</option>
-            <option value="2y">שנתיים</option>
-            <option value="">כל ההיסטוריה</option>
-          </select>
-          <button class="crm-btn" style="width:auto" type="button" id="ig-search">🔍 חיפוש במייל</button>
+          <button class="crm-btn" style="width:auto" type="button" id="ig-search">🔍 סריקת כל התיבה</button>
           <span class="lw-count" id="ig-status"></span>
         </div>
         <div class="lw-pickbar">
-          <button type="button" class="btn-ghost lw-mini" id="ig-all">בחירת הכל</button>
+          <input type="search" id="ig-filter" class="cases-search" placeholder="סינון לפי ספק / נושא (למשל capcut)" style="max-width:260px">
+          <button type="button" class="btn-ghost lw-mini" id="ig-all">בחירת הכל המוצגים</button>
           <button type="button" class="btn-ghost lw-mini" id="ig-none">ניקוי</button>
         </div>
         <div class="lw-items ig-list" id="ig-list"></div>
@@ -557,6 +543,6 @@
     </div>
   </div>
 
-  <script type="module" src="/js/crm.js?v=20261026d"></script>
+  <script type="module" src="/js/crm.js?v=20261026e"></script>
 </body>
 </html>

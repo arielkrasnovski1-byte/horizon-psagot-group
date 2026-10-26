@@ -3,10 +3,10 @@
    פאנל ניהול: לידים (ריבוי משתמשים, כרטיס ליד, חיפוש, דוחות,
    ייצוא, פולו-אפ) · עסקאות · מאמרים (בגל הבא)
    ============================================================ */
-import { firebaseConfig, isConfigured } from '/js/firebase-config.js?v=20261026d';
-import { SERVICE_TYPES, buildItems, serviceLabel, docCatalog, storagePath, safeSeg } from '/js/case-templates.js?v=20261026d';
-import { initTasks } from '/js/crm-tasks.js?v=20261026d';
-import { initInvoices } from '/js/crm-invoices.js?v=20261026d';
+import { firebaseConfig, isConfigured } from '/js/firebase-config.js?v=20261026e';
+import { SERVICE_TYPES, buildItems, serviceLabel, docCatalog, storagePath, safeSeg } from '/js/case-templates.js?v=20261026e';
+import { initTasks } from '/js/crm-tasks.js?v=20261026e';
+import { initInvoices } from '/js/crm-invoices.js?v=20261026e';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? '' : s).replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]));
