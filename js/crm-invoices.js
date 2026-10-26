@@ -10,7 +10,7 @@
 
 /* ---- ייבוא מ-Gmail: OAuth Client ID (סוג Web) מ-Google Cloud Console של הפרויקט.
         ריק = הכפתור מציג הוראות הגדרה. ראו README-INVOICES-GMAIL.md ---- */
-export const GMAIL_CLIENT_ID = '';
+export const GMAIL_CLIENT_ID = '579496667206-u63c3v4m3v25r1n15jhabunekdslgr0f.apps.googleusercontent.com';
 const GMAIL_LOGIN_HINT = 'office@horizon-psagot-group.com';
 const GMAIL_SCOPE = 'https://www.googleapis.com/auth/gmail.readonly';
 const GMAIL_DEFAULT_Q = '(חשבונית OR קבלה OR invoice OR receipt OR "חשבונית מס") has:attachment';
