@@ -58,6 +58,19 @@ service firebase.storage {
                    && request.resource.contentType.matches('(image/.*|application/pdf)');
     }
 
+    // חשבוניות וקבלות של העסק — בעלים בלבד (crm_users/{uid}.role == 'owner')
+    function isOwner() {
+      return request.auth != null
+        && firestore.exists(/databases/(default)/documents/crm_users/$(request.auth.uid))
+        && firestore.get(/databases/(default)/documents/crm_users/$(request.auth.uid)).data.role == 'owner';
+    }
+    match /invoices/{allPaths=**} {
+      allow read, delete: if isOwner();
+      allow write: if isOwner()
+                   && request.resource.size < 25 * 1024 * 1024
+                   && request.resource.contentType.matches('(image/.*|application/pdf)');
+    }
+
     // כל השאר חסום
     match /{allPaths=**} { allow read, write: if false; }
   }

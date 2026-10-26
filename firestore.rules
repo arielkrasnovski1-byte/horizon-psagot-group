@@ -162,6 +162,18 @@ service cloud.firestore {
                     );
     }
 
+    // ---------- חשבוניות וקבלות של העסק — בעלים בלבד ----------
+    // ארכיון כספי של החברה (ספקים, סכומים, קבצים). אף תפקיד אחר — גם manager — לא קורא ולא כותב.
+    // הקבצים עצמם ב-Storage תחת invoices/ עם אותה הרשאה (storage.rules).
+    match /invoices/{invoiceId} {
+      allow read, delete: if isOwner();
+      allow create, update: if isOwner()
+                            && request.resource.data.fileName is string
+                            && request.resource.data.fileName.size() < 300
+                            && request.resource.data.date is string
+                            && request.resource.data.kind in ['expense', 'income'];
+    }
+
     // ---------- ברירת מחדל: כל השאר חסום ----------
     match /{document=**} {
       allow read, write: if false;

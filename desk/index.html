@@ -52,6 +52,7 @@
       <button class="crm-tab active" data-tab="leads">לידים</button>
       <button class="crm-tab" data-tab="tasks">משימות <span class="tab-badge" id="tasks-badge" hidden>0</span></button>
       <button class="crm-tab" data-tab="cases">תיקים</button>
+      <button class="crm-tab" data-tab="invoices" id="tab-invoices" hidden title="לבעלים בלבד">חשבוניות</button>
       <button class="crm-tab" data-tab="deals" hidden>עסקאות</button>
       <button class="crm-tab" data-tab="testimonials" hidden>המלצות</button>
       <button class="crm-tab" data-tab="team" hidden>צוות</button>
@@ -167,6 +168,25 @@
         <p class="cases-hint">פותחים תיק ללקוח קיים, בוחרים סוג שירות → נטענת רשימת המסמכים. הלקוח נכנס ל-<b>/portal</b> (ב-SMS או מייל) ומעלה. כאן רואים בזמן אמת מה התקבל.</p>
         <div class="cases-filter" id="cases-filter"></div>
         <div class="editor-grid" id="cases-grid"><p class="empty-state">טוען…</p></div>
+      </section>
+
+      <!-- ===== טאב חשבוניות (בעלים בלבד) ===== -->
+      <section class="tab-panel" id="panel-invoices" hidden>
+        <div class="panel-head">
+          <h2>חשבוניות וקבלות <span class="inv-owner-badge" title="הטאב, הקבצים והנתונים נגישים רק למשתמשים בתפקיד בעלים — נאכף בחוקי האבטחה של Firebase">🔒 בעלים בלבד</span></h2>
+          <div class="inv-head-actions">
+            <button class="btn-ghost" type="button" id="inv-gmail" title="חיפוש קבצים מצורפים של חשבוניות בתיבת Gmail וייבוא לארכיון">✉ ייבוא מהמייל</button>
+            <button class="crm-btn" style="width:auto" id="inv-new">+ חשבונית חדשה</button>
+          </div>
+        </div>
+        <div class="inv-drop" id="inv-drop">
+          <input type="file" id="inv-files" multiple accept="image/*,application/pdf" hidden>
+          <b>גררו לכאן קבצי חשבוניות (PDF / תמונה)</b> או לחצו לבחירה · אפשר כמה קבצים בבת אחת · כל קובץ נשמר כחשבונית ואפשר להשלים ספק וסכום אחר כך
+        </div>
+        <div class="cm-upload-prog inv-prog" id="inv-prog" hidden></div>
+        <div class="cases-filter inv-filter" id="inv-filter"></div>
+        <div class="inv-summary" id="inv-summary"></div>
+        <div id="inv-table-wrap"><p class="empty-state">טוען…</p></div>
       </section>
 
       <!-- ===== טאב עסקאות ===== -->
@@ -362,6 +382,85 @@
   </div>
 
   <!-- ===== כרטיס תיק ===== -->
+  <!-- ===== כרטיס חשבונית ===== -->
+  <div class="modal-overlay" id="inv-modal" hidden>
+    <div class="modal">
+      <div class="lead-card-head">
+        <h3 id="inv-modal-title" style="margin:0">פרטי חשבונית</h3>
+        <button class="icon-btn" id="inv-modal-close" type="button" title="סגירה">✕</button>
+      </div>
+      <form id="inv-form" style="margin-top:var(--space-sm)">
+        <div class="inv-file-row" id="im-file-row"></div>
+        <div class="inv-gmail-src-wrap" id="im-src"></div>
+        <div class="field-row">
+          <div class="field"><label for="im-supplier">ספק / לקוח</label><input type="text" id="im-supplier" placeholder="למשל: Google Workspace / עו״ד כהן"></div>
+          <div class="field"><label for="im-number">מספר חשבונית</label><input type="text" id="im-number" dir="ltr"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label for="im-date">תאריך</label><input type="date" id="im-date" required></div>
+          <div class="field"><label for="im-amount">סכום (כולל מע״מ)</label><div class="inv-amount-row"><input type="text" id="im-amount" inputmode="decimal" dir="ltr" placeholder="0.00"><select id="im-currency"></select></div></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label for="im-kind">סוג</label><select id="im-kind"><option value="expense">הוצאה (ספק)</option><option value="income">הכנסה (חשבונית שהוצאנו)</option></select></div>
+          <div class="field"><label for="im-cat">קטגוריה</label><select id="im-cat"></select></div>
+        </div>
+        <div class="field"><label for="im-note">הערה</label><textarea id="im-note" rows="2" placeholder="לדוגמה: תשלום חודשי, שולם בכרטיס אשראי של העסק…"></textarea></div>
+        <label class="lw-check" style="margin-bottom:var(--space-sm)"><input type="checkbox" id="im-paid" checked> שולם</label>
+        <div class="field">
+          <label class="inv-file-lbl" for="im-file"><span id="im-replace-lbl">החלפת הקובץ</span> <input type="file" id="im-file" accept="image/*,application/pdf"></label>
+        </div>
+        <p class="cm-upload-prog err" id="im-err" style="min-height:1.2em"></p>
+        <div class="modal-actions">
+          <button class="crm-btn" type="submit" id="im-save">שמירה</button>
+          <button class="btn-ghost" type="button" id="im-cancel">ביטול</button>
+          <button class="btn-ghost cm-closebtn" type="button" id="im-delete" style="margin-inline-start:auto">מחיקה</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===== ייבוא חשבוניות מ-Gmail ===== -->
+  <div class="modal-overlay" id="inv-gmail-modal" hidden>
+    <div class="modal lead-card">
+      <div class="lead-card-head">
+        <div><h3 style="margin:0">ייבוא חשבוניות מהמייל</h3><div class="lc-sub">חיפוש בתיבת office@horizon-psagot-group.com · קריאה בלבד · הקבצים נשמרים בארכיון המאובטח</div></div>
+        <button class="icon-btn" id="inv-gmail-close" type="button" title="סגירה">✕</button>
+      </div>
+      <div id="ig-setup" class="inv-setup" hidden>
+        <b>הגדרה חד-פעמית נדרשת</b>
+        <ol>
+          <li>Google Cloud Console → הפרויקט <code>horizon-psagot-group-ccbe6</code> → APIs &amp; Services → <b>Enable</b> את Gmail API.</li>
+          <li>Credentials → Create credentials → <b>OAuth client ID</b> → Web application. ב-Authorized JavaScript origins להוסיף <code>https://horizonpsagotgroup.com</code> ו-<code>https://www.horizonpsagotgroup.com</code>.</li>
+          <li>OAuth consent screen → להוסיף את office@horizon-psagot-group.com כ-Test user (או לפרסם את האפליקציה בתוך הארגון).</li>
+          <li>להדביק את ה-Client ID ב-<code>js/crm-invoices.js</code> בשורה <code>GMAIL_CLIENT_ID</code>.</li>
+        </ol>
+        <p>ההוראות המלאות: README-INVOICES-GMAIL.md בתיקיית האתר.</p>
+      </div>
+      <div id="ig-body" hidden>
+        <div class="field"><label for="ig-q">שאילתת חיפוש (תחביר Gmail)</label><input type="text" id="ig-q" dir="auto"></div>
+        <div class="lw-pickbar">
+          <select id="ig-range" class="status-select">
+            <option value="3m">3 חודשים אחרונים</option>
+            <option value="1y" selected>שנה אחרונה</option>
+            <option value="2y">שנתיים</option>
+            <option value="">כל ההיסטוריה</option>
+          </select>
+          <button class="crm-btn" style="width:auto" type="button" id="ig-search">🔍 חיפוש במייל</button>
+          <span class="lw-count" id="ig-status"></span>
+        </div>
+        <div class="lw-pickbar">
+          <button type="button" class="btn-ghost lw-mini" id="ig-all">בחירת הכל</button>
+          <button type="button" class="btn-ghost lw-mini" id="ig-none">ניקוי</button>
+        </div>
+        <div class="lw-items ig-list" id="ig-list"></div>
+        <div class="modal-actions lw-actions">
+          <button class="crm-btn" type="button" id="ig-import" disabled>ייבוא נבחרים</button>
+          <button class="btn-ghost" type="button" id="ig-cancel">סגירה</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="modal-overlay" id="case-modal" hidden>
     <div class="modal lead-card">
       <div class="lead-card-head">
@@ -448,6 +547,6 @@
     </div>
   </div>
 
-  <script type="module" src="/js/crm.js?v=20260922a"></script>
+  <script type="module" src="/js/crm.js?v=20261026a"></script>
 </body>
 </html>

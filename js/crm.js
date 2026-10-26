@@ -3,9 +3,10 @@
    פאנל ניהול: לידים (ריבוי משתמשים, כרטיס ליד, חיפוש, דוחות,
    ייצוא, פולו-אפ) · עסקאות · מאמרים (בגל הבא)
    ============================================================ */
-import { firebaseConfig, isConfigured } from '/js/firebase-config.js?v=20260922a';
-import { SERVICE_TYPES, buildItems, serviceLabel, docCatalog, storagePath, safeSeg } from '/js/case-templates.js?v=20260922a';
-import { initTasks } from '/js/crm-tasks.js?v=20260922a';
+import { firebaseConfig, isConfigured } from '/js/firebase-config.js?v=20261026a';
+import { SERVICE_TYPES, buildItems, serviceLabel, docCatalog, storagePath, safeSeg } from '/js/case-templates.js?v=20261026a';
+import { initTasks } from '/js/crm-tasks.js?v=20261026a';
+import { initInvoices } from '/js/crm-invoices.js?v=20261026a';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? '' : s).replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -67,17 +68,19 @@ async function boot() {
       // רישום המשתמש לרשימת בעלי הגישה (לצורך הקצאה/סינון)
       fs.setDoc(fs.doc(db, 'crm_users', user.uid), { email: user.email, lastSeen: nowISO() }, { merge: true }).catch(() => {});
       if (!tasks) tasks = initTasks(taskCtx);
+      if (!invoices) invoices = initInvoices(invCtx);
       listenUsers();
       listenLeads(); listenCases(); listenDeals(); listenTestimonials(); teamCol.listen(); faqCol.listen(); articlesCol.listen();
-    } else { detachAll(); if (tasks) tasks.detach(); $('app-view').hidden = true; $('login-view').hidden = false; }
+    } else { detachAll(); if (tasks) tasks.detach(); if (invoices) invoices.detach(); $('app-view').hidden = true; $('login-view').hidden = false; }
   });
 
   /* ---------- טאבים ---------- */
   document.querySelectorAll('.crm-tab').forEach((tab) => {
     tab.addEventListener('click', () => {
       document.querySelectorAll('.crm-tab').forEach((t) => t.classList.toggle('active', t === tab));
-      ['leads', 'tasks', 'cases', 'deals', 'testimonials', 'team', 'faq', 'articles', 'users'].forEach((k) => { $('panel-' + k).hidden = (k !== tab.dataset.tab); });
+      ['leads', 'tasks', 'cases', 'invoices', 'deals', 'testimonials', 'team', 'faq', 'articles', 'users'].forEach((k) => { $('panel-' + k).hidden = (k !== tab.dataset.tab); });
       if (tab.dataset.tab === 'tasks' && tasks) tasks.refresh();
+      if (tab.dataset.tab === 'invoices' && invoices) invoices.refresh();
     });
   });
 
@@ -102,6 +105,13 @@ async function boot() {
     openCase: (id) => { const c = allCases.find((x) => x.id === id); if (c) openCaseModal(c); },
   };
 
+  /* ---------- חשבוניות (js/crm-invoices.js) — בעלים בלבד ---------- */
+  let invoices = null;
+  const invCtx = {
+    fs, db, st, storage, $, esc, track, nowISO, fmtDate, todayStr, toDateObj, displayName, safeSeg, loadJSZip,
+    me: () => ({ email: currentEmail, uid: currentUid }), role: () => currentRole,
+  };
+
   /* רשימת בעלי גישה — לבחירת מטפל, סינון וניהול משתמשים + הרשאות */
   function listenUsers() {
     track(fs.onSnapshot(fs.collection(db, 'crm_users'), (snap) => {
@@ -120,6 +130,8 @@ async function boot() {
         const btn = document.querySelector('.crm-tab[data-tab="' + k + '"]'); if (btn) btn.hidden = !canContent;
       });
       $('tab-users').hidden = !(isOwner || !ownerExists);
+      // חשבוניות: בעלים בלבד (גם בחוקי Firestore/Storage) — לא נפתח ל-"אין בעלים עדיין"
+      if (invoices) invoices.setOwner(isOwner);
       // אם הטאב הפעיל הוסתר — חוזרים ללידים
       const active = document.querySelector('.crm-tab.active');
       if (active && active.hidden) document.querySelector('.crm-tab[data-tab="leads"]').click();

@@ -606,3 +606,39 @@ tbody tr.lead-row:hover td { background: var(--color-cream-soft); }
 .cm-consent.warn { color: #8A6D3B; background: rgba(201,164,122,.14); border-color: rgba(201,164,122,.5); font-weight: 600; }
 .case-st.st-noconsent { color: #8A6D3B; background: rgba(201,164,122,.2); }
 .case-card-consent { margin-top: 6px; font-size: var(--fs-xs); font-weight: 700; color: #8A6D3B; background: rgba(201,164,122,.14); border: 1px solid rgba(201,164,122,.45); border-radius: var(--radius-md); padding: 5px 10px; }
+
+/* ---- חשבוניות (בעלים בלבד) ---- */
+.inv-owner-badge { font-family: inherit; font-size: var(--fs-xs); font-weight: 700; color: var(--color-rose-gold-deep, #9a7b56); background: rgba(201,164,122,.16); border: 1px solid rgba(201,164,122,.5); border-radius: 999px; padding: 3px 10px; vertical-align: middle; margin-inline-start: .5rem; }
+.inv-head-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
+.inv-drop { border: 2px dashed var(--color-rose-gold); border-radius: var(--radius-lg); background: rgba(201,164,122,.06); padding: var(--space-md) var(--space-lg); text-align: center; color: var(--color-charcoal-soft); font-size: var(--fs-sm); line-height: 1.7; cursor: pointer; transition: all .2s; margin-bottom: var(--space-sm); }
+.inv-drop:hover, .inv-drop.over { background: rgba(201,164,122,.16); border-color: var(--color-navy-deep); color: var(--color-navy-deep); }
+.inv-drop b { display: block; font-size: var(--fs-base); color: var(--color-navy-deep); }
+.inv-prog { margin: 0 0 var(--space-sm); font-size: var(--fs-sm); }
+.inv-filter .inv-tools { margin-inline-start: auto; }
+.inv-summary { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: var(--space-md); }
+.inv-sum { background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 6px 12px; font-size: var(--fs-sm); font-weight: 700; color: var(--color-navy-deep); }
+.inv-sum i { font-style: normal; font-weight: 600; color: var(--color-warm-gray); font-size: var(--fs-xs); margin-inline-end: .4rem; }
+.inv-sum.in { color: #23794A; }
+.inv-sum.warn { color: #8A6D3B; border-color: rgba(201,164,122,.6); background: rgba(201,164,122,.12); }
+.inv-table { min-width: 960px; }
+.inv-row { cursor: pointer; }
+.inv-row.inv-missing td:nth-child(2) b:empty::before { content: 'ללא ספק'; color: var(--color-warm-gray); font-weight: 400; }
+.inv-pill-miss { margin-inline-start: .4rem; }
+.inv-amt { font-weight: 700; color: var(--color-navy-deep); white-space: nowrap; direction: ltr; text-align: right; }
+.inv-kind { display: inline-block; font-size: var(--fs-xs); font-weight: 700; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+.inv-kind.expense { color: #A5291D; background: rgba(192,57,43,.1); }
+.inv-kind.income { color: #23794A; background: rgba(46,158,91,.12); }
+.inv-actions { white-space: nowrap; }
+.inv-actions .icon-btn { display: inline-grid; margin-inline-start: 4px; }
+.inv-file-row { margin-bottom: var(--space-sm); font-size: var(--fs-sm); display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.inv-file-row small { color: var(--color-warm-gray); font-size: var(--fs-xs); }
+.inv-gmail-src { font-size: var(--fs-xs); color: #5B4A8A; background: rgba(142,124,195,.1); border: 1px solid rgba(142,124,195,.35); border-radius: var(--radius-md); padding: 5px 10px; margin-bottom: var(--space-sm); }
+.inv-amount-row { display: grid; grid-template-columns: 1fr 84px; gap: 6px; }
+.inv-file-lbl { display: flex; align-items: center; gap: .6rem; font-size: var(--fs-sm) !important; font-weight: 600; color: var(--color-navy-deep); cursor: pointer; }
+.inv-file-lbl input { font-size: var(--fs-xs); }
+.inv-setup { background: rgba(201,164,122,.1); border: 1px solid rgba(201,164,122,.5); border-radius: var(--radius-md); padding: var(--space-sm) var(--space-md); font-size: var(--fs-sm); line-height: 1.7; }
+.inv-setup ol { padding-inline-start: 1.2rem; margin: .4rem 0; }
+.inv-setup code { font-size: var(--fs-xs); background: rgba(0,0,0,.06); padding: 1px 5px; border-radius: 4px; direction: ltr; unicode-bidi: embed; }
+.ig-list { max-height: 44vh; }
+.ig-item.dup { opacity: .55; }
+@media (max-width: 640px) { .inv-filter .inv-tools { margin-inline-start: 0; } .inv-amount-row { grid-template-columns: 1fr 72px; } }
