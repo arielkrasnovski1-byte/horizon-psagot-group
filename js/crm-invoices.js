@@ -12,8 +12,10 @@
         ריק = הכפתור מציג הוראות הגדרה. ראו README-INVOICES-GMAIL.md ---- */
 export const GMAIL_CLIENT_ID = '579496667206-u63c3v4m3v25r1n15jhabunekdslgr0f.apps.googleusercontent.com';
 const GMAIL_LOGIN_HINT = 'office@horizon-psagot-group.com';
+// 2026-11-02: המשתמש החליט לא להמשיך עם Dokka. כל ממשק ה-Dokka מוסתר (הקוד נשאר). להפעלה: true.
+export const DOKKA_ENABLED = false;
 // קריאה (ייבוא) + שליחה (גשר ל-Dokka). בפעם הראשונה אחרי העדכון גוגל יבקש לאשר גם שליחה.
-const GMAIL_SCOPE = 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send';
+const GMAIL_SCOPE = 'https://www.googleapis.com/auth/gmail.readonly' + (DOKKA_ENABLED ? ' https://www.googleapis.com/auth/gmail.send' : '');
 /* ---- Dokka: תיבת הקליטה של החברה (מופיעה ב-Dokka מתחת לשם החברה). כל מייל עם קובץ שנשלח אליה נקלט כמסמך. ---- */
 export const DOKKA_EMAIL = 'horizon-pg@dokka.co.il';
 // מילות מפתח למיילים ללא קובץ מצורף. ג'ימייל לא מזהה נטיות בעברית (החשבונית/חשבוניות), לכן הן מפורטות.
@@ -61,6 +63,7 @@ export function initInvoices(ctx) {
      ============================================================ */
   function setOwner(isOwner) {
     ownerMode = !!isOwner;
+    if (!DOKKA_ENABLED) { const sb = $('inv-dokka-sync'); if (sb) sb.hidden = true; const st0 = $('inv-dokka-status'); if (st0) st0.hidden = true; }
     const tab = $('tab-invoices'); if (tab) tab.hidden = !ownerMode;
     if (ownerMode && !unsub) listen();
     if (!ownerMode && unsub) detach();
@@ -86,6 +89,7 @@ export function initInvoices(ctx) {
      ============================================================ */
   function renderSyncStatus() {
     const el = $('inv-dokka-status'); if (!el) return;
+    if (!DOKKA_ENABLED) { el.hidden = true; const sb = $('inv-dokka-sync'); if (sb) sb.hidden = true; return; }
     const btn = $('inv-dokka-sync');
     if (!syncState) { el.innerHTML = '<span class="pill pending">סנכרון מ-Dokka עדיין לא הופעל</span> <small>נדרשת הגדרת הפונקציה בענן — ראו README-DOKKA.md</small>'; if (btn) btn.disabled = false; return; }
     const r = syncState.lastResult || {};
@@ -227,7 +231,7 @@ export function initInvoices(ctx) {
     return `<tr class="inv-row${miss ? ' inv-missing' : ''}${i.paid === false ? ' inv-unpaid' : ''}${selected.has(i.id) ? ' inv-selected' : ''}" data-id="${i.id}">` +
       `<td class="inv-sel"><input type="checkbox" data-sel="${i.id}"${selected.has(i.id) ? ' checked' : ''}></td>` +
       `<td>${fmtDay(i.date)}</td>` +
-      `<td><b>${esc(i.supplier || '')}</b>${i.supplier && !supF ? `<button type="button" class="inv-suplink" data-inv-sup="${esc(supKey(i))}" title="הצגת כל החשבוניות של ${esc(i.supplier)}">▼</button>` : ''}${miss ? '<span class="pill pending inv-pill-miss">חסרים פרטים</span>' : ''}${i.paid === false ? '<span class="pill rejected inv-pill-miss">לא שולם</span>' : ''}${i.dokkaSentAt ? `<span class="pill dokka inv-pill-miss" title="נשלח ל-Dokka ${esc(fmtDate(i.dokkaSentAt))}${i.dokkaSentBy ? ' מ-' + esc(i.dokkaSentBy) : ''}">📤 Dokka ${esc(fmtDay(String(i.dokkaSentAt).slice(0, 10)))}</span>` : ''}${i.printedAt ? `<span class="pill printed inv-pill-miss" title="הודפס ${esc(fmtDate(i.printedAt))}${i.printedBy ? ' · ' + esc(displayName(i.printedBy)) : ''}${Number(i.printCount) > 1 ? ' · ' + i.printCount + ' פעמים' : ''}">🖨 הודפס ${esc(fmtDay(String(i.printedAt).slice(0, 10)))}</span>` : ''}</td>` +
+      `<td><b>${esc(i.supplier || '')}</b>${i.supplier && !supF ? `<button type="button" class="inv-suplink" data-inv-sup="${esc(supKey(i))}" title="הצגת כל החשבוניות של ${esc(i.supplier)}">▼</button>` : ''}${miss ? '<span class="pill pending inv-pill-miss">חסרים פרטים</span>' : ''}${i.paid === false ? '<span class="pill rejected inv-pill-miss">לא שולם</span>' : ''}${DOKKA_ENABLED && i.dokkaSentAt ? `<span class="pill dokka inv-pill-miss" title="נשלח ל-Dokka ${esc(fmtDate(i.dokkaSentAt))}${i.dokkaSentBy ? ' מ-' + esc(i.dokkaSentBy) : ''}">📤 Dokka ${esc(fmtDay(String(i.dokkaSentAt).slice(0, 10)))}</span>` : ''}${i.printedAt ? `<span class="pill printed inv-pill-miss" title="הודפס ${esc(fmtDate(i.printedAt))}${i.printedBy ? ' · ' + esc(displayName(i.printedBy)) : ''}${Number(i.printCount) > 1 ? ' · ' + i.printCount + ' פעמים' : ''}">🖨 הודפס ${esc(fmtDay(String(i.printedAt).slice(0, 10)))}</span>` : ''}</td>` +
       `<td>${esc(i.number || '—')}</td>` +
       `<td>${esc(i.category || '—')}</td>` +
       `<td><span class="inv-kind ${kind}">${INVOICE_KINDS[kind]}</span></td>` +
@@ -253,7 +257,7 @@ export function initInvoices(ctx) {
       `<select id="inv-kind" class="status-select">${opt('', 'הוצאות והכנסות', kindF)}${Object.keys(INVOICE_KINDS).map((k) => opt(k, INVOICE_KINDS[k], kindF)).join('')}</select>` +
       `<select id="inv-cat" class="status-select">${opt('', 'כל הקטגוריות', catF)}${cats.map((c) => opt(c, c, catF)).join('')}</select>` +
       `<select id="inv-acct" class="status-select">${opt('', 'כל התיבות', acctF)}${accts.map((a) => opt(a, acctLabel(a), acctF)).join('')}</select>` +
-      `<select id="inv-paid" class="status-select">${opt('', 'כל המצבים', paidF)}${opt('paid', 'שולם', paidF)}${opt('unpaid', 'לא שולם', paidF)}${opt('missing', 'חסרים פרטים (ספק/סכום)', paidF)}${opt('emailprint', 'נשמרו מגוף המייל', paidF)}${opt('printed', '🖨 הודפסו', paidF)}${opt('unprinted', 'טרם הודפסו', paidF)}${opt('dokka', '📤 נשלחו ל-Dokka', paidF)}${opt('nodokka', 'טרם נשלחו ל-Dokka (הוצאות)', paidF)}</select>` +
+      `<select id="inv-paid" class="status-select">${opt('', 'כל המצבים', paidF)}${opt('paid', 'שולם', paidF)}${opt('unpaid', 'לא שולם', paidF)}${opt('missing', 'חסרים פרטים (ספק/סכום)', paidF)}${opt('emailprint', 'נשמרו מגוף המייל', paidF)}${opt('printed', '🖨 הודפסו', paidF)}${opt('unprinted', 'טרם הודפסו', paidF)}${DOKKA_ENABLED ? opt('dokka', '📤 נשלחו ל-Dokka', paidF) + opt('nodokka', 'טרם נשלחו ל-Dokka (הוצאות)', paidF) : ''}</select>` +
       `<span class="inv-amtrange"><input type="text" inputmode="decimal" id="inv-min" placeholder="מסכום ₪" value="${esc(minF)}"><input type="text" inputmode="decimal" id="inv-max" placeholder="עד סכום ₪" value="${esc(maxF)}"></span>` +
       `<input type="search" id="inv-q" class="search-input cases-search" placeholder="חיפוש חופשי: ספק, מספר, קובץ, נושא מייל…" value="${esc(q)}">` +
       `<select id="inv-sort" class="status-select" title="מיון">${SORTS.map(([v, l]) => opt(v, l, sortF)).join('')}</select>` +
@@ -268,7 +272,7 @@ export function initInvoices(ctx) {
       `<button type="button" id="inv-print-list">📋 הרשימה כדוח<small>טבלה עם סיכומים</small></button>` +
       `<button type="button" id="inv-print-mark">✔ סימון כהודפס / ביטול<small>בלי להדפיס — למשל אם הודפס במקום אחר</small></button>` +
       `</span></span>` +
-      `<button type="button" class="cases-fbtn inv-dokka" id="inv-dokka" title="שליחת קובצי החשבוניות במייל לתיבת הקליטה של Dokka (" + DOKKA_EMAIL + ") — נבחרים, או כל המסוננים; הכנסות ומה שכבר נשלח מדולגים">📤 שליחה ל-Dokka${esc(targetLabel())}</button>` +
+      (DOKKA_ENABLED ? `<button type="button" class="cases-fbtn inv-dokka" id="inv-dokka" title="שליחת קובצי החשבוניות במייל לתיבת הקליטה של Dokka (" + DOKKA_EMAIL + ") — נבחרים, או כל המסוננים; הכנסות ומה שכבר נשלח מדולגים">📤 שליחה ל-Dokka${esc(targetLabel())}</button>` : '') +
       `<button type="button" class="cases-fbtn" id="inv-csv" title="ייצוא לאקסל (נבחרים, או כל המסוננים)">📊 CSV${esc(targetLabel())}</button>` +
       `<button type="button" class="cases-fbtn" id="inv-zip" title="הורדת הקבצים כ-ZIP אחד (נבחרים, או כל המסוננים)">⬇ ZIP${esc(targetLabel())}</button>` +
       (selected.size ? `<button type="button" class="cases-fbtn inv-clear" id="inv-unsel" title="ביטול הבחירה">✕ ביטול בחירה (${selected.size})</button>` : '') +
@@ -316,7 +320,7 @@ export function initInvoices(ctx) {
     const split = (!acctF && acctKeys.length > 1)
       ? `<span class="inv-split">${acctKeys.sort((a, b) => (a === 'manual') - (b === 'manual') || a.localeCompare(b)).map((a) => `<button type="button" class="inv-sum acct" data-acct="${esc(a)}" title="סינון לפי תיבה זו"><i>${esc(acctLabel(a))}</i> ${byAcct[a].n} · ${fmtMoney(byAcct[a].sum, 'ILS')}</button>`).join('')}</span>` : '';
     el.innerHTML = `<span class="inv-sum"><i>מסמכים</i> ${rows.length}${rows.length !== all.length ? ' / ' + all.length : ''}</span>` + parts.join('') +
-      (miss ? `<span class="inv-sum warn"><i>חסרים פרטים</i> ${miss}</span>` : '') + (rows.some((i) => !i.dokkaSentAt && i.kind !== 'income') && paidF !== 'nodokka' ? `<button type="button" class="inv-sum nodokka" id="inv-nodokka" title="הצגת ההוצאות שטרם נשלחו ל-Dokka"><i>טרם נשלחו ל-Dokka</i> ${rows.filter((i) => !i.dokkaSentAt && i.kind !== 'income').length}</button>` : '') + (rows.some((i) => !i.printedAt) && paidF !== 'unprinted' ? `<button type="button" class="inv-sum unprinted" id="inv-unprinted" title="הצגת החשבוניות שטרם הודפסו"><i>טרם הודפסו</i> ${rows.filter((i) => !i.printedAt).length}</button>` : '') + (selected.size ? `<span class="inv-sum sel"><i>נבחרו</i> ${selected.size} · ${fmtMoney(all.filter((i) => selected.has(i.id) && (i.currency || 'ILS') === 'ILS').reduce((t, i) => t + num(i.amount), 0), 'ILS')}</span>` : '') + split;
+      (miss ? `<span class="inv-sum warn"><i>חסרים פרטים</i> ${miss}</span>` : '') + (DOKKA_ENABLED && rows.some((i) => !i.dokkaSentAt && i.kind !== 'income') && paidF !== 'nodokka' ? `<button type="button" class="inv-sum nodokka" id="inv-nodokka" title="הצגת ההוצאות שטרם נשלחו ל-Dokka"><i>טרם נשלחו ל-Dokka</i> ${rows.filter((i) => !i.dokkaSentAt && i.kind !== 'income').length}</button>` : '') + (rows.some((i) => !i.printedAt) && paidF !== 'unprinted' ? `<button type="button" class="inv-sum unprinted" id="inv-unprinted" title="הצגת החשבוניות שטרם הודפסו"><i>טרם הודפסו</i> ${rows.filter((i) => !i.printedAt).length}</button>` : '') + (selected.size ? `<span class="inv-sum sel"><i>נבחרו</i> ${selected.size} · ${fmtMoney(all.filter((i) => selected.has(i.id) && (i.currency || 'ILS') === 'ILS').reduce((t, i) => t + num(i.amount), 0), 'ILS')}</span>` : '') + split;
     el.querySelectorAll('[data-acct]').forEach((b) => b.onclick = () => { acctF = b.dataset.acct; render(); });
     const up = $('inv-unprinted'); if (up) up.onclick = () => { paidF = 'unprinted'; render(); };
     const nd = $('inv-nodokka'); if (nd) nd.onclick = () => { paidF = 'nodokka'; render(); };
@@ -411,7 +415,7 @@ export function initInvoices(ctx) {
     M('delete').hidden = !inv;
     M('printed').innerHTML = inv ? (inv.printedAt ? `<span class="pill printed">🖨 הודפס ${esc(fmtDate(inv.printedAt))}${inv.printedBy ? ' · ' + esc(displayName(inv.printedBy)) : ''}${Number(inv.printCount) > 1 ? ' · ' + inv.printCount + ' פעמים' : ''}</span> <button type="button" class="btn-ghost lw-mini" id="im-unprint">ביטול סימון</button>` : `<span class="pill pending">טרם הודפס</span> <button type="button" class="btn-ghost lw-mini" id="im-unprint">סימון כהודפס</button>`) : '';
     const tb = $('im-unprint'); if (tb) tb.onclick = () => markPrinted([inv], !inv.printedAt).then(() => openModal(all.find((x) => x.id === inv.id) || inv));
-    M('dokka').innerHTML = inv ? (inv.dokkaSentAt ? `<span class="pill dokka">📤 נשלח ל-Dokka ${esc(fmtDate(inv.dokkaSentAt))}${inv.dokkaSentBy ? ' מ-' + esc(inv.dokkaSentBy) : ''}</span> <button type="button" class="btn-ghost lw-mini" id="im-dokka-again">שליחה חוזרת</button> <button type="button" class="btn-ghost lw-mini" id="im-dokka-un">ביטול סימון</button>` : `<span class="pill pending">טרם נשלח ל-Dokka</span> <button type="button" class="btn-ghost lw-mini" id="im-dokka-send">📤 שליחה ל-Dokka</button> <button type="button" class="btn-ghost lw-mini" id="im-dokka-mark" title="אם נשלח בדרך אחרת">סימון כנשלח</button>`) : '';
+    M('dokka').innerHTML = (DOKKA_ENABLED && inv) ? (inv.dokkaSentAt ? `<span class="pill dokka">📤 נשלח ל-Dokka ${esc(fmtDate(inv.dokkaSentAt))}${inv.dokkaSentBy ? ' מ-' + esc(inv.dokkaSentBy) : ''}</span> <button type="button" class="btn-ghost lw-mini" id="im-dokka-again">שליחה חוזרת</button> <button type="button" class="btn-ghost lw-mini" id="im-dokka-un">ביטול סימון</button>` : `<span class="pill pending">טרם נשלח ל-Dokka</span> <button type="button" class="btn-ghost lw-mini" id="im-dokka-send">📤 שליחה ל-Dokka</button> <button type="button" class="btn-ghost lw-mini" id="im-dokka-mark" title="אם נשלח בדרך אחרת">סימון כנשלח</button>`) : '';
     const reopen = () => openModal(all.find((x) => x.id === inv.id) || inv);
     const bs = $('im-dokka-send') || $('im-dokka-again'); if (bs) bs.onclick = () => sendToDokka([inv], true).then(reopen);
     const bm = $('im-dokka-mark'); if (bm) bm.onclick = () => markDokka([inv], true, '').then(reopen);
@@ -478,7 +482,7 @@ export function initInvoices(ctx) {
     const rows = targetRows(); if (!rows.length) { alert('אין שורות לייצוא.'); return; }
     const cols = [['תאריך', (i) => fmtDay(i.date)], ['ספק / לקוח', (i) => i.supplier], ['מספר חשבונית', (i) => i.number], ['סוג', (i) => INVOICE_KINDS[i.kind] || 'הוצאה'],
       ['קטגוריה', (i) => i.category], ['סכום', (i) => i.amount || 0], ['מטבע', (i) => i.currency || 'ILS'], ['שולם', (i) => i.paid === false ? 'לא' : 'כן'],
-      ['הערה', (i) => i.note], ['קובץ', (i) => i.fileName], ['קישור', (i) => i.url], ['מקור', (i) => i.source === 'gmail' ? 'מייל' : 'ידני'], ['תיבת מייל', (i) => i.source === 'gmail' ? acctOf(i) : ''], ['הודפס', (i) => i.printedAt ? fmtDay(String(i.printedAt).slice(0, 10)) : 'לא'], ['נשלח ל-Dokka', (i) => i.dokkaSentAt ? fmtDay(String(i.dokkaSentAt).slice(0, 10)) : 'לא'], ['נושא המייל', (i) => i.gmailSubject], ['שולח המייל', (i) => i.gmailFrom]];
+      ['הערה', (i) => i.note], ['קובץ', (i) => i.fileName], ['קישור', (i) => i.url], ['מקור', (i) => i.source === 'gmail' ? 'מייל' : 'ידני'], ['תיבת מייל', (i) => i.source === 'gmail' ? acctOf(i) : ''], ['הודפס', (i) => i.printedAt ? fmtDay(String(i.printedAt).slice(0, 10)) : 'לא'],  ['נושא המייל', (i) => i.gmailSubject], ['שולח המייל', (i) => i.gmailFrom]];
     const cell = (v) => { const s = String(v == null ? '' : v); return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
     const csv = '﻿' + cols.map((c) => cell(c[0])).join(',') + '\r\n' + rows.map((i) => cols.map((c) => cell(c[1](i))).join(',')).join('\r\n');
     const a = document.createElement('a');

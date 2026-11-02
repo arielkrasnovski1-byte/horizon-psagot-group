@@ -175,7 +175,7 @@
         <div class="panel-head">
           <h2>חשבוניות וקבלות <span class="inv-owner-badge" title="הטאב, הקבצים והנתונים נגישים רק למשתמשים בתפקיד בעלים — נאכף בחוקי האבטחה של Firebase">🔒 בעלים בלבד</span></h2>
           <div class="inv-head-actions">
-            <button class="btn-ghost" type="button" id="inv-dokka-sync" title="משיכה מיידית של מסמכים חדשים מ-Dokka (רץ גם אוטומטית כל 30 דקות)">🔄 סנכרון מ-Dokka</button>
+            <button class="btn-ghost" type="button" id="inv-dokka-sync" hidden title="משיכה מיידית של מסמכים חדשים מ-Dokka (רץ גם אוטומטית כל 30 דקות)">🔄 סנכרון מ-Dokka</button>
             <button class="btn-ghost" type="button" id="inv-gmail" title="חיפוש קבצים מצורפים של חשבוניות בתיבת Gmail וייבוא לארכיון">✉ ייבוא מהמייל</button>
             <button class="crm-btn" style="width:auto" id="inv-new">+ חשבונית חדשה</button>
           </div>
@@ -185,7 +185,7 @@
           <b>גררו לכאן קבצי חשבוניות (PDF / תמונה)</b> או לחצו לבחירה · אפשר כמה קבצים בבת אחת · כל קובץ נשמר כחשבונית ואפשר להשלים ספק וסכום אחר כך
         </div>
         <div class="cm-upload-prog inv-prog" id="inv-prog" hidden></div>
-        <div class="inv-dokka-status" id="inv-dokka-status"></div>
+        <div class="inv-dokka-status" id="inv-dokka-status" hidden></div>
         <div class="cases-filter inv-filter" id="inv-filter"></div>
         <div class="inv-summary" id="inv-summary"></div>
         <div id="inv-table-wrap"><p class="empty-state">טוען…</p></div>
@@ -567,6 +567,6 @@
     </div>
   </div>
 
-  <script type="module" src="/js/crm.js?v=20261102f"></script>
+  <script type="module" src="/js/crm.js?v=20261102g"></script>
 </body>
 </html>
