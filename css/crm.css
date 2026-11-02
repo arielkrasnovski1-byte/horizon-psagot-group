@@ -670,3 +670,10 @@ tr.inv-grp td .inv-grp-sum { font-weight: 700; color: var(--color-navy-deep); di
 tr.inv-grp td small { color: var(--color-warm-gray); font-size: var(--fs-xs); float: left; }
 tr.inv-grp:hover td { background: rgba(201,164,122,.22); }
 @media (max-width: 640px) { .inv-amtrange input { width: 78px; } }
+/* בחירת שורות + הדפסה */
+.inv-table th.inv-sel, .inv-table td.inv-sel { width: 34px; text-align: center; padding-inline: 6px; }
+.inv-table .inv-sel input { width: 16px; height: 16px; cursor: pointer; accent-color: var(--color-navy-deep); }
+tr.inv-row.inv-selected td { background: rgba(201,164,122,.14); }
+.inv-sum.sel { color: var(--color-navy-deep); border-color: var(--color-rose-gold); background: rgba(201,164,122,.14); }
+.inv-print { border-color: var(--color-rose-gold); color: var(--color-navy-deep); }
+.inv-print:disabled { opacity: .7; cursor: progress; }

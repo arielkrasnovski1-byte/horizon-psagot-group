@@ -32,6 +32,7 @@ export function initInvoices(ctx) {
   let ownerMode = false;
   let periodF = '', fromF = '', toF = '', supF = '', kindF = '', catF = '', acctF = '', paidF = '', minF = '', maxF = '', q = '';
   let sortF = 'date_desc', viewF = 'list';
+  let selected = new Set();   // מזהי חשבוניות שסומנו בטבלה (להדפסה / ייצוא נבחרים)
   let current = null;            // החשבונית הפתוחה בכרטיס
   let pendingFile = null;        // קובץ שנבחר בכרטיס "חשבונית חדשה" לפני שמירה
   let gmailToken = null, gmailResults = [], gmailBody = [], gmailAccount = '', gmailPrompt = '';
@@ -63,6 +64,7 @@ export function initInvoices(ctx) {
   function listen() {
     unsub = fs.onSnapshot(fs.collection(db, 'invoices'), (snap) => {
       all = snap.docs.map((d) => ({ ...d.data(), id: d.id }));
+      const ids = new Set(all.map((i) => i.id)); selected.forEach((id) => { if (!ids.has(id)) selected.delete(id); });
       render();
       // השלמה חד-פעמית: ייבואים שנעשו לפני שמירת שם התיבה — כולם מ-office
       if (!backfilled) { backfilled = true; all.filter((i) => i.source === 'gmail' && !i.gmailAccount).forEach((i) => fs.updateDoc(fs.doc(db, 'invoices', i.id), { gmailAccount: GMAIL_LOGIN_HINT }).catch(() => {})); }
@@ -132,6 +134,9 @@ export function initInvoices(ctx) {
     return rows.sort(sorters[sortF] || byDate);
   }
   const activeFilters = () => [periodF, supF, kindF, catF, acctF, paidF, minF, maxF, q.trim()].filter(Boolean).length;
+  // היעד לפעולות (הדפסה / CSV / ZIP): הנבחרים — ואם לא נבחר כלום, כל מה שמסונן
+  const targetRows = () => { const rows = filtered(); return selected.size ? rows.filter((i) => selected.has(i.id)) : rows; };
+  const targetLabel = () => selected.size ? ' (' + selected.size + ' נבחרים)' : '';
   function clearFilters() { periodF = ''; fromF = ''; toF = ''; supF = ''; kindF = ''; catF = ''; acctF = ''; paidF = ''; minF = ''; maxF = ''; q = ''; render(); }
   function render() {
     if (!ownerMode) return;
@@ -141,7 +146,10 @@ export function initInvoices(ctx) {
     const wrap = $('inv-table-wrap');
     if (!all.length) { wrap.innerHTML = '<p class="empty-state">עדיין אין חשבוניות. גררו קבצי PDF לאזור ההעלאה, או ייבאו מהמייל.</p>'; return; }
     if (!rows.length) { wrap.innerHTML = '<p class="empty-state">אין חשבוניות שמתאימות לסינון. <button type="button" class="btn-ghost lw-mini" id="inv-clear2">ניקוי הסינון</button></p>'; const b = $('inv-clear2'); if (b) b.onclick = clearFilters; return; }
+    const visIds = rows.map((i) => i.id);
+    const allSel = visIds.length && visIds.every((id) => selected.has(id));
     const head = '<div class="leads-table-wrap"><table class="leads inv-table"><thead><tr>' +
+      `<th class="inv-sel"><input type="checkbox" id="inv-selall" title="בחירת כל השורות המוצגות"${allSel ? ' checked' : ''}></th>` +
       '<th>תאריך</th><th>ספק / מוצר</th><th>מס׳ חשבונית</th><th>קטגוריה</th><th>סוג</th><th>סכום</th><th>קובץ</th><th>מקור</th><th></th>' +
       '</tr></thead><tbody>';
     let body = '';
@@ -150,13 +158,15 @@ export function initInvoices(ctx) {
       const groups = {};
       rows.forEach((i) => { const k = supKey(i); (groups[k] = groups[k] || { name: i.supplier || 'ללא ספק', rows: [], sum: 0, n: 0 }); groups[k].rows.push(i); groups[k].n++; if ((i.currency || 'ILS') === 'ILS' && i.kind !== 'income') groups[k].sum += num(i.amount); });
       Object.entries(groups).sort((a, b) => b[1].sum - a[1].sum || b[1].n - a[1].n).forEach(([k, g]) => {
-        body += `<tr class="inv-grp" data-sup="${esc(k)}"><td colspan="9"><b>${esc(g.name)}</b><span>${g.n} ${g.n === 1 ? 'חשבונית' : 'חשבוניות'}</span><span class="inv-grp-sum">${fmtMoney(g.sum, 'ILS')}</span><small>לחיצה = סינון לספק זה</small></td></tr>` + g.rows.map(rowHTML).join('');
+        body += `<tr class="inv-grp" data-sup="${esc(k)}"><td colspan="10"><b>${esc(g.name)}</b><span>${g.n} ${g.n === 1 ? 'חשבונית' : 'חשבוניות'}</span><span class="inv-grp-sum">${fmtMoney(g.sum, 'ILS')}</span><small>לחיצה = סינון לספק זה</small></td></tr>` + g.rows.map(rowHTML).join('');
       });
     } else body = rows.map(rowHTML).join('');
     wrap.innerHTML = head + body + '</tbody></table></div>';
     wrap.querySelectorAll('tr.inv-row').forEach((tr) => {
-      tr.addEventListener('click', (e) => { if (e.target.closest('a,button')) return; const inv = all.find((x) => x.id === tr.dataset.id); if (inv) openModal(inv); });
+      tr.addEventListener('click', (e) => { if (e.target.closest('a,button,input,.inv-sel')) return; const inv = all.find((x) => x.id === tr.dataset.id); if (inv) openModal(inv); });
     });
+    wrap.querySelectorAll('[data-sel]').forEach((c) => c.onchange = () => { if (c.checked) selected.add(c.dataset.sel); else selected.delete(c.dataset.sel); render(); });
+    const sa = $('inv-selall'); if (sa) sa.onchange = () => { if (sa.checked) visIds.forEach((id) => selected.add(id)); else visIds.forEach((id) => selected.delete(id)); render(); };
     wrap.querySelectorAll('tr.inv-grp').forEach((tr) => tr.onclick = () => { supF = tr.dataset.sup; viewF = 'list'; render(); });
     wrap.querySelectorAll('[data-inv-del]').forEach((b) => b.onclick = () => { const inv = all.find((x) => x.id === b.dataset.invDel); if (inv) removeInvoice(inv); });
     wrap.querySelectorAll('[data-inv-edit]').forEach((b) => b.onclick = () => { const inv = all.find((x) => x.id === b.dataset.invEdit); if (inv) openModal(inv); });
@@ -165,7 +175,8 @@ export function initInvoices(ctx) {
   function rowHTML(i) {
     const kind = i.kind === 'income' ? 'income' : 'expense';
     const miss = missingInfo(i);
-    return `<tr class="inv-row${miss ? ' inv-missing' : ''}${i.paid === false ? ' inv-unpaid' : ''}" data-id="${i.id}">` +
+    return `<tr class="inv-row${miss ? ' inv-missing' : ''}${i.paid === false ? ' inv-unpaid' : ''}${selected.has(i.id) ? ' inv-selected' : ''}" data-id="${i.id}">` +
+      `<td class="inv-sel"><input type="checkbox" data-sel="${i.id}"${selected.has(i.id) ? ' checked' : ''}></td>` +
       `<td>${fmtDay(i.date)}</td>` +
       `<td><b>${esc(i.supplier || '')}</b>${i.supplier && !supF ? `<button type="button" class="inv-suplink" data-inv-sup="${esc(supKey(i))}" title="הצגת כל החשבוניות של ${esc(i.supplier)}">▼</button>` : ''}${miss ? '<span class="pill pending inv-pill-miss">חסרים פרטים</span>' : ''}${i.paid === false ? '<span class="pill rejected inv-pill-miss">לא שולם</span>' : ''}</td>` +
       `<td>${esc(i.number || '—')}</td>` +
@@ -201,8 +212,11 @@ export function initInvoices(ctx) {
       `<button type="button" class="cases-fbtn${viewF === 'list' ? ' on' : ''}" data-iv="list" title="רשימה">☰ רשימה</button>` +
       `<button type="button" class="cases-fbtn${viewF === 'supplier' ? ' on' : ''}" data-iv="supplier" title="קיבוץ לפי ספק / מוצר עם סיכום לכל אחד">▤ לפי ספק</button>` +
       (nActive ? `<button type="button" class="cases-fbtn inv-clear" id="inv-clear" title="איפוס כל הסינונים">✕ ניקוי סינון (${nActive})</button>` : '') +
-      `<button type="button" class="cases-fbtn" id="inv-csv" title="ייצוא הטבלה המסוננת לאקסל">📊 ייצוא CSV</button>` +
-      `<button type="button" class="cases-fbtn" id="inv-zip" title="הורדת כל הקבצים המסוננים כ-ZIP אחד">⬇ ZIP</button>` +
+      `<button type="button" class="cases-fbtn inv-print" id="inv-print-docs" title="מאחד את קובצי החשבוניות (נבחרים, או כל המסוננים) ל-PDF אחד ופותח אותו להדפסה">🖨 הדפסת המסמכים${esc(targetLabel())}</button>` +
+      `<button type="button" class="cases-fbtn inv-print" id="inv-print-list" title="דוח מודפס של הרשימה עם סיכומים (נבחרים, או כל המסוננים)">🖨 הדפסת הרשימה${esc(targetLabel())}</button>` +
+      `<button type="button" class="cases-fbtn" id="inv-csv" title="ייצוא לאקסל (נבחרים, או כל המסוננים)">📊 CSV${esc(targetLabel())}</button>` +
+      `<button type="button" class="cases-fbtn" id="inv-zip" title="הורדת הקבצים כ-ZIP אחד (נבחרים, או כל המסוננים)">⬇ ZIP${esc(targetLabel())}</button>` +
+      (selected.size ? `<button type="button" class="cases-fbtn inv-clear" id="inv-unsel" title="ביטול הבחירה">✕ ביטול בחירה (${selected.size})</button>` : '') +
       `</span>`;
     const on = (id, ev, fn) => { const el = bar.querySelector('#' + id); if (el) el['on' + ev] = fn; };
     on('inv-period', 'change', (e) => { periodF = e.target.value; if (periodF === 'custom' && !fromF && !toF) { fromF = ymd(addM(new Date(), -1)); toF = todayStr(); } render(); });
@@ -221,6 +235,9 @@ export function initInvoices(ctx) {
     on('inv-clear', 'click', clearFilters);
     on('inv-csv', 'click', exportCSV);
     on('inv-zip', 'click', downloadZip);
+    on('inv-print-docs', 'click', printDocs);
+    on('inv-print-list', 'click', printList);
+    on('inv-unsel', 'click', () => { selected.clear(); render(); });
   }
   function renderSummary(rows) {
     const el = $('inv-summary');
@@ -238,7 +255,7 @@ export function initInvoices(ctx) {
     const split = (!acctF && acctKeys.length > 1)
       ? `<span class="inv-split">${acctKeys.sort((a, b) => (a === 'manual') - (b === 'manual') || a.localeCompare(b)).map((a) => `<button type="button" class="inv-sum acct" data-acct="${esc(a)}" title="סינון לפי תיבה זו"><i>${esc(acctLabel(a))}</i> ${byAcct[a].n} · ${fmtMoney(byAcct[a].sum, 'ILS')}</button>`).join('')}</span>` : '';
     el.innerHTML = `<span class="inv-sum"><i>מסמכים</i> ${rows.length}${rows.length !== all.length ? ' / ' + all.length : ''}</span>` + parts.join('') +
-      (miss ? `<span class="inv-sum warn"><i>חסרים פרטים</i> ${miss}</span>` : '') + split;
+      (miss ? `<span class="inv-sum warn"><i>חסרים פרטים</i> ${miss}</span>` : '') + (selected.size ? `<span class="inv-sum sel"><i>נבחרו</i> ${selected.size} · ${fmtMoney(all.filter((i) => selected.has(i.id) && (i.currency || 'ILS') === 'ILS').reduce((t, i) => t + num(i.amount), 0), 'ILS')}</span>` : '') + split;
     el.querySelectorAll('[data-acct]').forEach((b) => b.onclick = () => { acctF = b.dataset.acct; render(); });
   }
 
@@ -385,7 +402,7 @@ export function initInvoices(ctx) {
      ייצוא CSV (אקסל) + ZIP של הקבצים המסוננים
      ============================================================ */
   function exportCSV() {
-    const rows = filtered(); if (!rows.length) { alert('אין שורות לייצוא.'); return; }
+    const rows = targetRows(); if (!rows.length) { alert('אין שורות לייצוא.'); return; }
     const cols = [['תאריך', (i) => fmtDay(i.date)], ['ספק / לקוח', (i) => i.supplier], ['מספר חשבונית', (i) => i.number], ['סוג', (i) => INVOICE_KINDS[i.kind] || 'הוצאה'],
       ['קטגוריה', (i) => i.category], ['סכום', (i) => i.amount || 0], ['מטבע', (i) => i.currency || 'ILS'], ['שולם', (i) => i.paid === false ? 'לא' : 'כן'],
       ['הערה', (i) => i.note], ['קובץ', (i) => i.fileName], ['קישור', (i) => i.url], ['מקור', (i) => i.source === 'gmail' ? 'מייל' : 'ידני'], ['תיבת מייל', (i) => i.source === 'gmail' ? acctOf(i) : ''], ['נושא המייל', (i) => i.gmailSubject], ['שולח המייל', (i) => i.gmailFrom]];
@@ -397,7 +414,7 @@ export function initInvoices(ctx) {
     document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
   }
   async function downloadZip() {
-    const rows = filtered().filter((i) => i.url); if (!rows.length) { alert('אין קבצים להורדה.'); return; }
+    const rows = targetRows().filter((i) => i.url); if (!rows.length) { alert('אין קבצים להורדה.'); return; }
     const btn = $('inv-zip'); const orig = btn.textContent; btn.disabled = true;
     try {
       const JSZip = await loadJSZip(); const zip = new JSZip(); const used = new Set(); let n = 0;
@@ -416,6 +433,99 @@ export function initInvoices(ctx) {
       document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
     } catch (e) { alert('הורדת ה-ZIP נכשלה: ' + (e.message || e) + (e instanceof TypeError ? '\n(ייתכן שחסרה הגדרת CORS על ה-bucket — ראו README-STORAGE-CORS.md)' : '')); }
     btn.disabled = false; btn.textContent = orig;
+  }
+
+  /* ============================================================
+     הדפסה — (1) המסמכים עצמם: איחוד כל הקבצים ל-PDF אחד (pdf-lib) ופתיחה להדפסה
+             (2) הרשימה: דוח מעוצב עם סיכומים בחלון חדש → דיאלוג הדפסה
+     פועל על הנבחרים, ואם לא נבחר כלום — על כל מה שמסונן.
+     ============================================================ */
+  // פותחים חלון מיד בלחיצה (אחרת הדפדפן חוסם פופאפ אחרי await), וממלאים אותו כשמוכן
+  function openWaitWindow(title) {
+    const w = window.open('', '_blank');
+    if (!w) return null;
+    w.document.write('<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><title>' + esc(title) + '</title></head><body style="font-family:Arial,sans-serif;padding:2rem;color:#333"><p id="st">מכין את הקובץ להדפסה…</p></body></html>');
+    w.document.close();
+    return w;
+  }
+  const wsay = (w, t) => { try { const el = w.document.getElementById('st'); if (el) el.textContent = t; } catch (e) {} };
+  function loadPdfLib() { return loadLib('pdf-lib', 'https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js', () => !!window.PDFLib); }
+  async function imageToPng(blob) {
+    const url = URL.createObjectURL(blob);
+    try {
+      const img = await new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => rej(new Error('תמונה לא נתמכת')); im.src = url; });
+      const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight;
+      c.getContext('2d').drawImage(img, 0, 0);
+      const out = await new Promise((res) => c.toBlob(res, 'image/png'));
+      return new Uint8Array(await out.arrayBuffer());
+    } finally { URL.revokeObjectURL(url); }
+  }
+  async function printDocs() {
+    const rows = targetRows().filter((i) => i.url);
+    if (!rows.length) { alert('אין מסמכים להדפסה.'); return; }
+    if (rows.length > 60 && !confirm('להדפיס ' + rows.length + ' מסמכים בקובץ אחד? זה עלול לקחת זמן.')) return;
+    const w = openWaitWindow('הדפסת חשבוניות');
+    if (!w) { alert('הדפדפן חסם את החלון. אפשרו חלונות קופצים לאתר ונסו שוב.'); return; }
+    const btn = $('inv-print-docs'); const orig = btn.textContent; btn.disabled = true;
+    try {
+      await loadPdfLib();
+      const { PDFDocument, StandardFonts, rgb } = window.PDFLib;
+      const out = await PDFDocument.create();
+      const font = await out.embedFont(StandardFonts.Helvetica);
+      let n = 0, failed = [];
+      for (const i of rows) {
+        btn.textContent = 'מכין ' + (++n) + '/' + rows.length + '…'; wsay(w, 'מכין ' + n + '/' + rows.length + ' — ' + (i.supplier || i.fileName || ''));
+        try {
+          const r = await fetch(i.url); if (!r.ok) throw new Error('HTTP ' + r.status);
+          const blob = await r.blob();
+          const pdfish = isPdf(i) || /pdf/i.test(blob.type);
+          if (pdfish) {
+            const src = await PDFDocument.load(await blob.arrayBuffer(), { ignoreEncryption: true });
+            const pages = await out.copyPages(src, src.getPageIndices());
+            pages.forEach((pg) => out.addPage(pg));
+          } else {
+            let img; try { img = await out.embedJpg(await blob.arrayBuffer()); } catch (e) { img = await out.embedPng(await imageToPng(blob)); }
+            const pg = out.addPage([595.28, 841.89]);   // A4
+            const scale = Math.min((595.28 - 40) / img.width, (841.89 - 40) / img.height, 1.5);
+            const wdt = img.width * scale, hgt = img.height * scale;
+            pg.drawImage(img, { x: (595.28 - wdt) / 2, y: 841.89 - 20 - hgt, width: wdt, height: hgt });
+          }
+          // כותרת קטנה (לטינית בלבד — פונט סטנדרטי) בתחתית העמוד הראשון של כל מסמך: תאריך וסכום
+          const last = out.getPage(out.getPageCount() - 1);
+          const label = [i.date, i.number ? '#' + i.number : '', i.amount ? Number(i.amount).toFixed(2) + ' ' + (i.currency || 'ILS') : ''].filter(Boolean).join('  ');
+          if (label) last.drawText(label, { x: 20, y: 8, size: 7, font, color: rgb(0.5, 0.5, 0.5) });
+        } catch (e) { failed.push((i.supplier || '') + ' ' + (i.fileName || '')); console.warn('print merge', i, e); }
+      }
+      if (!out.getPageCount()) throw new Error('לא הצלחתי לקרוא אף מסמך' + (failed.length ? ' (' + failed.length + ' נכשלו)' : ''));
+      const bytes = await out.save();
+      const url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
+      w.location.href = url;
+      if (failed.length) setTimeout(() => alert(failed.length + ' מסמכים לא נכללו בהדפסה (קובץ פגום או לא נתמך):\n' + failed.slice(0, 10).join('\n')), 500);
+    } catch (e) {
+      wsay(w, 'ההכנה נכשלה: ' + (e.message || e));
+      alert('הכנת ההדפסה נכשלה: ' + (e.message || e) + (e instanceof TypeError ? '\n(ייתכן שחסרה הגדרת CORS על ה-bucket — ראו README-STORAGE-CORS.md)' : ''));
+    }
+    btn.disabled = false; btn.textContent = orig;
+  }
+  function printList() {
+    const rows = targetRows();
+    if (!rows.length) { alert('אין שורות להדפסה.'); return; }
+    const w = window.open('', '_blank');
+    if (!w) { alert('הדפדפן חסם את החלון. אפשרו חלונות קופצים לאתר ונסו שוב.'); return; }
+    const [from, to] = periodRange();
+    const sums = {}; rows.forEach((i) => { const c = i.currency || 'ILS'; sums[c] = sums[c] || { expense: 0, income: 0 }; sums[c][i.kind === 'income' ? 'income' : 'expense'] += num(i.amount); });
+    const title = 'חשבוניות' + (selected.size ? ' — נבחרות' : '') + (from || to ? ' · ' + (from ? fmtDay(from) : '…') + ' – ' + (to ? fmtDay(to) : '…') : '') + (supF ? ' · ' + (rows[0] && rows[0].supplier || supF) : '');
+    const filters = [periodF && periodF !== 'custom' ? (PERIODS.find((x) => x[0] === periodF) || [, 'שנת ' + periodF.replace('y:', '')])[1] : '', kindF ? INVOICE_KINDS[kindF] : '', catF, acctF ? acctLabel(acctF) : '', paidF ? { paid: 'שולם', unpaid: 'לא שולם', missing: 'חסרים פרטים', emailprint: 'מגוף המייל' }[paidF] : '', minF !== '' || maxF !== '' ? 'סכום ' + (minF || '0') + '–' + (maxF || '∞') : '', q.trim() ? 'חיפוש: ' + q.trim() : ''].filter(Boolean);
+    const tr = rows.map((i) => `<tr><td>${fmtDay(i.date)}</td><td>${esc(i.supplier || '—')}</td><td>${esc(i.number || '—')}</td><td>${esc(i.category || '—')}</td><td>${INVOICE_KINDS[i.kind] || 'הוצאה'}</td><td class="n">${i.amount ? fmtMoney(i.amount, i.currency) : '—'}</td><td>${i.paid === false ? 'לא' : 'כן'}</td><td>${i.source === 'gmail' ? esc(acctShort(acctOf(i))) : 'ידני'}</td></tr>`).join('');
+    const totals = Object.keys(sums).map((c) => `<tr class="t"><td colspan="5">סה״כ הוצאות (${c})</td><td class="n">${fmtMoney(sums[c].expense, c)}</td><td colspan="2"></td></tr>` + (sums[c].income ? `<tr class="t"><td colspan="5">סה״כ הכנסות (${c})</td><td class="n">${fmtMoney(sums[c].income, c)}</td><td colspan="2"></td></tr>` : '')).join('');
+    w.document.write(`<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><title>${esc(title)}</title>
+<style>body{font-family:Arial,Helvetica,sans-serif;color:#222;margin:24px;font-size:12px}h1{font-size:18px;margin:0 0 4px}.sub{color:#666;font-size:11px;margin-bottom:14px}table{width:100%;border-collapse:collapse}th,td{border-bottom:1px solid #ddd;padding:6px 8px;text-align:right;vertical-align:top}th{background:#f3efe9;font-size:11px}td.n{direction:ltr;text-align:right;white-space:nowrap;font-weight:700}tr.t td{border-top:2px solid #333;font-weight:700;background:#faf7f2}@media print{body{margin:10mm}button{display:none}}</style></head><body>
+<h1>הורייזון פסגות גרופ — ${esc(title)}</h1>
+<div class="sub">${rows.length} מסמכים${filters.length ? ' · סינון: ' + esc(filters.join(' · ')) : ''} · הופק ${fmtDate(nowISO())}</div>
+<table><thead><tr><th>תאריך</th><th>ספק / מוצר</th><th>מס׳ חשבונית</th><th>קטגוריה</th><th>סוג</th><th>סכום</th><th>שולם</th><th>מקור</th></tr></thead><tbody>${tr}${totals}</tbody></table>
+<p style="margin-top:16px"><button onclick="window.print()" style="font:inherit;padding:8px 16px;cursor:pointer">🖨 הדפסה</button></p>
+<script>setTimeout(function(){window.print()},300)<\/script></body></html>`);
+    w.document.close();
   }
 
   /* ============================================================
