@@ -677,3 +677,13 @@ tr.inv-row.inv-selected td { background: rgba(201,164,122,.14); }
 .inv-sum.sel { color: var(--color-navy-deep); border-color: var(--color-rose-gold); background: rgba(201,164,122,.14); }
 .inv-print { border-color: var(--color-rose-gold); color: var(--color-navy-deep); }
 .inv-print:disabled { opacity: .7; cursor: progress; }
+/* תפריט הדפסה + הדפסה בנפרד */
+.inv-printwrap { position: relative; display: inline-block; }
+.inv-printmenu { position: absolute; top: calc(100% + 6px); inset-inline-start: 0; z-index: 50; min-width: 260px; background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-lg); padding: 4px; display: flex; flex-direction: column; }
+.inv-printmenu[hidden] { display: none; }
+.inv-printmenu button { text-align: start; border: 0; background: none; font: inherit; font-size: var(--fs-sm); font-weight: 700; color: var(--color-navy-deep); padding: 8px 10px; border-radius: var(--radius-sm); cursor: pointer; }
+.inv-printmenu button:hover { background: rgba(201,164,122,.14); }
+.inv-printmenu button small { display: block; font-weight: 400; color: var(--color-warm-gray); font-size: var(--fs-xs); }
+.inv-print-card { max-width: 900px; width: 100%; }
+.ip-frame { width: 100%; height: 62vh; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: #f3f3f3; margin-top: var(--space-sm); }
+@media (max-width: 640px) { .ip-frame { height: 50vh; } }

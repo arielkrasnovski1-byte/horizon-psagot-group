@@ -419,6 +419,25 @@
     </div>
   </div>
 
+  <!-- ===== הדפסת חשבוניות בנפרד ===== -->
+  <div class="modal-overlay" id="inv-print-modal" hidden>
+    <div class="modal lead-card inv-print-card">
+      <div class="lead-card-head">
+        <div><h3 id="ip-title" style="margin:0">הדפסה בנפרד</h3><div class="lc-sub" id="ip-name"></div></div>
+        <button class="icon-btn" id="inv-print-close" type="button" title="סגירה">✕</button>
+      </div>
+      <iframe id="ip-frame" class="ip-frame" title="תצוגה מקדימה"></iframe>
+      <div class="cm-upload-prog" id="ip-status"></div>
+      <div class="modal-actions lw-actions">
+        <button class="crm-btn" type="button" id="ip-print">🖨 הדפסת מסמך זה</button>
+        <button class="btn-ghost" type="button" id="ip-prev">‹ הקודם</button>
+        <button class="btn-ghost" type="button" id="ip-next">הבא ›</button>
+        <button class="btn-ghost" type="button" id="ip-all" title="פותח דיאלוג הדפסה לכל מסמך בתורו, מהמסמך הנוכחי עד הסוף">🖨🖨 הדפסת כל השאר ברצף</button>
+        <button class="btn-ghost" type="button" id="ip-done" style="margin-inline-start:auto">סיום</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== ייבוא חשבוניות מ-Gmail ===== -->
   <div class="modal-overlay" id="inv-gmail-modal" hidden>
     <div class="modal lead-card">
@@ -543,6 +562,6 @@
     </div>
   </div>
 
-  <script type="module" src="/js/crm.js?v=20261102b"></script>
+  <script type="module" src="/js/crm.js?v=20261102c"></script>
 </body>
 </html>

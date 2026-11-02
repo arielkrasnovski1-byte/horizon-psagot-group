@@ -212,8 +212,12 @@ export function initInvoices(ctx) {
       `<button type="button" class="cases-fbtn${viewF === 'list' ? ' on' : ''}" data-iv="list" title="רשימה">☰ רשימה</button>` +
       `<button type="button" class="cases-fbtn${viewF === 'supplier' ? ' on' : ''}" data-iv="supplier" title="קיבוץ לפי ספק / מוצר עם סיכום לכל אחד">▤ לפי ספק</button>` +
       (nActive ? `<button type="button" class="cases-fbtn inv-clear" id="inv-clear" title="איפוס כל הסינונים">✕ ניקוי סינון (${nActive})</button>` : '') +
-      `<button type="button" class="cases-fbtn inv-print" id="inv-print-docs" title="מאחד את קובצי החשבוניות (נבחרים, או כל המסוננים) ל-PDF אחד ופותח אותו להדפסה">🖨 הדפסת המסמכים${esc(targetLabel())}</button>` +
-      `<button type="button" class="cases-fbtn inv-print" id="inv-print-list" title="דוח מודפס של הרשימה עם סיכומים (נבחרים, או כל המסוננים)">🖨 הדפסת הרשימה${esc(targetLabel())}</button>` +
+      `<span class="inv-printwrap"><button type="button" class="cases-fbtn inv-print" id="inv-print-btn" title="הדפסה (נבחרים, או כל המסוננים)">🖨 הדפסה${esc(targetLabel())} ▾</button>` +
+      `<span class="inv-printmenu" id="inv-printmenu" hidden>` +
+      `<button type="button" id="inv-print-sep">📄 כל מסמך בנפרד<small>עבודת הדפסה לכל חשבונית, אחת אחרי השנייה, עם תצוגה מקדימה</small></button>` +
+      `<button type="button" id="inv-print-docs">🗂 כולם כקובץ אחד<small>איחוד כל החשבוניות ל-PDF אחד</small></button>` +
+      `<button type="button" id="inv-print-list">📋 הרשימה כדוח<small>טבלה עם סיכומים</small></button>` +
+      `</span></span>` +
       `<button type="button" class="cases-fbtn" id="inv-csv" title="ייצוא לאקסל (נבחרים, או כל המסוננים)">📊 CSV${esc(targetLabel())}</button>` +
       `<button type="button" class="cases-fbtn" id="inv-zip" title="הורדת הקבצים כ-ZIP אחד (נבחרים, או כל המסוננים)">⬇ ZIP${esc(targetLabel())}</button>` +
       (selected.size ? `<button type="button" class="cases-fbtn inv-clear" id="inv-unsel" title="ביטול הבחירה">✕ ביטול בחירה (${selected.size})</button>` : '') +
@@ -235,8 +239,12 @@ export function initInvoices(ctx) {
     on('inv-clear', 'click', clearFilters);
     on('inv-csv', 'click', exportCSV);
     on('inv-zip', 'click', downloadZip);
-    on('inv-print-docs', 'click', printDocs);
-    on('inv-print-list', 'click', printList);
+    const menu = bar.querySelector('#inv-printmenu');
+    on('inv-print-btn', 'click', (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; });
+    document.addEventListener('click', (e) => { if (!e.target.closest('.inv-printwrap')) menu.hidden = true; }, { once: true, capture: true });
+    on('inv-print-sep', 'click', () => { menu.hidden = true; printSeparately(); });
+    on('inv-print-docs', 'click', () => { menu.hidden = true; printDocs(); });
+    on('inv-print-list', 'click', () => { menu.hidden = true; printList(); });
     on('inv-unsel', 'click', () => { selected.clear(); render(); });
   }
   function renderSummary(rows) {
@@ -466,7 +474,7 @@ export function initInvoices(ctx) {
     if (rows.length > 60 && !confirm('להדפיס ' + rows.length + ' מסמכים בקובץ אחד? זה עלול לקחת זמן.')) return;
     const w = openWaitWindow('הדפסת חשבוניות');
     if (!w) { alert('הדפדפן חסם את החלון. אפשרו חלונות קופצים לאתר ונסו שוב.'); return; }
-    const btn = $('inv-print-docs'); const orig = btn.textContent; btn.disabled = true;
+    const btn = $('inv-print-btn'); const orig = btn.textContent; btn.disabled = true;
     try {
       await loadPdfLib();
       const { PDFDocument, StandardFonts, rgb } = window.PDFLib;
@@ -507,6 +515,61 @@ export function initInvoices(ctx) {
     }
     btn.disabled = false; btn.textContent = orig;
   }
+  /* ---- הדפסה בנפרד: מסמך אחרי מסמך, כל אחד עבודת הדפסה משלו ----
+     הקובץ נטען ל-iframe (PDF בצופה של הדפדפן, תמונה בעמוד HTML) ו-print() נקרא עליו.
+     "ברצף": print() חוסם עד שסוגרים את דיאלוג ההדפסה, לכן אפשר פשוט לעבור בלולאה. */
+  const P = (id) => $('ip-' + id);
+  let pq = [], pi = 0, pUrl = '', pRun = false;
+  function closePrint() { pRun = false; $('inv-print-modal').hidden = true; P('frame').src = 'about:blank'; if (pUrl) { URL.revokeObjectURL(pUrl); pUrl = ''; } }
+  $('inv-print-close').addEventListener('click', closePrint);
+  P('done').addEventListener('click', closePrint);
+  function printSeparately() {
+    pq = targetRows().filter((i) => i.url);
+    if (!pq.length) { alert('אין מסמכים להדפסה.'); return; }
+    pi = 0; $('inv-print-modal').hidden = false; loadPrintDoc();
+  }
+  async function loadPrintDoc() {
+    const i = pq[pi]; if (!i) return;
+    P('title').textContent = 'הדפסה בנפרד — מסמך ' + (pi + 1) + ' מתוך ' + pq.length;
+    P('name').textContent = [fmtDay(i.date), i.supplier, i.number ? '#' + i.number : '', i.amount ? fmtMoney(i.amount, i.currency) : '', i.fileName].filter(Boolean).join(' · ');
+    P('prev').disabled = pi === 0; P('next').disabled = pi >= pq.length - 1; P('print').disabled = true; P('all').disabled = true;
+    P('status').textContent = 'טוען…';
+    if (pUrl) { URL.revokeObjectURL(pUrl); pUrl = ''; }
+    try {
+      const r = await fetch(i.url); if (!r.ok) throw new Error('HTTP ' + r.status);
+      const blob = await r.blob();
+      if (isPdf(i) || /pdf/i.test(blob.type)) pUrl = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+      else {
+        const imgUrl = URL.createObjectURL(blob);
+        pUrl = URL.createObjectURL(new Blob(['<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;height:100%}img{display:block;max-width:100%;max-height:100vh;margin:auto}@media print{@page{margin:10mm}img{max-height:none;width:100%}}</style></head><body><img src="' + imgUrl + '"></body></html>'], { type: 'text/html' }));
+      }
+      await new Promise((res, rej) => { const f = P('frame'); f.onload = () => res(); f.onerror = () => rej(new Error('טעינה נכשלה')); f.src = pUrl; });
+      await new Promise((res) => setTimeout(res, 400));   // לצופה ה-PDF לסיים לצייר
+      P('status').textContent = ''; P('print').disabled = false; P('all').disabled = false;
+    } catch (e) { P('status').textContent = 'לא ניתן לטעון את הקובץ: ' + (e.message || e) + (e instanceof TypeError ? ' (CORS?)' : ''); console.warn('print sep', i, e); }
+  }
+  function printFrame() {
+    const f = P('frame');
+    try { f.contentWindow.focus(); f.contentWindow.print(); return true; }
+    catch (e) { console.warn('frame print', e); window.open(pUrl, '_blank'); return false; }
+  }
+  P('print').addEventListener('click', () => { printFrame(); });
+  P('prev').addEventListener('click', () => { if (pi > 0) { pi--; loadPrintDoc(); } });
+  P('next').addEventListener('click', () => { if (pi < pq.length - 1) { pi++; loadPrintDoc(); } });
+  P('all').addEventListener('click', async () => {
+    // ברצף מהמסמך הנוכחי: לכל מסמך נפתח דיאלוג הדפסה משלו (print חוסם עד שסוגרים אותו); ביטול בדיאלוג = דילוג
+    pRun = true; P('all').disabled = true;
+    let sent = 0;
+    while (pRun && pi < pq.length) {
+      if (P('print').disabled) await loadPrintDoc();
+      if (!pRun) break;
+      if (!P('print').disabled) { P('status').textContent = 'שולח להדפסה ' + (pi + 1) + '/' + pq.length + '…'; printFrame(); sent++; }
+      if (pi >= pq.length - 1) break;
+      pi++; await loadPrintDoc();
+    }
+    if (pRun) P('status').textContent = sent + ' מסמכים נשלחו להדפסה.';
+    pRun = false; P('all').disabled = false;
+  });
   function printList() {
     const rows = targetRows();
     if (!rows.length) { alert('אין שורות להדפסה.'); return; }
