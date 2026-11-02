@@ -12,7 +12,10 @@
         ריק = הכפתור מציג הוראות הגדרה. ראו README-INVOICES-GMAIL.md ---- */
 export const GMAIL_CLIENT_ID = '579496667206-u63c3v4m3v25r1n15jhabunekdslgr0f.apps.googleusercontent.com';
 const GMAIL_LOGIN_HINT = 'office@horizon-psagot-group.com';
-const GMAIL_SCOPE = 'https://www.googleapis.com/auth/gmail.readonly';
+// קריאה (ייבוא) + שליחה (גשר ל-Dokka). בפעם הראשונה אחרי העדכון גוגל יבקש לאשר גם שליחה.
+const GMAIL_SCOPE = 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send';
+/* ---- Dokka: תיבת הקליטה של החברה (מופיעה ב-Dokka מתחת לשם החברה). כל מייל עם קובץ שנשלח אליה נקלט כמסמך. ---- */
+export const DOKKA_EMAIL = 'horizon-pg@dokka.co.il';
 // מילות מפתח למיילים ללא קובץ מצורף. ג'ימייל לא מזהה נטיות בעברית (החשבונית/חשבוניות), לכן הן מפורטות.
 const GMAIL_KEYWORDS = '(חשבונית OR החשבונית OR חשבוניות OR קבלה OR הקבלה OR קבלות OR "חשבונית מס" OR "אישור תשלום" OR "דרישת תשלום" OR invoice OR invoices OR receipt OR receipts OR "tax invoice" OR billing OR statement OR payment OR subscription OR order)';
 const GMAIL_MAX_MSGS = 4000;  // מיילים עם קבצים מצורפים שנסרקים בסבב אחד
@@ -118,6 +121,8 @@ export function initInvoices(ctx) {
       if (paidF === 'emailprint' && !i.emailPrint) return false;
       if (paidF === 'printed' && !i.printedAt) return false;
       if (paidF === 'unprinted' && i.printedAt) return false;
+      if (paidF === 'dokka' && !i.dokkaSentAt) return false;
+      if (paidF === 'nodokka' && (i.dokkaSentAt || i.kind === 'income')) return false;
       if (min != null && num(i.amount) < min) return false;
       if (max != null && num(i.amount) > max) return false;
       if (qq) {
@@ -190,7 +195,7 @@ export function initInvoices(ctx) {
     return `<tr class="inv-row${miss ? ' inv-missing' : ''}${i.paid === false ? ' inv-unpaid' : ''}${selected.has(i.id) ? ' inv-selected' : ''}" data-id="${i.id}">` +
       `<td class="inv-sel"><input type="checkbox" data-sel="${i.id}"${selected.has(i.id) ? ' checked' : ''}></td>` +
       `<td>${fmtDay(i.date)}</td>` +
-      `<td><b>${esc(i.supplier || '')}</b>${i.supplier && !supF ? `<button type="button" class="inv-suplink" data-inv-sup="${esc(supKey(i))}" title="הצגת כל החשבוניות של ${esc(i.supplier)}">▼</button>` : ''}${miss ? '<span class="pill pending inv-pill-miss">חסרים פרטים</span>' : ''}${i.paid === false ? '<span class="pill rejected inv-pill-miss">לא שולם</span>' : ''}${i.printedAt ? `<span class="pill printed inv-pill-miss" title="הודפס ${esc(fmtDate(i.printedAt))}${i.printedBy ? ' · ' + esc(displayName(i.printedBy)) : ''}${Number(i.printCount) > 1 ? ' · ' + i.printCount + ' פעמים' : ''}">🖨 הודפס ${esc(fmtDay(String(i.printedAt).slice(0, 10)))}</span>` : ''}</td>` +
+      `<td><b>${esc(i.supplier || '')}</b>${i.supplier && !supF ? `<button type="button" class="inv-suplink" data-inv-sup="${esc(supKey(i))}" title="הצגת כל החשבוניות של ${esc(i.supplier)}">▼</button>` : ''}${miss ? '<span class="pill pending inv-pill-miss">חסרים פרטים</span>' : ''}${i.paid === false ? '<span class="pill rejected inv-pill-miss">לא שולם</span>' : ''}${i.dokkaSentAt ? `<span class="pill dokka inv-pill-miss" title="נשלח ל-Dokka ${esc(fmtDate(i.dokkaSentAt))}${i.dokkaSentBy ? ' מ-' + esc(i.dokkaSentBy) : ''}">📤 Dokka ${esc(fmtDay(String(i.dokkaSentAt).slice(0, 10)))}</span>` : ''}${i.printedAt ? `<span class="pill printed inv-pill-miss" title="הודפס ${esc(fmtDate(i.printedAt))}${i.printedBy ? ' · ' + esc(displayName(i.printedBy)) : ''}${Number(i.printCount) > 1 ? ' · ' + i.printCount + ' פעמים' : ''}">🖨 הודפס ${esc(fmtDay(String(i.printedAt).slice(0, 10)))}</span>` : ''}</td>` +
       `<td>${esc(i.number || '—')}</td>` +
       `<td>${esc(i.category || '—')}</td>` +
       `<td><span class="inv-kind ${kind}">${INVOICE_KINDS[kind]}</span></td>` +
@@ -216,7 +221,7 @@ export function initInvoices(ctx) {
       `<select id="inv-kind" class="status-select">${opt('', 'הוצאות והכנסות', kindF)}${Object.keys(INVOICE_KINDS).map((k) => opt(k, INVOICE_KINDS[k], kindF)).join('')}</select>` +
       `<select id="inv-cat" class="status-select">${opt('', 'כל הקטגוריות', catF)}${cats.map((c) => opt(c, c, catF)).join('')}</select>` +
       `<select id="inv-acct" class="status-select">${opt('', 'כל התיבות', acctF)}${accts.map((a) => opt(a, acctLabel(a), acctF)).join('')}</select>` +
-      `<select id="inv-paid" class="status-select">${opt('', 'כל המצבים', paidF)}${opt('paid', 'שולם', paidF)}${opt('unpaid', 'לא שולם', paidF)}${opt('missing', 'חסרים פרטים (ספק/סכום)', paidF)}${opt('emailprint', 'נשמרו מגוף המייל', paidF)}${opt('printed', '🖨 הודפסו', paidF)}${opt('unprinted', 'טרם הודפסו', paidF)}</select>` +
+      `<select id="inv-paid" class="status-select">${opt('', 'כל המצבים', paidF)}${opt('paid', 'שולם', paidF)}${opt('unpaid', 'לא שולם', paidF)}${opt('missing', 'חסרים פרטים (ספק/סכום)', paidF)}${opt('emailprint', 'נשמרו מגוף המייל', paidF)}${opt('printed', '🖨 הודפסו', paidF)}${opt('unprinted', 'טרם הודפסו', paidF)}${opt('dokka', '📤 נשלחו ל-Dokka', paidF)}${opt('nodokka', 'טרם נשלחו ל-Dokka (הוצאות)', paidF)}</select>` +
       `<span class="inv-amtrange"><input type="text" inputmode="decimal" id="inv-min" placeholder="מסכום ₪" value="${esc(minF)}"><input type="text" inputmode="decimal" id="inv-max" placeholder="עד סכום ₪" value="${esc(maxF)}"></span>` +
       `<input type="search" id="inv-q" class="search-input cases-search" placeholder="חיפוש חופשי: ספק, מספר, קובץ, נושא מייל…" value="${esc(q)}">` +
       `<select id="inv-sort" class="status-select" title="מיון">${SORTS.map(([v, l]) => opt(v, l, sortF)).join('')}</select>` +
@@ -231,6 +236,7 @@ export function initInvoices(ctx) {
       `<button type="button" id="inv-print-list">📋 הרשימה כדוח<small>טבלה עם סיכומים</small></button>` +
       `<button type="button" id="inv-print-mark">✔ סימון כהודפס / ביטול<small>בלי להדפיס — למשל אם הודפס במקום אחר</small></button>` +
       `</span></span>` +
+      `<button type="button" class="cases-fbtn inv-dokka" id="inv-dokka" title="שליחת קובצי החשבוניות במייל לתיבת הקליטה של Dokka (" + DOKKA_EMAIL + ") — נבחרים, או כל המסוננים; הכנסות ומה שכבר נשלח מדולגים">📤 שליחה ל-Dokka${esc(targetLabel())}</button>` +
       `<button type="button" class="cases-fbtn" id="inv-csv" title="ייצוא לאקסל (נבחרים, או כל המסוננים)">📊 CSV${esc(targetLabel())}</button>` +
       `<button type="button" class="cases-fbtn" id="inv-zip" title="הורדת הקבצים כ-ZIP אחד (נבחרים, או כל המסוננים)">⬇ ZIP${esc(targetLabel())}</button>` +
       (selected.size ? `<button type="button" class="cases-fbtn inv-clear" id="inv-unsel" title="ביטול הבחירה">✕ ביטול בחירה (${selected.size})</button>` : '') +
@@ -252,6 +258,7 @@ export function initInvoices(ctx) {
     on('inv-clear', 'click', clearFilters);
     on('inv-csv', 'click', exportCSV);
     on('inv-zip', 'click', downloadZip);
+    on('inv-dokka', 'click', () => sendToDokka());
     const menu = bar.querySelector('#inv-printmenu');
     on('inv-print-btn', 'click', (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; });
     document.addEventListener('click', (e) => { if (!e.target.closest('.inv-printwrap')) menu.hidden = true; }, { once: true, capture: true });
@@ -277,9 +284,10 @@ export function initInvoices(ctx) {
     const split = (!acctF && acctKeys.length > 1)
       ? `<span class="inv-split">${acctKeys.sort((a, b) => (a === 'manual') - (b === 'manual') || a.localeCompare(b)).map((a) => `<button type="button" class="inv-sum acct" data-acct="${esc(a)}" title="סינון לפי תיבה זו"><i>${esc(acctLabel(a))}</i> ${byAcct[a].n} · ${fmtMoney(byAcct[a].sum, 'ILS')}</button>`).join('')}</span>` : '';
     el.innerHTML = `<span class="inv-sum"><i>מסמכים</i> ${rows.length}${rows.length !== all.length ? ' / ' + all.length : ''}</span>` + parts.join('') +
-      (miss ? `<span class="inv-sum warn"><i>חסרים פרטים</i> ${miss}</span>` : '') + (rows.some((i) => !i.printedAt) && paidF !== 'unprinted' ? `<button type="button" class="inv-sum unprinted" id="inv-unprinted" title="הצגת החשבוניות שטרם הודפסו"><i>טרם הודפסו</i> ${rows.filter((i) => !i.printedAt).length}</button>` : '') + (selected.size ? `<span class="inv-sum sel"><i>נבחרו</i> ${selected.size} · ${fmtMoney(all.filter((i) => selected.has(i.id) && (i.currency || 'ILS') === 'ILS').reduce((t, i) => t + num(i.amount), 0), 'ILS')}</span>` : '') + split;
+      (miss ? `<span class="inv-sum warn"><i>חסרים פרטים</i> ${miss}</span>` : '') + (rows.some((i) => !i.dokkaSentAt && i.kind !== 'income') && paidF !== 'nodokka' ? `<button type="button" class="inv-sum nodokka" id="inv-nodokka" title="הצגת ההוצאות שטרם נשלחו ל-Dokka"><i>טרם נשלחו ל-Dokka</i> ${rows.filter((i) => !i.dokkaSentAt && i.kind !== 'income').length}</button>` : '') + (rows.some((i) => !i.printedAt) && paidF !== 'unprinted' ? `<button type="button" class="inv-sum unprinted" id="inv-unprinted" title="הצגת החשבוניות שטרם הודפסו"><i>טרם הודפסו</i> ${rows.filter((i) => !i.printedAt).length}</button>` : '') + (selected.size ? `<span class="inv-sum sel"><i>נבחרו</i> ${selected.size} · ${fmtMoney(all.filter((i) => selected.has(i.id) && (i.currency || 'ILS') === 'ILS').reduce((t, i) => t + num(i.amount), 0), 'ILS')}</span>` : '') + split;
     el.querySelectorAll('[data-acct]').forEach((b) => b.onclick = () => { acctF = b.dataset.acct; render(); });
     const up = $('inv-unprinted'); if (up) up.onclick = () => { paidF = 'unprinted'; render(); };
+    const nd = $('inv-nodokka'); if (nd) nd.onclick = () => { paidF = 'nodokka'; render(); };
   }
 
   /* ============================================================
@@ -369,6 +377,11 @@ export function initInvoices(ctx) {
     M('delete').hidden = !inv;
     M('printed').innerHTML = inv ? (inv.printedAt ? `<span class="pill printed">🖨 הודפס ${esc(fmtDate(inv.printedAt))}${inv.printedBy ? ' · ' + esc(displayName(inv.printedBy)) : ''}${Number(inv.printCount) > 1 ? ' · ' + inv.printCount + ' פעמים' : ''}</span> <button type="button" class="btn-ghost lw-mini" id="im-unprint">ביטול סימון</button>` : `<span class="pill pending">טרם הודפס</span> <button type="button" class="btn-ghost lw-mini" id="im-unprint">סימון כהודפס</button>`) : '';
     const tb = $('im-unprint'); if (tb) tb.onclick = () => markPrinted([inv], !inv.printedAt).then(() => openModal(all.find((x) => x.id === inv.id) || inv));
+    M('dokka').innerHTML = inv ? (inv.dokkaSentAt ? `<span class="pill dokka">📤 נשלח ל-Dokka ${esc(fmtDate(inv.dokkaSentAt))}${inv.dokkaSentBy ? ' מ-' + esc(inv.dokkaSentBy) : ''}</span> <button type="button" class="btn-ghost lw-mini" id="im-dokka-again">שליחה חוזרת</button> <button type="button" class="btn-ghost lw-mini" id="im-dokka-un">ביטול סימון</button>` : `<span class="pill pending">טרם נשלח ל-Dokka</span> <button type="button" class="btn-ghost lw-mini" id="im-dokka-send">📤 שליחה ל-Dokka</button> <button type="button" class="btn-ghost lw-mini" id="im-dokka-mark" title="אם נשלח בדרך אחרת">סימון כנשלח</button>`) : '';
+    const reopen = () => openModal(all.find((x) => x.id === inv.id) || inv);
+    const bs = $('im-dokka-send') || $('im-dokka-again'); if (bs) bs.onclick = () => sendToDokka([inv], true).then(reopen);
+    const bm = $('im-dokka-mark'); if (bm) bm.onclick = () => markDokka([inv], true, '').then(reopen);
+    const bu = $('im-dokka-un'); if (bu) bu.onclick = () => markDokka([inv], false).then(reopen);
     M('replace-lbl').textContent = inv ? 'החלפת הקובץ' : 'בחירת קובץ (PDF / תמונה)';
     M('err').textContent = '';
     $('inv-modal').hidden = false;
@@ -430,7 +443,7 @@ export function initInvoices(ctx) {
     const rows = targetRows(); if (!rows.length) { alert('אין שורות לייצוא.'); return; }
     const cols = [['תאריך', (i) => fmtDay(i.date)], ['ספק / לקוח', (i) => i.supplier], ['מספר חשבונית', (i) => i.number], ['סוג', (i) => INVOICE_KINDS[i.kind] || 'הוצאה'],
       ['קטגוריה', (i) => i.category], ['סכום', (i) => i.amount || 0], ['מטבע', (i) => i.currency || 'ILS'], ['שולם', (i) => i.paid === false ? 'לא' : 'כן'],
-      ['הערה', (i) => i.note], ['קובץ', (i) => i.fileName], ['קישור', (i) => i.url], ['מקור', (i) => i.source === 'gmail' ? 'מייל' : 'ידני'], ['תיבת מייל', (i) => i.source === 'gmail' ? acctOf(i) : ''], ['הודפס', (i) => i.printedAt ? fmtDay(String(i.printedAt).slice(0, 10)) : 'לא'], ['נושא המייל', (i) => i.gmailSubject], ['שולח המייל', (i) => i.gmailFrom]];
+      ['הערה', (i) => i.note], ['קובץ', (i) => i.fileName], ['קישור', (i) => i.url], ['מקור', (i) => i.source === 'gmail' ? 'מייל' : 'ידני'], ['תיבת מייל', (i) => i.source === 'gmail' ? acctOf(i) : ''], ['הודפס', (i) => i.printedAt ? fmtDay(String(i.printedAt).slice(0, 10)) : 'לא'], ['נשלח ל-Dokka', (i) => i.dokkaSentAt ? fmtDay(String(i.dokkaSentAt).slice(0, 10)) : 'לא'], ['נושא המייל', (i) => i.gmailSubject], ['שולח המייל', (i) => i.gmailFrom]];
     const cell = (v) => { const s = String(v == null ? '' : v); return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
     const csv = '﻿' + cols.map((c) => cell(c[0])).join(',') + '\r\n' + rows.map((i) => cols.map((c) => cell(c[1](i))).join(',')).join('\r\n');
     const a = document.createElement('a');
@@ -458,6 +471,83 @@ export function initInvoices(ctx) {
       document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
     } catch (e) { alert('הורדת ה-ZIP נכשלה: ' + (e.message || e) + (e instanceof TypeError ? '\n(ייתכן שחסרה הגדרת CORS על ה-bucket — ראו README-STORAGE-CORS.md)' : '')); }
     btn.disabled = false; btn.textContent = orig;
+  }
+
+  /* ============================================================
+     Dokka — גשר במייל: כל חשבונית נשלחת כמייל נפרד עם הקובץ המצורף לתיבת הקליטה של Dokka,
+     מחשבון ה-Gmail המחובר (Gmail API, הרשאת send). נשמר dokkaSentAt/By/MsgId על המסמך.
+     ============================================================ */
+  async function markDokka(rows, on, msgIdBy) {
+    const me = ctx.me(); const at = nowISO();
+    await Promise.all(rows.map((i) => fs.updateDoc(fs.doc(db, 'invoices', i.id), on
+      ? { dokkaSentAt: at, dokkaSentBy: (msgIdBy && msgIdBy[i.id] && msgIdBy[i.id].by) || gmailAccount || me.email || '', dokkaMsgId: (msgIdBy && msgIdBy[i.id] && msgIdBy[i.id].id) || '', dokkaCount: (Number(i.dokkaCount) || 0) + 1 }
+      : { dokkaSentAt: '', dokkaSentBy: '', dokkaMsgId: '' }).catch((e) => console.warn('markDokka', e))));
+    rows.forEach((i) => { i.dokkaSentAt = on ? at : ''; i.dokkaSentBy = on ? (gmailAccount || me.email || '') : ''; });
+    render();
+  }
+  const utf8b64 = (str) => { const u = new TextEncoder().encode(str); let bin = ''; for (let k = 0; k < u.length; k += 0x8000) bin += String.fromCharCode.apply(null, u.subarray(k, k + 0x8000)); return btoa(bin); };
+  const bytesB64 = (u) => { let bin = ''; for (let k = 0; k < u.length; k += 0x8000) bin += String.fromCharCode.apply(null, u.subarray(k, k + 0x8000)); return btoa(bin).replace(/(.{76})/g, '$1\r\n'); };
+  const encHdr = (str) => '=?UTF-8?B?' + utf8b64(str) + '?=';
+  function buildMime(to, subject, text, attName, attType, attBytes) {
+    const b = 'hpg_' + Date.now().toString(36);
+    const fn = encHdr(attName);
+    return ['From: me', 'To: ' + to, 'Subject: ' + encHdr(subject), 'MIME-Version: 1.0', 'Content-Type: multipart/mixed; boundary="' + b + '"', '',
+      '--' + b, 'Content-Type: text/plain; charset="UTF-8"', 'Content-Transfer-Encoding: base64', '', utf8b64(text).replace(/(.{76})/g, '$1\r\n'), '',
+      '--' + b, 'Content-Type: ' + (attType || 'application/pdf') + '; name="' + fn + '"', 'Content-Disposition: attachment; filename="' + fn + '"', 'Content-Transfer-Encoding: base64', '', bytesB64(attBytes), '',
+      '--' + b + '--', ''].join('\r\n');
+  }
+  async function gmailSendRaw(mime, retry) {
+    const token = await getGmailToken();
+    while (Date.now() < quotaPause) await new Promise((r) => setTimeout(r, 500));
+    await throttle();
+    const r = await fetch('https://gmail.googleapis.com/upload/gmail/v1/users/me/messages/send?uploadType=media', { method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'message/rfc822' }, body: mime });
+    if (r.status === 401) { gmailToken = null; throw new Error('ההרשאה פגה — נסו שוב.'); }
+    if (r.status === 403) { gmailToken = null; gmailPrompt = 'consent'; throw new Error('חסרה הרשאת שליחה — לחצו שוב ואשרו את ההרשאה בחלון של Google.'); }
+    if (!r.ok) {
+      let msg = 'HTTP ' + r.status; try { const j = await r.json(); msg = (j.error && j.error.message) || msg; } catch (e) {}
+      if ((r.status === 429 || r.status >= 500) && (retry || 0) < 5) { await new Promise((w) => setTimeout(w, 2000 * Math.pow(2, retry || 0))); return gmailSendRaw(mime, (retry || 0) + 1); }
+      throw new Error(msg);
+    }
+    return r.json();
+  }
+  async function sendToDokka(rowsArg, force) {
+    if (!GMAIL_CLIENT_ID) { alert('חיבור Gmail לא הוגדר (GMAIL_CLIENT_ID).'); return; }
+    const base = (Array.isArray(rowsArg) ? rowsArg : targetRows()).filter((i) => i.url);
+    if (!base.length) { alert('אין חשבוניות לשליחה.'); return; }
+    const income = base.filter((i) => i.kind === 'income').length;
+    const sent = base.filter((i) => i.dokkaSentAt).length;
+    const rows = force ? base : base.filter((i) => i.kind !== 'income' && !i.dokkaSentAt);
+    if (!rows.length) {
+      if (sent && confirm('כל ' + base.length + ' החשבוניות כבר נשלחו ל-Dokka. לשלוח שוב?')) return sendToDokka(base.filter((i) => i.kind !== 'income'), true);
+      alert('אין מה לשלוח: ' + (income ? income + ' הכנסות (לא נשלחות ל-Dokka)' : '') + (sent ? (income ? ', ' : '') + sent + ' כבר נשלחו' : '') + '.'); return;
+    }
+    if (!force || rows.length > 1) {
+      const note = [income ? income + ' הכנסות לא ייכללו' : '', sent && !force ? sent + ' כבר נשלחו וידולגו' : ''].filter(Boolean).join(' · ');
+      if (!confirm('לשלוח ' + rows.length + ' חשבוניות ל-Dokka (' + DOKKA_EMAIL + ')?\nכל חשבונית נשלחת כמייל נפרד' + (gmailAccount ? ' מ-' + gmailAccount : ' מחשבון ה-Gmail שתאשרו') + '.' + (note ? '\n' + note : ''))) return;
+    }
+    const btn = $('inv-dokka'); const orig = btn ? btn.textContent : ''; if (btn) btn.disabled = true;
+    let done = 0, failed = [], ids = {};
+    try {
+      if (!gmailAccount) { const prof = await gapi('profile'); gmailAccount = String(prof.emailAddress || '').toLowerCase(); }
+      for (const i of rows) {
+        if (btn) btn.textContent = 'שולח ' + (done + failed.length + 1) + '/' + rows.length + '…';
+        try {
+          const r = await fetch(i.url); if (!r.ok) throw new Error('HTTP ' + r.status);
+          const bytes = new Uint8Array(await r.arrayBuffer());
+          const subject = ['חשבונית', i.supplier, i.date ? fmtDay(i.date) : '', i.number ? '#' + i.number : ''].filter(Boolean).join(' · ');
+          const text = ['חשבונית מארכיון Desk — הורייזון פסגות גרופ', 'ספק: ' + (i.supplier || '—'), 'תאריך: ' + fmtDay(i.date), 'מספר: ' + (i.number || '—'), 'סכום: ' + (i.amount ? fmtMoney(i.amount, i.currency) : '—'), 'קטגוריה: ' + (i.category || '—'), i.note ? 'הערה: ' + i.note : '', '', 'מזהה פנימי: ' + i.id].filter((x) => x !== '').join('\n');
+          const ext = (i.fileName || '').match(/\.[a-z0-9]+$/i); const e = ext ? ext[0] : (isPdf(i) ? '.pdf' : '');
+          const name = ([i.date, safeSeg(i.supplier, 40), i.number ? safeSeg(i.number, 20) : ''].filter(Boolean).join(' ') || safeSeg(i.fileName, 60) || 'invoice') + e;
+          const res = await gmailSendRaw(buildMime(DOKKA_EMAIL, subject, text, name, i.contentType || (isPdf(i) ? 'application/pdf' : 'application/octet-stream'), bytes));
+          ids[i.id] = { id: res.id || '', by: gmailAccount };
+          done++;
+          await markDokka([i], true, ids);
+        } catch (err) { failed.push((i.supplier || '') + ' ' + (i.fileName || '') + ': ' + (err.message || err)); console.warn('dokka send', i, err); if (/הרשאת שליחה|ההרשאה פגה/.test(err.message || '')) break; }
+      }
+    } catch (err) { failed.push(err.message || String(err)); }
+    if (btn) { btn.disabled = false; btn.textContent = orig; }
+    render();
+    alert('נשלחו ל-Dokka ' + done + ' חשבוניות' + (failed.length ? '.\nנכשלו ' + failed.length + ':\n' + failed.slice(0, 8).join('\n') : '.'));
   }
 
   /* ============================================================

@@ -693,3 +693,9 @@ tr.inv-row.inv-selected td { background: rgba(201,164,122,.14); }
 .inv-sum.unprinted:hover { border-color: #1F7A9E; }
 .inv-printed-row { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; font-size: var(--fs-sm); margin-bottom: var(--space-sm); }
 .ip-printed-row { margin: .5rem 0 0; }
+/* Dokka */
+.pill.dokka { background: rgba(91,74,138,.12); color: #5B4A8A; }
+.inv-sum.nodokka { cursor: pointer; font: inherit; font-size: var(--fs-sm); font-weight: 700; color: #5B4A8A; border-color: rgba(91,74,138,.4); background: rgba(91,74,138,.07); }
+.inv-sum.nodokka:hover { border-color: #5B4A8A; }
+.inv-dokka { border-color: #5B4A8A; color: #5B4A8A; }
+.inv-dokka:disabled { opacity: .7; cursor: progress; }
