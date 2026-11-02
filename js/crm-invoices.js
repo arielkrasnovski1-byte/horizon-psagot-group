@@ -116,6 +116,8 @@ export function initInvoices(ctx) {
       if (paidF === 'unpaid' && i.paid !== false) return false;
       if (paidF === 'missing' && !missingInfo(i)) return false;
       if (paidF === 'emailprint' && !i.emailPrint) return false;
+      if (paidF === 'printed' && !i.printedAt) return false;
+      if (paidF === 'unprinted' && i.printedAt) return false;
       if (min != null && num(i.amount) < min) return false;
       if (max != null && num(i.amount) > max) return false;
       if (qq) {
@@ -137,6 +139,16 @@ export function initInvoices(ctx) {
   // היעד לפעולות (הדפסה / CSV / ZIP): הנבחרים — ואם לא נבחר כלום, כל מה שמסונן
   const targetRows = () => { const rows = filtered(); return selected.size ? rows.filter((i) => selected.has(i.id)) : rows; };
   const targetLabel = () => selected.size ? ' (' + selected.size + ' נבחרים)' : '';
+  // סימון "הודפס": נשמר על המסמך (printedAt/printedBy/printCount). נרשם אוטומטית בשליחה להדפסה, וניתן לשינוי ידני.
+  async function markPrinted(rows, on) {
+    const me = ctx.me(); const at = nowISO();
+    await Promise.all(rows.map((i) => fs.updateDoc(fs.doc(db, 'invoices', i.id), on
+      ? { printedAt: at, printedBy: me.email || '', printCount: (Number(i.printCount) || 0) + 1 }
+      : { printedAt: '', printedBy: '' }).catch((e) => console.warn('markPrinted', e))));
+    // עדכון מקומי מיידי (עד שה-snapshot מגיע)
+    rows.forEach((i) => { i.printedAt = on ? at : ''; i.printedBy = on ? (me.email || '') : ''; if (on) i.printCount = (Number(i.printCount) || 0) + 1; });
+    render();
+  }
   function clearFilters() { periodF = ''; fromF = ''; toF = ''; supF = ''; kindF = ''; catF = ''; acctF = ''; paidF = ''; minF = ''; maxF = ''; q = ''; render(); }
   function render() {
     if (!ownerMode) return;
@@ -178,7 +190,7 @@ export function initInvoices(ctx) {
     return `<tr class="inv-row${miss ? ' inv-missing' : ''}${i.paid === false ? ' inv-unpaid' : ''}${selected.has(i.id) ? ' inv-selected' : ''}" data-id="${i.id}">` +
       `<td class="inv-sel"><input type="checkbox" data-sel="${i.id}"${selected.has(i.id) ? ' checked' : ''}></td>` +
       `<td>${fmtDay(i.date)}</td>` +
-      `<td><b>${esc(i.supplier || '')}</b>${i.supplier && !supF ? `<button type="button" class="inv-suplink" data-inv-sup="${esc(supKey(i))}" title="הצגת כל החשבוניות של ${esc(i.supplier)}">▼</button>` : ''}${miss ? '<span class="pill pending inv-pill-miss">חסרים פרטים</span>' : ''}${i.paid === false ? '<span class="pill rejected inv-pill-miss">לא שולם</span>' : ''}</td>` +
+      `<td><b>${esc(i.supplier || '')}</b>${i.supplier && !supF ? `<button type="button" class="inv-suplink" data-inv-sup="${esc(supKey(i))}" title="הצגת כל החשבוניות של ${esc(i.supplier)}">▼</button>` : ''}${miss ? '<span class="pill pending inv-pill-miss">חסרים פרטים</span>' : ''}${i.paid === false ? '<span class="pill rejected inv-pill-miss">לא שולם</span>' : ''}${i.printedAt ? `<span class="pill printed inv-pill-miss" title="הודפס ${esc(fmtDate(i.printedAt))}${i.printedBy ? ' · ' + esc(displayName(i.printedBy)) : ''}${Number(i.printCount) > 1 ? ' · ' + i.printCount + ' פעמים' : ''}">🖨 הודפס ${esc(fmtDay(String(i.printedAt).slice(0, 10)))}</span>` : ''}</td>` +
       `<td>${esc(i.number || '—')}</td>` +
       `<td>${esc(i.category || '—')}</td>` +
       `<td><span class="inv-kind ${kind}">${INVOICE_KINDS[kind]}</span></td>` +
@@ -204,7 +216,7 @@ export function initInvoices(ctx) {
       `<select id="inv-kind" class="status-select">${opt('', 'הוצאות והכנסות', kindF)}${Object.keys(INVOICE_KINDS).map((k) => opt(k, INVOICE_KINDS[k], kindF)).join('')}</select>` +
       `<select id="inv-cat" class="status-select">${opt('', 'כל הקטגוריות', catF)}${cats.map((c) => opt(c, c, catF)).join('')}</select>` +
       `<select id="inv-acct" class="status-select">${opt('', 'כל התיבות', acctF)}${accts.map((a) => opt(a, acctLabel(a), acctF)).join('')}</select>` +
-      `<select id="inv-paid" class="status-select">${opt('', 'כל המצבים', paidF)}${opt('paid', 'שולם', paidF)}${opt('unpaid', 'לא שולם', paidF)}${opt('missing', 'חסרים פרטים (ספק/סכום)', paidF)}${opt('emailprint', 'נשמרו מגוף המייל', paidF)}</select>` +
+      `<select id="inv-paid" class="status-select">${opt('', 'כל המצבים', paidF)}${opt('paid', 'שולם', paidF)}${opt('unpaid', 'לא שולם', paidF)}${opt('missing', 'חסרים פרטים (ספק/סכום)', paidF)}${opt('emailprint', 'נשמרו מגוף המייל', paidF)}${opt('printed', '🖨 הודפסו', paidF)}${opt('unprinted', 'טרם הודפסו', paidF)}</select>` +
       `<span class="inv-amtrange"><input type="text" inputmode="decimal" id="inv-min" placeholder="מסכום ₪" value="${esc(minF)}"><input type="text" inputmode="decimal" id="inv-max" placeholder="עד סכום ₪" value="${esc(maxF)}"></span>` +
       `<input type="search" id="inv-q" class="search-input cases-search" placeholder="חיפוש חופשי: ספק, מספר, קובץ, נושא מייל…" value="${esc(q)}">` +
       `<select id="inv-sort" class="status-select" title="מיון">${SORTS.map(([v, l]) => opt(v, l, sortF)).join('')}</select>` +
@@ -217,6 +229,7 @@ export function initInvoices(ctx) {
       `<button type="button" id="inv-print-sep">📄 כל מסמך בנפרד<small>עבודת הדפסה לכל חשבונית, אחת אחרי השנייה, עם תצוגה מקדימה</small></button>` +
       `<button type="button" id="inv-print-docs">🗂 כולם כקובץ אחד<small>איחוד כל החשבוניות ל-PDF אחד</small></button>` +
       `<button type="button" id="inv-print-list">📋 הרשימה כדוח<small>טבלה עם סיכומים</small></button>` +
+      `<button type="button" id="inv-print-mark">✔ סימון כהודפס / ביטול<small>בלי להדפיס — למשל אם הודפס במקום אחר</small></button>` +
       `</span></span>` +
       `<button type="button" class="cases-fbtn" id="inv-csv" title="ייצוא לאקסל (נבחרים, או כל המסוננים)">📊 CSV${esc(targetLabel())}</button>` +
       `<button type="button" class="cases-fbtn" id="inv-zip" title="הורדת הקבצים כ-ZIP אחד (נבחרים, או כל המסוננים)">⬇ ZIP${esc(targetLabel())}</button>` +
@@ -245,6 +258,7 @@ export function initInvoices(ctx) {
     on('inv-print-sep', 'click', () => { menu.hidden = true; printSeparately(); });
     on('inv-print-docs', 'click', () => { menu.hidden = true; printDocs(); });
     on('inv-print-list', 'click', () => { menu.hidden = true; printList(); });
+    on('inv-print-mark', 'click', () => { menu.hidden = true; const rows = targetRows(); if (!rows.length) return; const allOn = rows.every((i) => i.printedAt); if (confirm(allOn ? 'לבטל את סימון "הודפס" ל-' + rows.length + ' חשבוניות?' : 'לסמן ' + rows.length + ' חשבוניות כהודפסו?')) markPrinted(rows, !allOn); });
     on('inv-unsel', 'click', () => { selected.clear(); render(); });
   }
   function renderSummary(rows) {
@@ -263,8 +277,9 @@ export function initInvoices(ctx) {
     const split = (!acctF && acctKeys.length > 1)
       ? `<span class="inv-split">${acctKeys.sort((a, b) => (a === 'manual') - (b === 'manual') || a.localeCompare(b)).map((a) => `<button type="button" class="inv-sum acct" data-acct="${esc(a)}" title="סינון לפי תיבה זו"><i>${esc(acctLabel(a))}</i> ${byAcct[a].n} · ${fmtMoney(byAcct[a].sum, 'ILS')}</button>`).join('')}</span>` : '';
     el.innerHTML = `<span class="inv-sum"><i>מסמכים</i> ${rows.length}${rows.length !== all.length ? ' / ' + all.length : ''}</span>` + parts.join('') +
-      (miss ? `<span class="inv-sum warn"><i>חסרים פרטים</i> ${miss}</span>` : '') + (selected.size ? `<span class="inv-sum sel"><i>נבחרו</i> ${selected.size} · ${fmtMoney(all.filter((i) => selected.has(i.id) && (i.currency || 'ILS') === 'ILS').reduce((t, i) => t + num(i.amount), 0), 'ILS')}</span>` : '') + split;
+      (miss ? `<span class="inv-sum warn"><i>חסרים פרטים</i> ${miss}</span>` : '') + (rows.some((i) => !i.printedAt) && paidF !== 'unprinted' ? `<button type="button" class="inv-sum unprinted" id="inv-unprinted" title="הצגת החשבוניות שטרם הודפסו"><i>טרם הודפסו</i> ${rows.filter((i) => !i.printedAt).length}</button>` : '') + (selected.size ? `<span class="inv-sum sel"><i>נבחרו</i> ${selected.size} · ${fmtMoney(all.filter((i) => selected.has(i.id) && (i.currency || 'ILS') === 'ILS').reduce((t, i) => t + num(i.amount), 0), 'ILS')}</span>` : '') + split;
     el.querySelectorAll('[data-acct]').forEach((b) => b.onclick = () => { acctF = b.dataset.acct; render(); });
+    const up = $('inv-unprinted'); if (up) up.onclick = () => { paidF = 'unprinted'; render(); };
   }
 
   /* ============================================================
@@ -352,6 +367,8 @@ export function initInvoices(ctx) {
     M('src').innerHTML = inv && inv.source === 'gmail'
       ? `<div class="inv-gmail-src">✉ <b>${esc(inv.gmailFrom || '')}</b> · ${esc(inv.gmailSubject || '')}${inv.gmailDate ? ' · ' + fmtDate(inv.gmailDate) : ''}<br><small>תיבה: ${esc(acctOf(inv))}${inv.emailPrint ? ' · נשמר כ-PDF מגוף המייל (ללא קובץ מצורף)' : ''}</small></div>` : '';
     M('delete').hidden = !inv;
+    M('printed').innerHTML = inv ? (inv.printedAt ? `<span class="pill printed">🖨 הודפס ${esc(fmtDate(inv.printedAt))}${inv.printedBy ? ' · ' + esc(displayName(inv.printedBy)) : ''}${Number(inv.printCount) > 1 ? ' · ' + inv.printCount + ' פעמים' : ''}</span> <button type="button" class="btn-ghost lw-mini" id="im-unprint">ביטול סימון</button>` : `<span class="pill pending">טרם הודפס</span> <button type="button" class="btn-ghost lw-mini" id="im-unprint">סימון כהודפס</button>`) : '';
+    const tb = $('im-unprint'); if (tb) tb.onclick = () => markPrinted([inv], !inv.printedAt).then(() => openModal(all.find((x) => x.id === inv.id) || inv));
     M('replace-lbl').textContent = inv ? 'החלפת הקובץ' : 'בחירת קובץ (PDF / תמונה)';
     M('err').textContent = '';
     $('inv-modal').hidden = false;
@@ -413,7 +430,7 @@ export function initInvoices(ctx) {
     const rows = targetRows(); if (!rows.length) { alert('אין שורות לייצוא.'); return; }
     const cols = [['תאריך', (i) => fmtDay(i.date)], ['ספק / לקוח', (i) => i.supplier], ['מספר חשבונית', (i) => i.number], ['סוג', (i) => INVOICE_KINDS[i.kind] || 'הוצאה'],
       ['קטגוריה', (i) => i.category], ['סכום', (i) => i.amount || 0], ['מטבע', (i) => i.currency || 'ILS'], ['שולם', (i) => i.paid === false ? 'לא' : 'כן'],
-      ['הערה', (i) => i.note], ['קובץ', (i) => i.fileName], ['קישור', (i) => i.url], ['מקור', (i) => i.source === 'gmail' ? 'מייל' : 'ידני'], ['תיבת מייל', (i) => i.source === 'gmail' ? acctOf(i) : ''], ['נושא המייל', (i) => i.gmailSubject], ['שולח המייל', (i) => i.gmailFrom]];
+      ['הערה', (i) => i.note], ['קובץ', (i) => i.fileName], ['קישור', (i) => i.url], ['מקור', (i) => i.source === 'gmail' ? 'מייל' : 'ידני'], ['תיבת מייל', (i) => i.source === 'gmail' ? acctOf(i) : ''], ['הודפס', (i) => i.printedAt ? fmtDay(String(i.printedAt).slice(0, 10)) : 'לא'], ['נושא המייל', (i) => i.gmailSubject], ['שולח המייל', (i) => i.gmailFrom]];
     const cell = (v) => { const s = String(v == null ? '' : v); return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
     const csv = '﻿' + cols.map((c) => cell(c[0])).join(',') + '\r\n' + rows.map((i) => cols.map((c) => cell(c[1](i))).join(',')).join('\r\n');
     const a = document.createElement('a');
@@ -508,6 +525,7 @@ export function initInvoices(ctx) {
       const bytes = await out.save();
       const url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
       w.location.href = url;
+      markPrinted(rows.filter((i) => !failed.includes((i.supplier || '') + ' ' + (i.fileName || ''))), true);
       if (failed.length) setTimeout(() => alert(failed.length + ' מסמכים לא נכללו בהדפסה (קובץ פגום או לא נתמך):\n' + failed.slice(0, 10).join('\n')), 500);
     } catch (e) {
       wsay(w, 'ההכנה נכשלה: ' + (e.message || e));
@@ -533,6 +551,8 @@ export function initInvoices(ctx) {
     P('title').textContent = 'הדפסה בנפרד — מסמך ' + (pi + 1) + ' מתוך ' + pq.length;
     P('name').textContent = [fmtDay(i.date), i.supplier, i.number ? '#' + i.number : '', i.amount ? fmtMoney(i.amount, i.currency) : '', i.fileName].filter(Boolean).join(' · ');
     P('prev').disabled = pi === 0; P('next').disabled = pi >= pq.length - 1; P('print').disabled = true; P('all').disabled = true;
+    P('printed').innerHTML = i.printedAt ? `<span class="pill printed">🖨 הודפס ${esc(fmtDate(i.printedAt))}</span>` : '<span class="pill pending">טרם הודפס</span>';
+    P('unmark').textContent = i.printedAt ? 'ביטול סימון "הודפס"' : 'סימון כהודפס';
     P('status').textContent = 'טוען…';
     if (pUrl) { URL.revokeObjectURL(pUrl); pUrl = ''; }
     try {
@@ -553,7 +573,8 @@ export function initInvoices(ctx) {
     try { f.contentWindow.focus(); f.contentWindow.print(); return true; }
     catch (e) { console.warn('frame print', e); window.open(pUrl, '_blank'); return false; }
   }
-  P('print').addEventListener('click', () => { printFrame(); });
+  P('print').addEventListener('click', () => { if (printFrame()) markPrinted([pq[pi]], true); else loadPrintDoc(); });
+  P('unmark').addEventListener('click', () => { const i = pq[pi]; if (i) markPrinted([i], !i.printedAt).then(loadPrintDoc); });
   P('prev').addEventListener('click', () => { if (pi > 0) { pi--; loadPrintDoc(); } });
   P('next').addEventListener('click', () => { if (pi < pq.length - 1) { pi++; loadPrintDoc(); } });
   P('all').addEventListener('click', async () => {
@@ -563,7 +584,7 @@ export function initInvoices(ctx) {
     while (pRun && pi < pq.length) {
       if (P('print').disabled) await loadPrintDoc();
       if (!pRun) break;
-      if (!P('print').disabled) { P('status').textContent = 'שולח להדפסה ' + (pi + 1) + '/' + pq.length + '…'; printFrame(); sent++; }
+      if (!P('print').disabled) { P('status').textContent = 'שולח להדפסה ' + (pi + 1) + '/' + pq.length + '…'; if (printFrame()) { markPrinted([pq[pi]], true); sent++; } }
       if (pi >= pq.length - 1) break;
       pi++; await loadPrintDoc();
     }
@@ -579,13 +600,13 @@ export function initInvoices(ctx) {
     const sums = {}; rows.forEach((i) => { const c = i.currency || 'ILS'; sums[c] = sums[c] || { expense: 0, income: 0 }; sums[c][i.kind === 'income' ? 'income' : 'expense'] += num(i.amount); });
     const title = 'חשבוניות' + (selected.size ? ' — נבחרות' : '') + (from || to ? ' · ' + (from ? fmtDay(from) : '…') + ' – ' + (to ? fmtDay(to) : '…') : '') + (supF ? ' · ' + (rows[0] && rows[0].supplier || supF) : '');
     const filters = [periodF && periodF !== 'custom' ? (PERIODS.find((x) => x[0] === periodF) || [, 'שנת ' + periodF.replace('y:', '')])[1] : '', kindF ? INVOICE_KINDS[kindF] : '', catF, acctF ? acctLabel(acctF) : '', paidF ? { paid: 'שולם', unpaid: 'לא שולם', missing: 'חסרים פרטים', emailprint: 'מגוף המייל' }[paidF] : '', minF !== '' || maxF !== '' ? 'סכום ' + (minF || '0') + '–' + (maxF || '∞') : '', q.trim() ? 'חיפוש: ' + q.trim() : ''].filter(Boolean);
-    const tr = rows.map((i) => `<tr><td>${fmtDay(i.date)}</td><td>${esc(i.supplier || '—')}</td><td>${esc(i.number || '—')}</td><td>${esc(i.category || '—')}</td><td>${INVOICE_KINDS[i.kind] || 'הוצאה'}</td><td class="n">${i.amount ? fmtMoney(i.amount, i.currency) : '—'}</td><td>${i.paid === false ? 'לא' : 'כן'}</td><td>${i.source === 'gmail' ? esc(acctShort(acctOf(i))) : 'ידני'}</td></tr>`).join('');
-    const totals = Object.keys(sums).map((c) => `<tr class="t"><td colspan="5">סה״כ הוצאות (${c})</td><td class="n">${fmtMoney(sums[c].expense, c)}</td><td colspan="2"></td></tr>` + (sums[c].income ? `<tr class="t"><td colspan="5">סה״כ הכנסות (${c})</td><td class="n">${fmtMoney(sums[c].income, c)}</td><td colspan="2"></td></tr>` : '')).join('');
+    const tr = rows.map((i) => `<tr><td>${fmtDay(i.date)}</td><td>${esc(i.supplier || '—')}</td><td>${esc(i.number || '—')}</td><td>${esc(i.category || '—')}</td><td>${INVOICE_KINDS[i.kind] || 'הוצאה'}</td><td class="n">${i.amount ? fmtMoney(i.amount, i.currency) : '—'}</td><td>${i.paid === false ? 'לא' : 'כן'}</td><td>${i.printedAt ? fmtDay(String(i.printedAt).slice(0, 10)) : '—'}</td><td>${i.source === 'gmail' ? esc(acctShort(acctOf(i))) : 'ידני'}</td></tr>`).join('');
+    const totals = Object.keys(sums).map((c) => `<tr class="t"><td colspan="5">סה״כ הוצאות (${c})</td><td class="n">${fmtMoney(sums[c].expense, c)}</td><td colspan="3"></td></tr>` + (sums[c].income ? `<tr class="t"><td colspan="5">סה״כ הכנסות (${c})</td><td class="n">${fmtMoney(sums[c].income, c)}</td><td colspan="3"></td></tr>` : '')).join('');
     w.document.write(`<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><title>${esc(title)}</title>
 <style>body{font-family:Arial,Helvetica,sans-serif;color:#222;margin:24px;font-size:12px}h1{font-size:18px;margin:0 0 4px}.sub{color:#666;font-size:11px;margin-bottom:14px}table{width:100%;border-collapse:collapse}th,td{border-bottom:1px solid #ddd;padding:6px 8px;text-align:right;vertical-align:top}th{background:#f3efe9;font-size:11px}td.n{direction:ltr;text-align:right;white-space:nowrap;font-weight:700}tr.t td{border-top:2px solid #333;font-weight:700;background:#faf7f2}@media print{body{margin:10mm}button{display:none}}</style></head><body>
 <h1>הורייזון פסגות גרופ — ${esc(title)}</h1>
 <div class="sub">${rows.length} מסמכים${filters.length ? ' · סינון: ' + esc(filters.join(' · ')) : ''} · הופק ${fmtDate(nowISO())}</div>
-<table><thead><tr><th>תאריך</th><th>ספק / מוצר</th><th>מס׳ חשבונית</th><th>קטגוריה</th><th>סוג</th><th>סכום</th><th>שולם</th><th>מקור</th></tr></thead><tbody>${tr}${totals}</tbody></table>
+<table><thead><tr><th>תאריך</th><th>ספק / מוצר</th><th>מס׳ חשבונית</th><th>קטגוריה</th><th>סוג</th><th>סכום</th><th>שולם</th><th>הודפס</th><th>מקור</th></tr></thead><tbody>${tr}${totals}</tbody></table>
 <p style="margin-top:16px"><button onclick="window.print()" style="font:inherit;padding:8px 16px;cursor:pointer">🖨 הדפסה</button></p>
 <script>setTimeout(function(){window.print()},300)<\/script></body></html>`);
     w.document.close();

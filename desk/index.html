@@ -392,6 +392,7 @@
       <form id="inv-form" style="margin-top:var(--space-sm)">
         <div class="inv-file-row" id="im-file-row"></div>
         <div class="inv-gmail-src-wrap" id="im-src"></div>
+        <div class="inv-printed-row" id="im-printed"></div>
         <div class="field-row">
           <div class="field"><label for="im-supplier">ספק / לקוח</label><input type="text" id="im-supplier" placeholder="למשל: Google Workspace / עו״ד כהן"></div>
           <div class="field"><label for="im-number">מספר חשבונית</label><input type="text" id="im-number" dir="ltr"></div>
@@ -427,6 +428,7 @@
         <button class="icon-btn" id="inv-print-close" type="button" title="סגירה">✕</button>
       </div>
       <iframe id="ip-frame" class="ip-frame" title="תצוגה מקדימה"></iframe>
+      <div class="inv-printed-row ip-printed-row"><span id="ip-printed"></span><button type="button" class="btn-ghost lw-mini" id="ip-unmark">סימון כהודפס</button></div>
       <div class="cm-upload-prog" id="ip-status"></div>
       <div class="modal-actions lw-actions">
         <button class="crm-btn" type="button" id="ip-print">🖨 הדפסת מסמך זה</button>
@@ -562,6 +564,6 @@
     </div>
   </div>
 
-  <script type="module" src="/js/crm.js?v=20261102c"></script>
+  <script type="module" src="/js/crm.js?v=20261102d"></script>
 </body>
 </html>
