@@ -30,7 +30,8 @@ export function initInvoices(ctx) {
   let all = [];
   let unsub = null;
   let ownerMode = false;
-  let yearF = '', monthF = '', kindF = '', catF = '', acctF = '', q = '';
+  let periodF = '', fromF = '', toF = '', supF = '', kindF = '', catF = '', acctF = '', paidF = '', minF = '', maxF = '', q = '';
+  let sortF = 'date_desc', viewF = 'list';
   let current = null;            // החשבונית הפתוחה בכרטיס
   let pendingFile = null;        // קובץ שנבחר בכרטיס "חשבונית חדשה" לפני שמירה
   let gmailToken = null, gmailResults = [], gmailBody = [], gmailAccount = '', gmailPrompt = '';
@@ -75,22 +76,63 @@ export function initInvoices(ctx) {
 
   /* ============================================================
      סינון ותצוגה
+     תקופה (מהירה / טווח תאריכים) · ספק/מוצר · סוג · קטגוריה · תיבת מייל · מצב תשלום ·
+     טווח סכום · חיפוש · מיון · תצוגה: רשימה / לפי ספק (עם סיכום לכל ספק)
      ============================================================ */
+  const PERIODS = [['', 'כל התקופה'], ['month', 'החודש'], ['lastmonth', 'חודש שעבר'], ['3m', '3 חודשים אחרונים'], ['6m', '6 חודשים אחרונים'], ['12m', '12 חודשים אחרונים'], ['year', 'השנה'], ['lastyear', 'שנה שעברה'], ['custom', 'טווח תאריכים…']];
+  const SORTS = [['date_desc', 'תאריך: חדש → ישן'], ['date_asc', 'תאריך: ישן → חדש'], ['amt_desc', 'סכום: גבוה → נמוך'], ['amt_asc', 'סכום: נמוך → גבוה'], ['sup', 'ספק: א → ת'], ['added', 'נוסף לאחרונה']];
+  const supKey = (i) => String(i.supplier || '').trim().toLowerCase().replace(/\s+/g, ' ');
+  const addM = (d, n) => { const x = new Date(d); x.setMonth(x.getMonth() + n); return x; };
+  const ymd = (d) => `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`;
+  function periodRange() {
+    const t = new Date(), y = t.getFullYear(), m = t.getMonth();
+    switch (periodF) {
+      case 'month': return [ymd(new Date(y, m, 1)), ymd(new Date(y, m + 1, 0))];
+      case 'lastmonth': return [ymd(new Date(y, m - 1, 1)), ymd(new Date(y, m, 0))];
+      case '3m': return [ymd(addM(t, -3)), ymd(t)];
+      case '6m': return [ymd(addM(t, -6)), ymd(t)];
+      case '12m': return [ymd(addM(t, -12)), ymd(t)];
+      case 'year': return [`${y}-01-01`, `${y}-12-31`];
+      case 'lastyear': return [`${y - 1}-01-01`, `${y - 1}-12-31`];
+      case 'custom': return [fromF, toF];
+      default: return periodF.startsWith('y:') ? [periodF.slice(2) + '-01-01', periodF.slice(2) + '-12-31'] : ['', ''];
+    }
+  }
   function filtered() {
     const qq = q.trim().toLowerCase();
-    return all.filter((i) => {
-      if (yearF && String(i.year || '') !== yearF) return false;
-      if (monthF && String(i.month || '') !== monthF) return false;
+    const [from, to] = periodRange();
+    const min = minF !== '' ? num(minF) : null, max = maxF !== '' ? num(maxF) : null;
+    const rows = all.filter((i) => {
+      const d = i.date || '';
+      if (from && d < from) return false;
+      if (to && d > to) return false;
+      if (supF && supKey(i) !== supF) return false;
       if (kindF && (i.kind || 'expense') !== kindF) return false;
       if (catF && (i.category || '') !== catF) return false;
       if (acctF && acctOf(i) !== acctF) return false;
+      if (paidF === 'paid' && i.paid === false) return false;
+      if (paidF === 'unpaid' && i.paid !== false) return false;
+      if (paidF === 'missing' && !missingInfo(i)) return false;
+      if (paidF === 'emailprint' && !i.emailPrint) return false;
+      if (min != null && num(i.amount) < min) return false;
+      if (max != null && num(i.amount) > max) return false;
       if (qq) {
-        const hay = [i.supplier, i.number, i.fileName, i.note, i.category, i.gmailSubject, i.gmailFrom].map((s) => String(s || '').toLowerCase()).join(' ');
+        const hay = [i.supplier, i.number, i.fileName, i.note, i.category, i.gmailSubject, i.gmailFrom, i.amount].map((s) => String(s || '').toLowerCase()).join(' ');
         if (!hay.includes(qq)) return false;
       }
       return true;
-    }).sort((a, b) => (b.date || '').localeCompare(a.date || '') || (b.uploadedAt || '').localeCompare(a.uploadedAt || ''));
+    });
+    const byDate = (a, b) => (b.date || '').localeCompare(a.date || '') || (b.uploadedAt || '').localeCompare(a.uploadedAt || '');
+    const sorters = {
+      date_desc: byDate, date_asc: (a, b) => -byDate(a, b),
+      amt_desc: (a, b) => num(b.amount) - num(a.amount) || byDate(a, b), amt_asc: (a, b) => num(a.amount) - num(b.amount) || byDate(a, b),
+      sup: (a, b) => supKey(a).localeCompare(supKey(b), 'he') || byDate(a, b),
+      added: (a, b) => (b.uploadedAt || '').localeCompare(a.uploadedAt || ''),
+    };
+    return rows.sort(sorters[sortF] || byDate);
   }
+  const activeFilters = () => [periodF, supF, kindF, catF, acctF, paidF, minF, maxF, q.trim()].filter(Boolean).length;
+  function clearFilters() { periodF = ''; fromF = ''; toF = ''; supF = ''; kindF = ''; catF = ''; acctF = ''; paidF = ''; minF = ''; maxF = ''; q = ''; render(); }
   function render() {
     if (!ownerMode) return;
     renderFilter();
@@ -98,27 +140,39 @@ export function initInvoices(ctx) {
     renderSummary(rows);
     const wrap = $('inv-table-wrap');
     if (!all.length) { wrap.innerHTML = '<p class="empty-state">עדיין אין חשבוניות. גררו קבצי PDF לאזור ההעלאה, או ייבאו מהמייל.</p>'; return; }
-    if (!rows.length) { wrap.innerHTML = '<p class="empty-state">אין חשבוניות שמתאימות לסינון.</p>'; return; }
-    wrap.innerHTML = '<div class="leads-table-wrap"><table class="leads inv-table"><thead><tr>' +
-      '<th>תאריך</th><th>ספק / לקוח</th><th>מס׳ חשבונית</th><th>קטגוריה</th><th>סוג</th><th>סכום</th><th>קובץ</th><th>מקור</th><th></th>' +
-      '</tr></thead><tbody>' + rows.map(rowHTML).join('') + '</tbody></table></div>';
+    if (!rows.length) { wrap.innerHTML = '<p class="empty-state">אין חשבוניות שמתאימות לסינון. <button type="button" class="btn-ghost lw-mini" id="inv-clear2">ניקוי הסינון</button></p>'; const b = $('inv-clear2'); if (b) b.onclick = clearFilters; return; }
+    const head = '<div class="leads-table-wrap"><table class="leads inv-table"><thead><tr>' +
+      '<th>תאריך</th><th>ספק / מוצר</th><th>מס׳ חשבונית</th><th>קטגוריה</th><th>סוג</th><th>סכום</th><th>קובץ</th><th>מקור</th><th></th>' +
+      '</tr></thead><tbody>';
+    let body = '';
+    if (viewF === 'supplier') {
+      // קיבוץ לפי ספק: כותרת עם מספר חשבוניות וסכום (₪, הוצאות), ממוין לפי סכום יורד
+      const groups = {};
+      rows.forEach((i) => { const k = supKey(i); (groups[k] = groups[k] || { name: i.supplier || 'ללא ספק', rows: [], sum: 0, n: 0 }); groups[k].rows.push(i); groups[k].n++; if ((i.currency || 'ILS') === 'ILS' && i.kind !== 'income') groups[k].sum += num(i.amount); });
+      Object.entries(groups).sort((a, b) => b[1].sum - a[1].sum || b[1].n - a[1].n).forEach(([k, g]) => {
+        body += `<tr class="inv-grp" data-sup="${esc(k)}"><td colspan="9"><b>${esc(g.name)}</b><span>${g.n} ${g.n === 1 ? 'חשבונית' : 'חשבוניות'}</span><span class="inv-grp-sum">${fmtMoney(g.sum, 'ILS')}</span><small>לחיצה = סינון לספק זה</small></td></tr>` + g.rows.map(rowHTML).join('');
+      });
+    } else body = rows.map(rowHTML).join('');
+    wrap.innerHTML = head + body + '</tbody></table></div>';
     wrap.querySelectorAll('tr.inv-row').forEach((tr) => {
       tr.addEventListener('click', (e) => { if (e.target.closest('a,button')) return; const inv = all.find((x) => x.id === tr.dataset.id); if (inv) openModal(inv); });
     });
+    wrap.querySelectorAll('tr.inv-grp').forEach((tr) => tr.onclick = () => { supF = tr.dataset.sup; viewF = 'list'; render(); });
     wrap.querySelectorAll('[data-inv-del]').forEach((b) => b.onclick = () => { const inv = all.find((x) => x.id === b.dataset.invDel); if (inv) removeInvoice(inv); });
     wrap.querySelectorAll('[data-inv-edit]').forEach((b) => b.onclick = () => { const inv = all.find((x) => x.id === b.dataset.invEdit); if (inv) openModal(inv); });
+    wrap.querySelectorAll('[data-inv-sup]').forEach((b) => b.onclick = () => { supF = b.dataset.invSup; render(); });
   }
   function rowHTML(i) {
     const kind = i.kind === 'income' ? 'income' : 'expense';
     const miss = missingInfo(i);
     return `<tr class="inv-row${miss ? ' inv-missing' : ''}${i.paid === false ? ' inv-unpaid' : ''}" data-id="${i.id}">` +
       `<td>${fmtDay(i.date)}</td>` +
-      `<td><b>${esc(i.supplier || '')}</b>${miss ? '<span class="pill pending inv-pill-miss">חסרים פרטים</span>' : ''}${i.paid === false ? '<span class="pill rejected inv-pill-miss">לא שולם</span>' : ''}</td>` +
+      `<td><b>${esc(i.supplier || '')}</b>${i.supplier && !supF ? `<button type="button" class="inv-suplink" data-inv-sup="${esc(supKey(i))}" title="הצגת כל החשבוניות של ${esc(i.supplier)}">▼</button>` : ''}${miss ? '<span class="pill pending inv-pill-miss">חסרים פרטים</span>' : ''}${i.paid === false ? '<span class="pill rejected inv-pill-miss">לא שולם</span>' : ''}</td>` +
       `<td>${esc(i.number || '—')}</td>` +
       `<td>${esc(i.category || '—')}</td>` +
       `<td><span class="inv-kind ${kind}">${INVOICE_KINDS[kind]}</span></td>` +
       `<td class="inv-amt">${i.amount ? fmtMoney(i.amount, i.currency) : '—'}</td>` +
-      `<td>${i.url ? `<a class="file-chip" href="${esc(i.url)}" target="_blank" rel="noopener" title="${esc(i.fileName || '')}">${isPdf(i) ? '📄' : '🖼'} ${esc((i.fileName || 'קובץ').slice(0, 28))}</a>` : '—'}</td>` +
+      `<td>${i.url ? `<a class="file-chip" href="${esc(i.url)}" target="_blank" rel="noopener" title="${esc(i.fileName || '')}">${i.emailPrint ? '📧' : isPdf(i) ? '📄' : '🖼'} ${esc((i.fileName || 'קובץ').slice(0, 28))}</a>` : '—'}</td>` +
       `<td><small title="${esc(acctLabel(acctOf(i)))}">${i.source === 'gmail' ? '✉ ' + esc(acctShort(acctOf(i))) : '⬆ ידני'}</small></td>` +
       `<td class="inv-actions"><button class="icon-btn" data-inv-edit="${i.id}" title="עריכת פרטים">✎</button><button class="icon-btn danger" data-inv-del="${i.id}" title="מחיקה">✕</button></td>` +
       '</tr>';
@@ -128,26 +182,45 @@ export function initInvoices(ctx) {
     const years = [...new Set(all.map((i) => i.year).filter(Boolean))].sort((a, b) => b - a);
     const cats = [...new Set(all.map((i) => i.category).filter(Boolean))].sort();
     const accts = [...new Set(all.map(acctOf))].sort((a, b) => (a === 'manual') - (b === 'manual') || a.localeCompare(b));
+    const sups = {}; all.forEach((i) => { const k = supKey(i); if (!k) return; sups[k] = sups[k] || { name: i.supplier.trim(), n: 0 }; sups[k].n++; });
+    const supList = Object.entries(sups).sort((a, b) => b[1].n - a[1].n || a[1].name.localeCompare(b[1].name, 'he'));
+    const opt = (v, label, cur) => `<option value="${esc(v)}"${String(v) === String(cur) ? ' selected' : ''}>${esc(label)}</option>`;
+    const nActive = activeFilters();
     bar.innerHTML =
-      `<select id="inv-year" class="status-select"><option value="">כל השנים</option>${years.map((y) => `<option value="${y}"${String(y) === yearF ? ' selected' : ''}>${y}</option>`).join('')}</select>` +
-      `<select id="inv-month" class="status-select"><option value="">כל החודשים</option>${MONTHS_HE.map((m, k) => `<option value="${k + 1}"${String(k + 1) === monthF ? ' selected' : ''}>${m}</option>`).join('')}</select>` +
-      `<select id="inv-kind" class="status-select"><option value="">הוצאות והכנסות</option>${Object.keys(INVOICE_KINDS).map((k) => `<option value="${k}"${k === kindF ? ' selected' : ''}>${INVOICE_KINDS[k]}</option>`).join('')}</select>` +
-      `<select id="inv-cat" class="status-select"><option value="">כל הקטגוריות</option>${cats.map((c) => `<option value="${esc(c)}"${c === catF ? ' selected' : ''}>${esc(c)}</option>`).join('')}</select>` +
-      `<select id="inv-acct" class="status-select"><option value="">כל התיבות</option>${accts.map((a) => `<option value="${esc(a)}"${a === acctF ? ' selected' : ''}>${esc(acctLabel(a))}</option>`).join('')}</select>` +
-      `<input type="search" id="inv-q" class="search-input cases-search" placeholder="חיפוש ספק / מספר / קובץ…" value="${esc(q)}">` +
+      `<select id="inv-period" class="status-select" title="תקופה">${PERIODS.map(([v, l]) => opt(v, l, periodF)).join('')}${years.length ? '<option disabled>──</option>' + years.map((y) => opt('y:' + y, 'שנת ' + y, periodF)).join('') : ''}</select>` +
+      `<span class="inv-range" id="inv-range"${periodF === 'custom' ? '' : ' hidden'}><label>מ־<input type="date" id="inv-from" value="${esc(fromF)}"></label><label>עד <input type="date" id="inv-to" value="${esc(toF)}"></label></span>` +
+      `<select id="inv-sup" class="status-select" title="ספק / מוצר"><option value="">כל הספקים / מוצרים</option>${supList.map(([k, s]) => opt(k, s.name + ' (' + s.n + ')', supF)).join('')}</select>` +
+      `<select id="inv-kind" class="status-select">${opt('', 'הוצאות והכנסות', kindF)}${Object.keys(INVOICE_KINDS).map((k) => opt(k, INVOICE_KINDS[k], kindF)).join('')}</select>` +
+      `<select id="inv-cat" class="status-select">${opt('', 'כל הקטגוריות', catF)}${cats.map((c) => opt(c, c, catF)).join('')}</select>` +
+      `<select id="inv-acct" class="status-select">${opt('', 'כל התיבות', acctF)}${accts.map((a) => opt(a, acctLabel(a), acctF)).join('')}</select>` +
+      `<select id="inv-paid" class="status-select">${opt('', 'כל המצבים', paidF)}${opt('paid', 'שולם', paidF)}${opt('unpaid', 'לא שולם', paidF)}${opt('missing', 'חסרים פרטים (ספק/סכום)', paidF)}${opt('emailprint', 'נשמרו מגוף המייל', paidF)}</select>` +
+      `<span class="inv-amtrange"><input type="text" inputmode="decimal" id="inv-min" placeholder="מסכום ₪" value="${esc(minF)}"><input type="text" inputmode="decimal" id="inv-max" placeholder="עד סכום ₪" value="${esc(maxF)}"></span>` +
+      `<input type="search" id="inv-q" class="search-input cases-search" placeholder="חיפוש חופשי: ספק, מספר, קובץ, נושא מייל…" value="${esc(q)}">` +
+      `<select id="inv-sort" class="status-select" title="מיון">${SORTS.map(([v, l]) => opt(v, l, sortF)).join('')}</select>` +
       `<span class="cases-viewsw inv-tools">` +
+      `<button type="button" class="cases-fbtn${viewF === 'list' ? ' on' : ''}" data-iv="list" title="רשימה">☰ רשימה</button>` +
+      `<button type="button" class="cases-fbtn${viewF === 'supplier' ? ' on' : ''}" data-iv="supplier" title="קיבוץ לפי ספק / מוצר עם סיכום לכל אחד">▤ לפי ספק</button>` +
+      (nActive ? `<button type="button" class="cases-fbtn inv-clear" id="inv-clear" title="איפוס כל הסינונים">✕ ניקוי סינון (${nActive})</button>` : '') +
       `<button type="button" class="cases-fbtn" id="inv-csv" title="ייצוא הטבלה המסוננת לאקסל">📊 ייצוא CSV</button>` +
       `<button type="button" class="cases-fbtn" id="inv-zip" title="הורדת כל הקבצים המסוננים כ-ZIP אחד">⬇ ZIP</button>` +
       `</span>`;
-    bar.querySelector('#inv-year').onchange = (e) => { yearF = e.target.value; render(); };
-    bar.querySelector('#inv-month').onchange = (e) => { monthF = e.target.value; render(); };
-    bar.querySelector('#inv-kind').onchange = (e) => { kindF = e.target.value; render(); };
-    bar.querySelector('#inv-cat').onchange = (e) => { catF = e.target.value; render(); };
-    bar.querySelector('#inv-acct').onchange = (e) => { acctF = e.target.value; render(); };
-    const qi = bar.querySelector('#inv-q');
-    qi.oninput = () => { q = qi.value; const pos = qi.selectionStart; render(); const n = $('inv-q'); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (e) {} } };
-    bar.querySelector('#inv-csv').onclick = exportCSV;
-    bar.querySelector('#inv-zip').onclick = downloadZip;
+    const on = (id, ev, fn) => { const el = bar.querySelector('#' + id); if (el) el['on' + ev] = fn; };
+    on('inv-period', 'change', (e) => { periodF = e.target.value; if (periodF === 'custom' && !fromF && !toF) { fromF = ymd(addM(new Date(), -1)); toF = todayStr(); } render(); });
+    on('inv-from', 'change', (e) => { fromF = e.target.value; render(); });
+    on('inv-to', 'change', (e) => { toF = e.target.value; render(); });
+    on('inv-sup', 'change', (e) => { supF = e.target.value; render(); });
+    on('inv-kind', 'change', (e) => { kindF = e.target.value; render(); });
+    on('inv-cat', 'change', (e) => { catF = e.target.value; render(); });
+    on('inv-acct', 'change', (e) => { acctF = e.target.value; render(); });
+    on('inv-paid', 'change', (e) => { paidF = e.target.value; render(); });
+    on('inv-sort', 'change', (e) => { sortF = e.target.value; render(); });
+    // שדות טקסט: עדכון תוך כדי הקלדה בלי לאבד את הסמן
+    const live = (id, set) => { const el = bar.querySelector('#' + id); el.oninput = () => { set(el.value); const pos = el.selectionStart; render(); const n = $(id); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (e) {} } }; };
+    live('inv-q', (v) => { q = v; }); live('inv-min', (v) => { minF = v; }); live('inv-max', (v) => { maxF = v; });
+    bar.querySelectorAll('[data-iv]').forEach((b) => b.onclick = () => { viewF = b.dataset.iv; render(); });
+    on('inv-clear', 'click', clearFilters);
+    on('inv-csv', 'click', exportCSV);
+    on('inv-zip', 'click', downloadZip);
   }
   function renderSummary(rows) {
     const el = $('inv-summary');
@@ -320,7 +393,7 @@ export function initInvoices(ctx) {
     const csv = '﻿' + cols.map((c) => cell(c[0])).join(',') + '\r\n' + rows.map((i) => cols.map((c) => cell(c[1](i))).join(',')).join('\r\n');
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-    a.download = 'חשבוניות' + (yearF ? '-' + yearF : '') + (monthF ? '-' + p2(monthF) : '') + '.csv';
+    a.download = 'חשבוניות' + (periodF ? '-' + periodF.replace('y:', '') : '') + (supF ? '-' + safeSeg(supF, 20) : '') + '.csv';
     document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
   }
   async function downloadZip() {
@@ -339,7 +412,7 @@ export function initInvoices(ctx) {
       btn.textContent = 'אורז…';
       const blob = await zip.generateAsync({ type: 'blob' });
       const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-      a.download = 'חשבוניות' + (yearF ? '-' + yearF : '') + (monthF ? '-' + p2(monthF) : '') + '.zip';
+      a.download = 'חשבוניות' + (periodF ? '-' + periodF.replace('y:', '') : '') + (supF ? '-' + safeSeg(supF, 20) : '') + '.zip';
       document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
     } catch (e) { alert('הורדת ה-ZIP נכשלה: ' + (e.message || e) + (e instanceof TypeError ? '\n(ייתכן שחסרה הגדרת CORS על ה-bucket — ראו README-STORAGE-CORS.md)' : '')); }
     btn.disabled = false; btn.textContent = orig;

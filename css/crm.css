@@ -653,3 +653,20 @@ tbody tr.lead-row:hover td { background: var(--color-cream-soft); }
 .ig-item[hidden] { display: none; }
 .ig-body b { font-weight: 600; }
 #ig-filter { height: 36px; }
+/* סינון חשבוניות — תקופה / ספק / סכום / תצוגה לפי ספק */
+.inv-range { display: inline-flex; gap: .4rem; align-items: center; font-size: var(--fs-xs); color: var(--color-warm-gray); }
+.inv-range label { display: inline-flex; align-items: center; gap: .25rem; }
+.inv-range input { height: 36px; font: inherit; font-size: var(--fs-xs); padding: 0 .4rem; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-white); }
+.inv-amtrange { display: inline-flex; gap: 4px; }
+.inv-amtrange input { width: 92px; height: 36px; font: inherit; font-size: var(--fs-xs); padding: 0 .5rem; border: 1px solid var(--color-border); border-radius: 999px; background: var(--color-white); direction: ltr; text-align: center; }
+#inv-sort { max-width: 190px; }
+.inv-clear { border-color: #C0392B; color: #A5291D; }
+.inv-suplink { border: 0; background: none; color: var(--color-warm-gray); cursor: pointer; font-size: 9px; padding: 0 .3rem; vertical-align: middle; }
+.inv-suplink:hover { color: var(--color-navy-deep); }
+tr.inv-grp td { background: rgba(201,164,122,.12); cursor: pointer; padding-top: .5rem; padding-bottom: .5rem; }
+tr.inv-grp td b { color: var(--color-navy-deep); font-size: var(--fs-base); margin-inline-end: .7rem; }
+tr.inv-grp td span { color: var(--color-charcoal-soft); margin-inline-end: .7rem; }
+tr.inv-grp td .inv-grp-sum { font-weight: 700; color: var(--color-navy-deep); direction: ltr; unicode-bidi: embed; }
+tr.inv-grp td small { color: var(--color-warm-gray); font-size: var(--fs-xs); float: left; }
+tr.inv-grp:hover td { background: rgba(201,164,122,.22); }
+@media (max-width: 640px) { .inv-amtrange input { width: 78px; } }
