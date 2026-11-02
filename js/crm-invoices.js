@@ -40,6 +40,7 @@ export function initInvoices(ctx) {
   let pendingFile = null;        // קובץ שנבחר בכרטיס "חשבונית חדשה" לפני שמירה
   let gmailToken = null, gmailResults = [], gmailBody = [], gmailAccount = '', gmailPrompt = '';
   let backfilled = false;
+  let syncState = null, unsubSync = null;   // settings/dokkaSync — מצב הסנכרון האוטומטי מ-DOKKA
 
   const p2 = (n) => ('0' + n).slice(-2);
   const num = (v) => { const n = parseFloat(String(v == null ? '' : v).replace(/[^\d.\-]/g, '')); return isNaN(n) ? 0 : n; };
@@ -51,9 +52,9 @@ export function initInvoices(ctx) {
   const missingInfo = (inv) => !inv.supplier || !inv.amount;
   // מאיזו תיבה הגיעה החשבונית: מייל של החשבון המייבא, או 'manual' להעלאה ידנית.
   // ייבואים ישנים (לפני שנשמר החשבון) נעשו כולם מ-office.
-  const acctOf = (i) => i.source === 'gmail' ? (i.gmailAccount || GMAIL_LOGIN_HINT) : 'manual';
-  const acctLabel = (a) => a === 'manual' ? 'העלאה ידנית' : a;
-  const acctShort = (a) => a === 'manual' ? 'ידני' : String(a).split('@')[0];
+  const acctOf = (i) => i.source === 'gmail' ? (i.gmailAccount || GMAIL_LOGIN_HINT) : i.source === 'dokka' ? 'dokka' : 'manual';
+  const acctLabel = (a) => a === 'manual' ? 'העלאה ידנית' : a === 'dokka' ? 'Dokka (סנכרון אוטומטי)' : a;
+  const acctShort = (a) => a === 'manual' ? 'ידני' : a === 'dokka' ? 'Dokka' : String(a).split('@')[0];
 
   /* ============================================================
      הרשאה: הטאב והמנוי קיימים רק לבעלים
@@ -65,6 +66,7 @@ export function initInvoices(ctx) {
     if (!ownerMode && unsub) detach();
   }
   function listen() {
+    unsubSync = fs.onSnapshot(fs.doc(db, 'settings', 'dokkaSync'), (snap) => { syncState = (snap && typeof snap.data === 'function' && snap.exists && snap.exists()) ? snap.data() : null; renderSyncStatus(); }, (e) => { console.warn('dokkaSync listen', e); syncState = null; renderSyncStatus(); });
     unsub = fs.onSnapshot(fs.collection(db, 'invoices'), (snap) => {
       all = snap.docs.map((d) => ({ ...d.data(), id: d.id }));
       const ids = new Set(all.map((i) => i.id)); selected.forEach((id) => { if (!ids.has(id)) selected.delete(id); });
@@ -77,7 +79,37 @@ export function initInvoices(ctx) {
       $('inv-table-wrap').innerHTML = '<p class="empty-state">אין הרשאה לצפות בחשבוניות' + (err && err.code === 'permission-denied' ? ' — ודאו שחוקי Firestore עודכנו (firebase deploy --only firestore:rules).' : '.') + '</p>';
     });
   }
-  function detach() { if (unsub) { try { unsub(); } catch (e) {} } unsub = null; all = []; current = null; }
+  function detach() { if (unsub) { try { unsub(); } catch (e) {} } unsub = null; if (unsubSync) { try { unsubSync(); } catch (e) {} } unsubSync = null; all = []; current = null; }
+
+  /* ============================================================
+     סנכרון אוטומטי מ-DOKKA (Cloud Function dokkaSyncScheduled כל 30 דק׳ + dokkaSyncNow ידני)
+     ============================================================ */
+  function renderSyncStatus() {
+    const el = $('inv-dokka-status'); if (!el) return;
+    const btn = $('inv-dokka-sync');
+    if (!syncState) { el.innerHTML = '<span class="pill pending">סנכרון מ-Dokka עדיין לא הופעל</span> <small>נדרשת הגדרת הפונקציה בענן — ראו README-DOKKA.md</small>'; if (btn) btn.disabled = false; return; }
+    const r = syncState.lastResult || {};
+    const running = syncState.running && syncState.runningSince && (Date.now() - Date.parse(syncState.runningSince) < 10 * 60000);
+    el.innerHTML = (running ? '<span class="pill printed">⏳ סנכרון רץ עכשיו…</span> ' : '') +
+      (syncState.lastSyncAt ? `<span class="pill dokka">🔗 Dokka</span> סנכרון אחרון ${esc(fmtDate(syncState.lastSyncAt))}` + (syncState.lastTrigger && String(syncState.lastTrigger).startsWith('manual') ? ' (ידני)' : ' (אוטומטי, כל 30 דק׳)') : '') +
+      (r.seen != null ? ` · נבדקו ${r.seen} · <b>נוספו ${r.added || 0}</b> · עודכנו ${r.updated || 0}` + (r.errorCount ? ` · <span class="inv-sync-err" title="${esc((r.errors || []).join('\n'))}">שגיאות ${r.errorCount}</span>` : '') : '');
+    if (btn) btn.disabled = !!running;
+  }
+  $('inv-dokka-sync').addEventListener('click', async () => {
+    const btn = $('inv-dokka-sync'); const orig = btn.textContent;
+    btn.disabled = true; btn.textContent = 'מסנכרן…';
+    try {
+      const r = await ctx.callFn('dokkaSyncNow', { sinceDays: 0 });
+      alert('סנכרון מ-Dokka הסתיים: נבדקו ' + r.seen + ', נוספו ' + r.added + ', עודכנו ' + r.updated + (r.errors && r.errors.length ? '\nשגיאות (' + r.errors.length + '):\n' + r.errors.slice(0, 5).join('\n') : ''));
+    } catch (e) {
+      const code = e && e.code ? String(e.code) : '';
+      alert(/not-found|internal/.test(code) && /not found|NOT_FOUND/i.test(e.message || '') || /functions\/not-found/.test(code)
+        ? 'הפונקציה עדיין לא פרוסה בענן. ראו README-DOKKA.md (firebase deploy --only functions).'
+        : 'הסנכרון נכשל: ' + (e.message || e));
+      console.warn('dokkaSyncNow', e);
+    }
+    btn.textContent = orig; renderSyncStatus();
+  });
 
   /* ============================================================
      סינון ותצוגה
@@ -201,7 +233,7 @@ export function initInvoices(ctx) {
       `<td><span class="inv-kind ${kind}">${INVOICE_KINDS[kind]}</span></td>` +
       `<td class="inv-amt">${i.amount ? fmtMoney(i.amount, i.currency) : '—'}</td>` +
       `<td>${i.url ? `<a class="file-chip" href="${esc(i.url)}" target="_blank" rel="noopener" title="${esc(i.fileName || '')}">${i.emailPrint ? '📧' : isPdf(i) ? '📄' : '🖼'} ${esc((i.fileName || 'קובץ').slice(0, 28))}</a>` : '—'}</td>` +
-      `<td><small title="${esc(acctLabel(acctOf(i)))}">${i.source === 'gmail' ? '✉ ' + esc(acctShort(acctOf(i))) : '⬆ ידני'}</small></td>` +
+      `<td><small title="${esc(acctLabel(acctOf(i)))}">${i.source === 'gmail' ? '✉ ' + esc(acctShort(acctOf(i))) : i.source === 'dokka' ? '🔗 Dokka' : '⬆ ידני'}</small></td>` +
       `<td class="inv-actions"><button class="icon-btn" data-inv-edit="${i.id}" title="עריכת פרטים">✎</button><button class="icon-btn danger" data-inv-del="${i.id}" title="מחיקה">✕</button></td>` +
       '</tr>';
   }
@@ -372,7 +404,9 @@ export function initInvoices(ctx) {
     M('file-row').innerHTML = inv && inv.url
       ? `<a class="file-chip" href="${esc(inv.url)}" target="_blank" rel="noopener">${isPdf(inv) ? '📄' : '🖼'} ${esc(inv.fileName || 'קובץ')}</a> <small>${fmtSize(inv.size)} · ${inv.source === 'gmail' ? 'יובא מהמייל' : 'הועלה'} ${fmtDate(inv.uploadedAt)}${inv.uploadedBy ? ' · ' + esc(displayName(inv.uploadedBy)) : ''}</small>`
       : '<small>לא נבחר קובץ</small>';
-    M('src').innerHTML = inv && inv.source === 'gmail'
+    M('src').innerHTML = inv && inv.source === 'dokka'
+      ? `<div class="inv-gmail-src">🔗 <b>הגיע מ-Dokka</b>${inv.dokkaCreated ? ' · נקלט ' + esc(fmtDate(inv.dokkaCreated)) : ''}${inv.dokkaCreatedBy ? ' · ' + esc(inv.dokkaCreatedBy) : ''}${inv.dokkaType ? ' · סוג: ' + esc(inv.dokkaType) : ''}${(inv.dokkaTags || []).length ? ' · תגיות: ' + esc(inv.dokkaTags.join(', ')) : ''}<br><small>מזהה Dokka: ${esc(inv.dokkaDocumentId || '')}${inv.manualEdit ? ' · תוקן ידנית (הסנכרון לא ידרוס)' : ' · הפרטים מתעדכנים אוטומטית מ-Dokka'}</small></div>`
+      : inv && inv.source === 'gmail'
       ? `<div class="inv-gmail-src">✉ <b>${esc(inv.gmailFrom || '')}</b> · ${esc(inv.gmailSubject || '')}${inv.gmailDate ? ' · ' + fmtDate(inv.gmailDate) : ''}<br><small>תיבה: ${esc(acctOf(inv))}${inv.emailPrint ? ' · נשמר כ-PDF מגוף המייל (ללא קובץ מצורף)' : ''}</small></div>` : '';
     M('delete').hidden = !inv;
     M('printed').innerHTML = inv ? (inv.printedAt ? `<span class="pill printed">🖨 הודפס ${esc(fmtDate(inv.printedAt))}${inv.printedBy ? ' · ' + esc(displayName(inv.printedBy)) : ''}${Number(inv.printCount) > 1 ? ' · ' + inv.printCount + ' פעמים' : ''}</span> <button type="button" class="btn-ghost lw-mini" id="im-unprint">ביטול סימון</button>` : `<span class="pill pending">טרם הודפס</span> <button type="button" class="btn-ghost lw-mini" id="im-unprint">סימון כהודפס</button>`) : '';
@@ -413,6 +447,7 @@ export function initInvoices(ctx) {
         await uploadOne(pendingFile, pendingFile.name, data);
       } else {
         const upd = { ...data, updatedAt: nowISO(), updatedBy: ctx.me().email || '' };
+        if (current.source === 'dokka') upd.manualEdit = true;   // תיקון ידני — הסנכרון מ-DOKKA לא ידרוס אותו
         if (pendingFile) {
           const path = invoiceStoragePath(data.date, pendingFile.name);
           const sref = st.ref(storage, path);

@@ -3,10 +3,10 @@
    פאנל ניהול: לידים (ריבוי משתמשים, כרטיס ליד, חיפוש, דוחות,
    ייצוא, פולו-אפ) · עסקאות · מאמרים (בגל הבא)
    ============================================================ */
-import { firebaseConfig, isConfigured } from '/js/firebase-config.js?v=20261102e';
-import { SERVICE_TYPES, buildItems, serviceLabel, docCatalog, storagePath, safeSeg } from '/js/case-templates.js?v=20261102e';
-import { initTasks } from '/js/crm-tasks.js?v=20261102e';
-import { initInvoices } from '/js/crm-invoices.js?v=20261102e';
+import { firebaseConfig, isConfigured } from '/js/firebase-config.js?v=20261102f';
+import { SERVICE_TYPES, buildItems, serviceLabel, docCatalog, storagePath, safeSeg } from '/js/case-templates.js?v=20261102f';
+import { initTasks } from '/js/crm-tasks.js?v=20261102f';
+import { initInvoices } from '/js/crm-invoices.js?v=20261102f';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? '' : s).replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -15,16 +15,20 @@ if (!isConfigured) { $('login-view').hidden = true; $('setup-view').hidden = fal
 else boot();
 
 async function boot() {
-  const [{ initializeApp, deleteApp }, auth, fs, st] = await Promise.all([
+  const [{ initializeApp, deleteApp }, auth, fs, st, fnMod] = await Promise.all([
     import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'),
     import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js'),
     import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js'),
-    import('https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js')
+    import('https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js'),
+    import('https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js').catch(() => null)
   ]);
   const app = initializeApp(firebaseConfig);
   const authInstance = auth.getAuth(app);
   const db = fs.getFirestore(app);
   const storage = st.getStorage(app);
+  // Cloud Functions (europe-west1) — כרגע: סנכרון חשבוניות מ-DOKKA. callFn(name, data) → תוצאה
+  const fnApp = fnMod ? fnMod.getFunctions(app, 'europe-west1') : null;
+  const callFn = (name, data) => { if (!fnApp) return Promise.reject(new Error('Functions SDK לא נטען')); return fnMod.httpsCallable(fnApp, name)(data || {}).then((r) => r.data); };
   let currentEmail = '', currentUid = '';
 
   const STATUS = {
@@ -109,7 +113,7 @@ async function boot() {
   let invoices = null;
   const invCtx = {
     fs, db, st, storage, $, esc, track, nowISO, fmtDate, todayStr, toDateObj, displayName, safeSeg, loadJSZip,
-    me: () => ({ email: currentEmail, uid: currentUid }), role: () => currentRole,
+    me: () => ({ email: currentEmail, uid: currentUid }), role: () => currentRole, callFn,
   };
 
   /* רשימת בעלי גישה — לבחירת מטפל, סינון וניהול משתמשים + הרשאות */

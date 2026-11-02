@@ -699,3 +699,6 @@ tr.inv-row.inv-selected td { background: rgba(201,164,122,.14); }
 .inv-sum.nodokka:hover { border-color: #5B4A8A; }
 .inv-dokka { border-color: #5B4A8A; color: #5B4A8A; }
 .inv-dokka:disabled { opacity: .7; cursor: progress; }
+.inv-dokka-status { font-size: var(--fs-sm); color: var(--color-charcoal-soft); margin: 0 0 var(--space-sm); display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; }
+.inv-dokka-status small { color: var(--color-warm-gray); }
+.inv-sync-err { color: #A5291D; font-weight: 700; cursor: help; }

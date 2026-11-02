@@ -162,6 +162,13 @@ service cloud.firestore {
                     );
     }
 
+    // ---------- הגדרות/מצב מערכת (למשל settings/dokkaSync — תוצאת הסנכרון האחרון מ-DOKKA) ----------
+    // נכתב רק ע"י Cloud Functions (Admin SDK); בעלים קוראים בדסק.
+    match /settings/{id} {
+      allow read: if isOwner();
+      allow write: if false;
+    }
+
     // ---------- חשבוניות וקבלות של העסק — בעלים בלבד ----------
     // ארכיון כספי של החברה (ספקים, סכומים, קבצים). אף תפקיד אחר — גם manager — לא קורא ולא כותב.
     // הקבצים עצמם ב-Storage תחת invoices/ עם אותה הרשאה (storage.rules).
