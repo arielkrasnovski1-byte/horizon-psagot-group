@@ -702,3 +702,14 @@ tr.inv-row.inv-selected td { background: rgba(201,164,122,.14); }
 .inv-dokka-status { font-size: var(--fs-sm); color: var(--color-charcoal-soft); margin: 0 0 var(--space-sm); display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; }
 .inv-dokka-status small { color: var(--color-warm-gray); }
 .inv-sync-err { color: #A5291D; font-weight: 700; cursor: help; }
+/* ייבוא מהמייל — דרגות, קיבוץ לפי שולח, הסתרה */
+.ig-sec small { display: block; font-weight: 400; color: var(--color-warm-gray); margin-top: 2px; }
+.ig-sec .lw-mini { margin-inline-start: .5rem; padding: .1rem .55rem; }
+.ig-sender { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; padding: .45rem 0 .25rem; margin-top: .3rem; border-top: 2px solid rgba(201,164,122,.35); font-size: var(--fs-sm); }
+.ig-sender b { color: var(--color-navy-deep); }
+.ig-sender small { color: var(--color-warm-gray); font-size: var(--fs-xs); unicode-bidi: embed; }
+.ig-sender-n { font-size: var(--fs-xs); font-weight: 700; background: var(--color-navy-deep); color: #fff; border-radius: 999px; padding: 1px 7px; }
+.ig-sender .lw-mini { padding: .1rem .55rem; font-size: var(--fs-xs); }
+.ig-ign-sender { border-color: rgba(192,57,43,.4); color: #A5291D; }
+.ig-ign { flex: 0 0 auto; border: 0; background: none; color: var(--color-warm-gray); cursor: pointer; font-size: 12px; padding: 0 .35rem; line-height: 1; align-self: center; }
+.ig-ign:hover { color: #C0392B; }

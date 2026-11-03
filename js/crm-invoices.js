@@ -918,6 +918,11 @@ export function initInvoices(ctx) {
     scanning = false; G('search').disabled = false;
   });
 
+  /* ---- התעלמות: שולחים/מיילים שסומנו "לא חשבונית" — לא מוצגים שוב (נשמר בדפדפן הזה) ---- */
+  const IGN_KEY = 'hp_inv_ignore';
+  const loadIgn = () => { try { return Object.assign({ senders: [], msgs: [] }, JSON.parse(localStorage.getItem(IGN_KEY) || '{}')); } catch (e) { return { senders: [], msgs: [] }; } };
+  const saveIgn = (x) => { try { localStorage.setItem(IGN_KEY, JSON.stringify(x)); } catch (e) {} };
+  const senderKey = (from) => { const m = String(from || '').match(/<([^>]+)>/); return (m ? m[1] : String(from || '')).trim().toLowerCase(); };
   function itemHTML(r, k, isBody) {
     const dup = isBody ? alreadyPrinted(r.msgId) : alreadyImported(r.msgId, r.att.name);
     const other = !isBody && !dup && inOtherAcct(r);
@@ -928,28 +933,62 @@ export function initInvoices(ctx) {
       : `${isPdf({ contentType: r.att.mime, fileName: r.att.name }) ? '📄' : '🖼'} ${esc(r.att.name)} <small style="display:inline">${fmtSize(r.att.size)} · ${fmtDay(r.day)}</small>`;
     const sub = isBody ? `${esc(r.subject)}${r.snippet ? ' — ' + esc(r.snippet.slice(0, 90)) : ''}` : `${esc(fromName(r.from))} · ${esc(r.subject)}`;
     const tag = dup ? '<span class="pill received">יובא</span>' : other ? '<span class="pill pending" title="קובץ זהה כבר יובא מתיבה אחרת">קיים בתיבה אחרת</span>' : isBody ? '<span class="pill pending" title="אין קובץ מצורף — המייל עצמו יישמר כ-PDF">מייל→PDF</span>' : '';
-    return `<label class="lw-item ig-item${dup ? ' dup' : ''}" data-txt="${txt}" data-on="${on ? 1 : 0}"><input type="checkbox" data-${isBody ? 'b' : 'k'}="${k}"${dup ? ' disabled' : on ? ' checked' : ''}><span><b>${head}</b><small>${sub}</small></span>${tag}</label>`;
+    const ign = dup ? '' : `<button type="button" class="ig-ign" data-ign-msg="${esc(r.msgId)}" title="לא חשבונית — להסתיר את הפריט הזה גם בסריקות הבאות">✕</button>`;
+    return `<label class="lw-item ig-item${dup ? ' dup' : ''}" data-txt="${txt}" data-on="${on ? 1 : 0}"><input type="checkbox" data-${isBody ? 'b' : 'k'}="${k}"${dup ? ' disabled' : on ? ' checked' : ''}><span><b>${head}</b><small>${sub}</small></span>${tag}${ign}</label>`;
+  }
+  // קבוצה לפי שולח (לרשימות "אולי" ו"אחרים") — כותרת עם ספירה, "בחר הכל" ו"הסתר שולח"
+  function groupedHTML(arr) {
+    const groups = {};
+    arr.forEach((it) => { const k = senderKey(it.r.from) || '?'; (groups[k] = groups[k] || { name: fromName(it.r.from) || k, key: k, items: [] }).items.push(it); });
+    return Object.values(groups).sort((a, b) => b.items.length - a.items.length).map((g) =>
+      `<div class="ig-sender" data-sender="${esc(g.key)}"><b>${esc(g.name)}</b> <small dir="ltr">${esc(g.key)}</small> <span class="ig-sender-n">${g.items.length}</span>` +
+      `<button type="button" class="btn-ghost lw-mini" data-pick-sender="${esc(g.key)}">בחר הכל</button>` +
+      `<button type="button" class="btn-ghost lw-mini ig-ign-sender" data-ign-sender="${esc(g.key)}" title="כל המיילים מהשולח הזה אינם חשבוניות — להסתיר גם בסריקות הבאות">לא חשבוניות — הסתר שולח</button></div>` +
+      g.items.map((it) => itemHTML(it.r, it.k, it.body)).join('')).join('');
   }
   function renderGmailList(extra) {
+    const ign = loadIgn();
+    const isIgn = (it) => ign.msgs.includes(it.r.msgId) || ign.senders.includes(senderKey(it.r.from));
     const items = gmailResults.map((r, k) => ({ r, k, body: false })).concat(gmailBody.map((r, k) => ({ r, k, body: true })));
     const isDup = (it) => it.body ? alreadyPrinted(it.r.msgId) : alreadyImported(it.r.msgId, it.r.att.name);
-    const yes = items.filter((it) => !isDup(it) && likely(it.r) && !(it.body ? false : inOtherAcct(it.r)));
-    const maybe = items.filter((it) => !isDup(it) && !yes.includes(it));
     const dups = items.filter(isDup);
+    const live = items.filter((it) => !isDup(it));
+    const ignored = live.filter(isIgn);
+    const shown = live.filter((it) => !isIgn(it));
+    // שלוש דרגות: זוהו (ציון 2+) · אולי (ציון 1 — יש סימן חלש) · אחרים (0 ומטה — שום סימן לחשבונית; מוסתרים)
+    const yes = shown.filter((it) => likely(it.r) && !(it.body ? false : inOtherAcct(it.r)));
+    const maybe = shown.filter((it) => !yes.includes(it) && invoiceScore(it.r) >= 1);
+    const rest = shown.filter((it) => !yes.includes(it) && !maybe.includes(it));
     const byDate = (x, y) => (y.r.date || '').localeCompare(x.r.date || '');
-    const sec = (title, arr) => arr.length ? `<h5 class="ig-sec">${title} (${arr.length})</h5>` + arr.sort(byDate).map((it) => itemHTML(it.r, it.k, it.body)).join('') : '';
-    G('status').textContent = (items.length ? `זוהו ${yes.length} חשבוניות · עוד ${maybe.length} פריטים לבדיקה` + (dups.length ? ` · ${dups.length} כבר יובאו` : '') : 'לא נמצאו קבצים מצורפים או מיילים של חשבוניות.') + (extra || '');
+    [yes, maybe, rest, dups].forEach((a) => a.sort(byDate));
+    G('status').textContent = (items.length
+      ? `זוהו ${yes.length} חשבוניות` + (maybe.length ? ` · ${maybe.length} אולי` : '') + (rest.length ? ` · ${rest.length} אחרים (מוסתרים)` : '') + (ignored.length ? ` · ${ignored.length} הוסתרו על ידך` : '') + (dups.length ? ` · ${dups.length} כבר בארכיון` : '')
+      : 'לא נמצאו קבצים מצורפים או מיילים של חשבוניות.') + (extra || '');
+    const sec = (title, arr, opts) => {
+      if (!arr.length) return '';
+      opts = opts || {};
+      const id = 'igsec_' + opts.key;
+      return `<h5 class="ig-sec${opts.collapsed ? ' collapsible' : ''}" data-sec="${id}">${title} (${arr.length})${opts.collapsed ? ` <button type="button" class="btn-ghost lw-mini" data-toggle="${id}">${opts.open ? 'הסתרה' : 'הצגה'}</button>` : ''}${opts.hint ? `<small>${opts.hint}</small>` : ''}</h5>` +
+        `<div id="${id}" class="ig-secbody"${opts.collapsed && !opts.open ? ' hidden' : ''}>${opts.grouped ? groupedHTML(arr) : arr.map((it) => itemHTML(it.r, it.k, it.body)).join('')}</div>`;
+    };
     G('list').innerHTML =
-      sec('✅ זוהו כחשבוניות — מסומנות לייבוא', yes) +
-      sec('❓ לא בטוח — עברו ברשימה וסמנו מה שרלוונטי (קבצים מצורפים אחרים ומיילים עם מילות תשלום)', maybe) +
-      sec('כבר בארכיון', dups);
+      sec('✅ זוהו כחשבוניות — מסומנות לייבוא', yes, { key: 'yes' }) +
+      sec('❓ אולי — יש סימן חלש (מילת תשלום / שולח של חיובים). מקובץ לפי שולח', maybe, { key: 'maybe', collapsed: true, open: maybe.length <= 40, grouped: true, hint: 'סמנו מה שרלוונטי, או "הסתר שולח" למי שלא שולח חשבוניות' }) +
+      sec('📁 אחרים — קבצים בלי שום סימן לחשבונית (חוזים, מסמכים, תמונות)', rest, { key: 'rest', collapsed: true, open: false, grouped: true, hint: 'מוסתרים כברירת מחדל. פתחו רק אם נראה שחסרה חשבונית' }) +
+      sec('כבר בארכיון', dups, { key: 'dups', collapsed: true, open: false });
     const upd = () => { const n = G('list').querySelectorAll('input:checked:not(:disabled)').length; G('import').disabled = !n; G('import').textContent = 'ייבוא ' + (n ? n + ' פריטים' : 'נבחרים'); };
     G('list').querySelectorAll('input').forEach((c) => c.onchange = upd); upd();
-    const visible = () => Array.from(G('list').querySelectorAll('.ig-item')).filter((el) => !el.hidden);
-    const applyFilter = () => { const f = G('filter').value.trim().toLowerCase(); G('list').querySelectorAll('.ig-item').forEach((el) => { el.hidden = !!f && !(el.dataset.txt || '').includes(f); }); };
+    G('list').querySelectorAll('[data-toggle]').forEach((b) => b.onclick = () => { const el = $(b.dataset.toggle); el.hidden = !el.hidden; b.textContent = el.hidden ? 'הצגה' : 'הסתרה'; });
+    G('list').querySelectorAll('[data-pick-sender]').forEach((b) => b.onclick = () => { const grp = b.closest('.ig-sender'); let el = grp.nextElementSibling; while (el && !el.classList.contains('ig-sender')) { const c = el.querySelector('input'); if (c && !c.disabled && !el.hidden) c.checked = true; el = el.nextElementSibling; } upd(); });
+    G('list').querySelectorAll('[data-ign-sender]').forEach((b) => b.onclick = () => { const x = loadIgn(); if (!x.senders.includes(b.dataset.ignSender)) x.senders.push(b.dataset.ignSender); saveIgn(x); renderGmailList(extra); });
+    G('list').querySelectorAll('[data-ign-msg]').forEach((b) => b.onclick = (e) => { e.preventDefault(); const x = loadIgn(); if (!x.msgs.includes(b.dataset.ignMsg)) x.msgs.push(b.dataset.ignMsg); saveIgn(x); renderGmailList(extra); });
+    const visible = () => Array.from(G('list').querySelectorAll('.ig-item')).filter((el) => !el.hidden && !el.closest('.ig-secbody[hidden]'));
+    const applyFilter = () => { const f = G('filter').value.trim().toLowerCase(); G('list').querySelectorAll('.ig-item').forEach((el) => { el.hidden = !!f && !(el.dataset.txt || '').includes(f); }); if (f) G('list').querySelectorAll('.ig-secbody').forEach((el) => { el.hidden = false; }); };
     G('filter').oninput = applyFilter; applyFilter();
     G('all').onclick = () => { visible().forEach((el) => { const c = el.querySelector('input'); if (!c.disabled) c.checked = true; }); upd(); };
     G('none').onclick = () => { visible().forEach((el) => { el.querySelector('input').checked = false; }); upd(); };
+    G('unignore').hidden = !(ign.senders.length || ign.msgs.length);
+    G('unignore').onclick = () => { if (confirm('להחזיר את כל השולחים והפריטים שהוסתרו (' + ign.senders.length + ' שולחים, ' + ign.msgs.length + ' פריטים)?')) { saveIgn({ senders: [], msgs: [] }); renderGmailList(extra); } };
   }
 
   /* ---- שמירת מייל כ-PDF (html2canvas + jsPDF, נטענים לפי צורך) ---- */
@@ -1044,5 +1083,7 @@ export function initInvoices(ctx) {
     renderGmailList();
   });
 
+  // בדיקות מקומיות בלבד (harness): הזרקת תוצאות סריקה מדומות
+  if (/^(127\.0\.0\.1|localhost)$/.test(location.hostname)) window.__invTest = { setResults: (a, b) => { gmailResults = a || []; gmailBody = b || []; renderGmailList(); } };
   return { setOwner, refresh: render, detach, openNew: () => openModal(null) };
 }
