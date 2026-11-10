@@ -85,10 +85,14 @@
       const app = initializeApp(cfg.firebaseConfig);
       const db = getFirestore(app);
       const v = (id) => { const el = form.querySelector('#' + id); return el ? (el.value || '').trim() : ''; };
+      // שדות ייעודיים לדפי נחיתה (data-crm-extra="תווית") — מצורפים לפירוט הפנייה
+      const extras = Array.from(form.querySelectorAll('[data-crm-extra]'))
+        .map((el) => { const val = (el.value || '').trim(); return val ? el.getAttribute('data-crm-extra') + ': ' + val : ''; })
+        .filter(Boolean);
       await addDoc(collection(db, 'leads'), {
         name: v('name'), phone: v('phone'), email: v('email'),
         audience: v('audience'), topic: v('topic'), hasAsset: v('asset'),
-        message: v('message'),
+        message: [v('message')].concat(extras).filter(Boolean).join('\n'),
         source: 'website', status: 'new', notes: '',
         lang: document.documentElement.lang === 'en' ? 'en' : 'he',
         createdAt: serverTimestamp(),
