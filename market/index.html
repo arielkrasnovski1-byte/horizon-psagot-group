@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>הורייזון מרקט — מרכז ידע ונתוני שוק למניות וקריפטו</title>
+  <meta name="description" content="הורייזון מרקט — תוכן חינוכי על עולם המניות והקריפטו: מדריכים בשפה פשוטה, נתוני שוק חיים, חדשות ותובנות. התוכן אינו ייעוץ השקעות.">
+  <meta name="theme-color" content="#0A0E17">
+
+  <!-- Favicon (placeholder emoji עד ללוגו סופי) -->
+  <link rel="icon" type="image/svg+xml" href="/market/assets/favicon.svg">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="הורייזון מרקט — מרכז ידע ונתוני שוק למניות וקריפטו">
+  <meta property="og:description" content="תוכן חינוכי על עולם המניות והקריפטו: מדריכים, נתוני שוק חיים, חדשות ותובנות.">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="he_IL">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link rel="stylesheet" href="/market/css/main.css">
+  <link rel="stylesheet" href="/market/css/layout.css">
+  <link rel="stylesheet" href="/market/css/components.css">
+  <link rel="stylesheet" href="/market/css/animations.css">
+  <link rel="stylesheet" href="/market/css/enhance.css">
+  <link rel="canonical" href="https://horizonpsagotgroup.com/market/">
+  <link rel="alternate" hreflang="he" href="https://horizonpsagotgroup.com/market/">
+  <link rel="alternate" hreflang="en" href="https://horizonpsagotgroup.com/market/en/">
+  <link rel="alternate" hreflang="x-default" href="https://horizonpsagotgroup.com/market/">
+  <meta property="og:url" content="https://horizonpsagotgroup.com/market/">
+  <script defer src="/js/analytics.js"></script>
+</head>
+<body>
+
+  <a href="#main" class="skip-link">דלג לתוכן הראשי</a>
+
+  <!-- שכבת רקע aurora -->
+  <div class="bg-fx" aria-hidden="true">
+    <span class="orb orb-1"></span>
+    <span class="orb orb-2"></span>
+    <span class="orb orb-3"></span>
+  </div>
+
+  <!-- ============== HEADER ============== -->
+  <header class="site-header" role="banner">
+    <div class="container-wide header-inner">
+
+      <a href="/market/" class="site-logo" aria-label="הורייזון מרקט - דף בית">
+        <span class="logo-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#04120C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="17" cy="6" r="2.1" fill="#04120C" stroke="none"/>
+            <path d="M4 15l5-5 3 3 5-7"/>
+            <path d="M3 19h18"/>
+          </svg>
+        </span>
+        <span class="logo-wordmark">
+          <span class="main">Horizon Market</span>
+          <span class="sub">מניות · קריפטו</span>
+        </span>
+      </a>
+
+      <button class="menu-toggle" type="button" aria-label="פתח תפריט ניווט" aria-expanded="false" aria-controls="primary-nav">
+        <span class="menu-toggle-bar" aria-hidden="true"></span>
+        <span class="menu-toggle-bar" aria-hidden="true"></span>
+        <span class="menu-toggle-bar" aria-hidden="true"></span>
+      </button>
+
+      <nav class="site-nav" id="primary-nav" aria-label="ניווט ראשי" aria-hidden="true">
+        <ul class="nav-list">
+          <li><a class="nav-link is-active" href="#hero">בית</a></li>
+          <li><a class="nav-link" href="#markets">נתוני שוק</a></li>
+          <li><a class="nav-link" href="/market/news/">חדשות</a></li>
+          <li><a class="nav-link" href="#services">מה באתר</a></li>
+          <li><a class="nav-link" href="/market/about/">עלינו</a></li>
+          <li><a class="nav-link" href="#education">מרכז ידע</a></li>
+          <li><a class="nav-link" href="#insights">תובנות</a></li>
+        </ul>
+        <div class="nav-tools">
+          <a href="/market/en/" class="lang-toggle" aria-label="Switch to English" lang="en">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"/><path d="M2 12h20"/>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            </svg>
+            <span>EN</span>
+          </a>
+          <a href="#contact" class="btn btn-primary btn-sm nav-cta">יצירת קשר</a>
+        </div>
+      </nav>
+
+    </div>
+  </header>
+
+  <!-- ============== TICKER TAPE (חי) ============== -->
+  <div class="ticker-strip" aria-label="מחירי שוק חיים">
+    <span class="ticker-label" aria-hidden="true"><span class="pulse"></span>LIVE</span>
+    <div class="tradingview-widget-container">
+      <div class="tradingview-widget-container__widget"></div>
+      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+      {
+        "symbols": [
+          {"proName": "BINANCE:BTCUSDT", "title": "Bitcoin"},
+          {"proName": "BINANCE:ETHUSDT", "title": "Ethereum"},
+          {"proName": "BINANCE:SOLUSDT", "title": "Solana"},
+          {"proName": "NASDAQ:AAPL", "title": "Apple"},
+          {"proName": "NASDAQ:NVDA", "title": "Nvidia"},
+          {"proName": "NASDAQ:TSLA", "title": "Tesla"},
+          {"proName": "FOREXCOM:SPXUSD", "title": "S&P 500"},
+          {"proName": "TVC:GOLD", "title": "Gold"}
+        ],
+        "showSymbolLogo": true,
+        "isTransparent": false,
+        "displayMode": "adaptive",
+        "colorTheme": "dark",
+        "locale": "he_IL"
+      }
+      </script>
+    </div>
+  </div>
+
+  <main id="main">
+
+    <!-- ============== HERO ============== -->
+    <section class="hero" id="hero" aria-labelledby="hero-heading">
+      <div class="container">
+        <div class="hero-inner">
+          <span class="hero-eyebrow reveal"><span class="pulse" aria-hidden="true"></span>שווקים גלובליים · 24/7</span>
+          <h1 id="hero-heading" class="reveal" style="--reveal-delay:1">
+            להבין מניות וקריפטו,<br>
+            <span class="text-gradient">במקום אחד.</span>
+          </h1>
+          <p class="hero-lead reveal" style="--reveal-delay:2">
+            הורייזון מרקט הוא מרכז ידע לעולם המניות והנכסים הדיגיטליים —
+            מדריכים בשפה פשוטה, נתוני שוק חיים, חדשות ותובנות. תוכן חינוכי בלבד.
+          </p>
+          <div class="hero-ctas reveal" style="--reveal-delay:3">
+            <a href="#education" class="btn btn-primary btn-lg">למרכז הידע</a>
+            <a href="#markets" class="btn btn-outline btn-lg">צפייה בנתוני השוק</a>
+          </div>
+
+          <div class="asset-chips reveal" style="--reveal-delay:4">
+            <span class="chip"><span class="dot up"></span>Bitcoin</span>
+            <span class="chip"><span class="dot up"></span>Ethereum</span>
+            <span class="chip"><span class="dot down"></span>Solana</span>
+            <span class="chip"><span class="dot up"></span>S&amp;P 500</span>
+            <span class="chip"><span class="dot up"></span>Nvidia</span>
+            <span class="chip"><span class="dot down"></span>Gold</span>
+          </div>
+
+          <div class="hero-stats reveal" style="--reveal-delay:5">
+            <div class="hero-stat"><span class="num">מניות + קריפטו</span><span class="label">שני עולמות, מקום אחד</span></div>
+            <div class="hero-stat"><span class="num">24/7</span><span class="label">נתוני שוק חיים</span></div>
+            <div class="hero-stat"><span class="num">בגובה העיניים</span><span class="label">הסברים פשוטים, בלי ז'רגון</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== נתוני שוק חיים ============== -->
+    <section class="section section-alt" id="markets" aria-labelledby="markets-heading">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="section-eyebrow">Live Markets</span>
+          <h2 id="markets-heading">נתוני שוק בזמן אמת</h2>
+          <p>תמונת מצב חיה של הקריפטו והשווקים הגלובליים — כך שתמיד תדעו איפה השוק עומד.</p>
+        </div>
+
+        <div class="market-stack reveal" style="--reveal-delay:1">
+          <!-- כרטיסי נכס חיים (CoinGecko) -->
+          <div class="quote-row" id="market-quotes" aria-label="מחירי קריפטו חיים"></div>
+
+          <!-- גרף שטח אלגנטי -->
+          <div class="market-frame market-frame-lg">
+            <div class="frame-head">
+              <span class="frame-title">גרף חי</span>
+              <span class="frame-sub">קריפטו · מניות · מדדים · זהב — בחרו נכס</span>
+            </div>
+            <div class="tradingview-widget-container" style="height:480px;">
+              <div class="tradingview-widget-container__widget" style="height:100%;"></div>
+              <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>
+              {
+                "symbols": [
+                  ["Bitcoin", "BINANCE:BTCUSDT|1D"],
+                  ["Ethereum", "BINANCE:ETHUSDT|1D"],
+                  ["S&P 500", "FOREXCOM:SPXUSD|1D"],
+                  ["Nvidia", "NASDAQ:NVDA|1D"],
+                  ["Gold", "TVC:GOLD|1D"]
+                ],
+                "chartOnly": false,
+                "width": "100%",
+                "height": "100%",
+                "locale": "he_IL",
+                "colorTheme": "dark",
+                "autosize": true,
+                "showVolume": false,
+                "showMA": false,
+                "hideDateRanges": false,
+                "hideMarketStatus": false,
+                "hideSymbolLogo": false,
+                "scalePosition": "right",
+                "scaleMode": "Normal",
+                "fontSize": "11",
+                "noTimeScale": false,
+                "valuesTracking": "1",
+                "changeMode": "price-and-percent",
+                "chartType": "area",
+                "lineColor": "#16E39B",
+                "topColor": "rgba(22, 227, 155, 0.28)",
+                "bottomColor": "rgba(22, 227, 155, 0)",
+                "lineWidth": 2,
+                "backgroundColor": "rgba(17, 24, 39, 1)",
+                "gridLineColor": "rgba(255, 255, 255, 0.06)"
+              }
+              </script>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== שירותים ============== -->
+    <section class="section" id="services" aria-labelledby="services-heading">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="section-eyebrow">What's here</span>
+          <h2 id="services-heading">מה תמצאו כאן</h2>
+          <p>כלים ותוכן שעוזרים להבין את השווקים — בלי המלצות ובלי הבטחות.</p>
+        </div>
+
+        <div class="service-grid">
+          <article class="card service-card spotlight reveal">
+            <span class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="9"/></svg>
+            </span>
+            <h3>יסודות ההשקעה</h3>
+            <p>מושגי היסוד שכדאי להכיר: טווח השקעה, רמת סיכון ומה ההבדל בין מניות לקריפטו.</p>
+            <a href="#education" class="card-link">למרכז הידע
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            </a>
+          </article>
+
+          <article class="card service-card spotlight reveal" style="--reveal-delay:1">
+            <span class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>
+            </span>
+            <h3>ניתוח שוק ותובנות</h3>
+            <p>מגמות, מטבעות ומניות — נתונים וניתוחים שמוסברים בשפה ברורה, לצורכי לימוד בלבד.</p>
+            <a href="#insights" class="card-link">לתובנות שלנו
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            </a>
+          </article>
+
+          <article class="card service-card spotlight reveal" style="--reveal-delay:2">
+            <span class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+            </span>
+            <h3>עקרונות בניית תיק</h3>
+            <p>מה זה פיזור, איך חושבים על איזון בין נכסים ולמה זה חשוב — הסבר עקרוני, לא המלצה אישית.</p>
+            <a href="/market/articles/portfolio-diversification/" class="card-link">למדריך הפיזור
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            </a>
+          </article>
+
+          <article class="card service-card spotlight reveal" style="--reveal-delay:3">
+            <span class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </span>
+            <h3>ניהול סיכונים</h3>
+            <p>להבין את הסיכון לפני הכול — תנודתיות, חשיפה ופסיכולוגיה של השוק.</p>
+            <a href="/market/articles/fear-and-greed/" class="card-link">לקריאה
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            </a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== למה אנחנו ============== -->
+    <section class="section section-alt" id="why" aria-labelledby="why-heading">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="section-eyebrow">Why Horizon</span>
+          <h2 id="why-heading">למה הורייזון מרקט</h2>
+        </div>
+        <div class="bento">
+          <article class="card spotlight b-lg reveal">
+            <div>
+              <span class="bento-eyebrow">01 · CORE</span>
+              <div class="bento-big text-gradient">ראייה משולבת</div>
+              <h4>מניות וקריפטו תחת גג אחד</h4>
+              <p>במקום להתפזר בין אתרים ופלטפורמות — מקום אחד שמסביר את שני העולמות, עם נתונים חיים, חדשות ומדריכים זה לצד זה.</p>
+            </div>
+            <div class="b-visual" aria-hidden="true"></div>
+          </article>
+
+          <article class="card spotlight reveal" style="--reveal-delay:1">
+            <span class="bento-eyebrow">02</span>
+            <h4>שקיפות מלאה</h4>
+            <p>בלי הבטחות שווא. מסבירים כל צעד, כולל הסיכונים, בשפה ברורה.</p>
+          </article>
+
+          <article class="card spotlight reveal" style="--reveal-delay:2">
+            <span class="bento-eyebrow">03</span>
+            <h4>מבוסס נתונים</h4>
+            <p>תוכן שנשען על מחקר ונתונים בזמן אמת — לא על רעש רשתות.</p>
+          </article>
+
+          <article class="card spotlight b-wide reveal" style="--reveal-delay:3">
+            <span class="bento-eyebrow">04</span>
+            <h4>בגובה העיניים</h4>
+            <p>הסברים פשוטים, בלי ז'רגון ובלי הנחות מוקדמות — כדי שתוכלו ללמוד בקצב שלכם ולקבל החלטות בעצמכם.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== איך זה עובד ============== -->
+    <section class="section" id="how" aria-labelledby="how-heading">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="section-eyebrow">Process</span>
+          <h2 id="how-heading">איך זה עובד</h2>
+          <p>ארבעה צעדים פשוטים — מהמושגים הראשונים ועד מעקב שוטף אחרי השוק.</p>
+        </div>
+        <div class="steps">
+          <div class="step reveal">
+            <span class="step-num">1</span>
+            <h4>מתחילים מהבסיס</h4>
+            <p>קוראים את המדריכים למתחילים ומכירים את מושגי היסוד.</p>
+          </div>
+          <div class="step reveal" style="--reveal-delay:1">
+            <span class="step-num">2</span>
+            <h4>עוקבים אחרי השוק</h4>
+            <p>נתוני שוק חיים, חדשות ויומן כלכלי — במקום אחד.</p>
+          </div>
+          <div class="step reveal" style="--reveal-delay:2">
+            <span class="step-num">3</span>
+            <h4>מעמיקים</h4>
+            <p>תובנות וניתוחים על מגמות, סיכונים ופסיכולוגיה של השוק.</p>
+          </div>
+          <div class="step reveal" style="--reveal-delay:3">
+            <span class="step-num">4</span>
+            <h4>נשארים מעודכנים</h4>
+            <p>תוכן חדש מתעדכן באתר באופן שוטף.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== מרכז ידע ============== -->
+    <section class="section section-alt" id="education" aria-labelledby="education-heading">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="section-eyebrow">Knowledge</span>
+          <h2 id="education-heading">מרכז הידע</h2>
+          <p>מדריכים והסברים שיעזרו לכם להבין את השווקים — לפני שאתם משקיעים.</p>
+        </div>
+
+        <div class="insight-grid">
+          <article class="card insight-card spotlight reveal">
+            <div class="meta"><span class="badge badge-accent">מדריך למתחילים</span><span>7 דק' קריאה</span></div>
+            <h3><a href="/market/articles/what-is-bitcoin/">מה זה ביטקוין ואיך הוא עובד</a></h3>
+            <p>רשת מבוזרת, בלוקצ'יין וארנקים דיגיטליים — מסבירים בשפה פשוטה מה עומד מאחורי המטבע הדיגיטלי הראשון, איך שומרים עליו בבטחה ולמה הוא שינה את כללי המשחק.</p>
+            <a class="read-more" href="/market/articles/what-is-bitcoin/">קראו עוד ←</a>
+          </article>
+          <article class="card insight-card spotlight reveal" style="--reveal-delay:1">
+            <div class="meta"><span class="badge badge-accent">מניות</span><span>6 דק' קריאה</span></div>
+            <h3><a href="/market/articles/stock-index-etf/">מניה, מדד ותעודת סל — מה ההבדל?</a></h3>
+            <p>לפני שקונים, כדאי להבין מה בדיוק קונים. איך נראית בעלות במניה בודדת, מה זה מדד כמו S&P 500, ולמה תעודות הסל הפכו לכלי המרכזי של משקיעים לטווח ארוך.</p>
+            <a class="read-more" href="/market/articles/stock-index-etf/">קראו עוד ←</a>
+          </article>
+          <article class="card insight-card spotlight reveal" style="--reveal-delay:2">
+            <div class="meta"><span class="badge badge-accent">ניהול סיכונים</span><span>5 דק' קריאה</span></div>
+            <h3><a href="/market/articles/portfolio-diversification/">פיזור תיק — כלל הזהב של המשקיע</a></h3>
+            <p>למה לא נכון לרכז את כל ההון בנכס אחד. עקרונות הפיזור בין מניות, קריפטו ומגזרים שונים — ואיך פיזור חכם מקטין סיכון בלי לוותר על פוטנציאל התשואה.</p>
+            <a class="read-more" href="/market/articles/portfolio-diversification/">קראו עוד ←</a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== תובנות (CMS בהמשך) ============== -->
+    <section class="section" id="insights" aria-labelledby="insights-heading">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="section-eyebrow">Market Insights</span>
+          <h2 id="insights-heading">תובנות שוק</h2>
+          <p>נקודות מבט וניתוחים מהצוות שלנו — שיתעדכנו כאן באופן שוטף.</p>
+        </div>
+
+        <div class="insight-grid">
+          <article class="card insight-card spotlight reveal">
+            <div class="meta"><span class="badge badge-violet">גישה</span><span>נקודת מבט</span></div>
+            <h3><a href="/market/articles/time-in-market/">"זמן בשוק" מנצח "תזמון השוק"</a></h3>
+            <p>הניסיון לתפוס בדיוק את התחתית ואת הפסגה כמעט תמיד נכשל. מסבירים למה השקעה עקבית ומתמשכת מביסה לאורך זמן מסחר שמבוסס על ניחוש הכיוון הבא.</p>
+            <a class="read-more" href="/market/articles/time-in-market/">קראו עוד ←</a>
+          </article>
+          <article class="card insight-card spotlight reveal" style="--reveal-delay:1">
+            <div class="meta"><span class="badge badge-violet">פסיכולוגיה</span><span>ניתוח</span></div>
+            <h3><a href="/market/articles/fear-and-greed/">פחד וחמדנות: איך רגשות מזיזים מחירים</a></h3>
+            <p>השוק נע כל הזמן בין שני קצוות רגשיים. איך מזהים מתי ההמון פועל מתוך פאניקה או מתוך אופוריה — ואיך שומרים על ראש קר ולא נסחפים אחריו בהחלטות שלכם.</p>
+            <a class="read-more" href="/market/articles/fear-and-greed/">קראו עוד ←</a>
+          </article>
+          <article class="card insight-card spotlight reveal" style="--reveal-delay:2">
+            <div class="meta"><span class="badge badge-violet">קריפטו</span><span>ניתוח</span></div>
+            <h3><a href="/market/articles/crypto-market-cycles/">מה אפשר ללמוד ממחזורי השוק של הקריפטו</a></h3>
+            <p>עליות חדות, מפולות והתאוששויות — לשוק הקריפטו יש דפוס מחזורי מוכר. סוקרים את המחזורים ההיסטוריים ומה הם מלמדים על ניהול ציפיות וסבלנות.</p>
+            <a class="read-more" href="/market/articles/crypto-market-cycles/">קראו עוד ←</a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== שאלות נפוצות ============== -->
+    <section class="section section-alt" id="faq" aria-labelledby="faq-heading">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="section-eyebrow">FAQ</span>
+          <h2 id="faq-heading">שאלות נפוצות</h2>
+          <p>כמה מהדברים שהכי שואלים אותנו.</p>
+        </div>
+        <div class="faq-list reveal">
+          <details class="faq-item">
+            <summary>למי האתר מתאים?</summary>
+            <div class="faq-body">למי שרוצה להבין את עולם ההשקעות במניות או בקריפטו בצורה מסודרת — בין אם אתם בתחילת הדרך ובין אם כבר משקיעים ורוצים להעמיק ולקבל ראייה רחבה יותר.</div>
+          </details>
+          <details class="faq-item">
+            <summary>אני מתחיל לגמרי, זה בשבילי?</summary>
+            <div class="faq-body">בהחלט. אנחנו מתחילים מהבסיס, בשפה פשוטה, ובקצב שנוח לכם. מרכז הידע שלנו נבנה בדיוק בשביל להסביר את המושגים לפני שמקבלים החלטות.</div>
+          </details>
+          <details class="faq-item">
+            <summary>התוכן עוסק במניות, בקריפטו או בשניהם?</summary>
+            <div class="faq-body">שניהם. היתרון של הורייזון מרקט הוא בדיוק הראייה המשולבת — התבוננות על שני העולמות יחד, במקום להתייחס לכל אחד בנפרד.</div>
+          </details>
+          <details class="faq-item">
+            <summary>השקעה במניות ובקריפטו זה לא מסוכן?</summary>
+            <div class="faq-body">כל השקעה כרוכה בסיכון, וקריפטו במיוחד יכול להיות תנודתי. אנחנו לא מבטיחים רווחים ולא ממליצים על השקעות — התוכן נועד לעזור לכם להבין את הסיכונים. שקיפות מלאה היא עיקרון מנחה אצלנו.</div>
+          </details>
+          <details class="faq-item">
+            <summary>האם אתם נותנים ייעוץ השקעות?</summary>
+            <div class="faq-body">לא. הורייזון מרקט הוא אתר תוכן חינוכי. אין באתר ייעוץ השקעות, שיווק השקעות או המלצה לפעולה, והתוכן אינו מחליף ייעוץ אישי מבעל רישיון. יש לכם שאלה על התכנים? אפשר לפנות אלינו בטופס למטה או בוואטסאפ.</div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== יצירת קשר ============== -->
+    <section class="section" id="contact" aria-labelledby="contact-heading">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="section-eyebrow">Contact</span>
+          <h2 id="contact-heading">רוצים לשאול משהו?</h2>
+          <p>יש לכם שאלה על התכנים או רוצים לשמוע עוד על הורייזון מרקט? השאירו פרטים ונחזור אליכם.</p>
+        </div>
+
+        <div class="contact-grid reveal">
+          <div class="contact-info">
+            <h3>בואו נדבר</h3>
+            <p class="lead">נשמח לשמוע מכם — שאלות, הצעות לנושאים או כל דבר אחר.</p>
+            <div class="contact-methods">
+              <a class="contact-method" href="https://wa.me/972549665999" target="_blank" rel="noopener">
+                <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2z"/></svg></span>
+                <span><b>וואטסאפ</b><span>054-966-5999</span></span>
+              </a>
+              <a class="contact-method" href="mailto:office@horizon-psagot-group.com">
+                <span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></span>
+                <span><b>אימייל</b><span>office@horizon-psagot-group.com</span></span>
+              </a>
+            </div>
+          </div>
+
+          <form class="card contact-form" name="contact">
+            <p style="display:none;"><label>אל תמלאו: <input name="bot-field"></label></p>
+            <div class="form-row">
+              <div class="field">
+                <label for="name">שם מלא</label>
+                <input id="name" name="name" type="text" required placeholder="השם שלכם">
+              </div>
+              <div class="field">
+                <label for="phone">טלפון</label>
+                <input id="phone" name="phone" type="tel" required placeholder="050-0000000">
+              </div>
+            </div>
+            <div class="field">
+              <label for="email">אימייל</label>
+              <input id="email" name="email" type="email" placeholder="you@example.com">
+            </div>
+            <div class="field">
+              <label for="interest">מה מעניין אתכם?</label>
+              <select id="interest" name="interest">
+                <option>מניות</option>
+                <option>קריפטו</option>
+                <option>שניהם</option>
+                <option>עדיין לא בטוח/ה</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="message">הודעה (אופציונלי)</label>
+              <textarea id="message" name="message" placeholder="ספרו לנו קצת..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg" style="width:100%;">שליחה</button>
+            <p class="form-note">* הפרטים שלכם נשמרים אצלנו בלבד.</p>
+          </form>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============== FOOTER ============== -->
+  <footer class="site-footer" role="contentinfo">
+    <div class="container-wide">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <span class="logo-wordmark">
+            <span class="main">Horizon Market</span>
+            <span class="sub">מניות · קריפטו</span>
+          </span>
+          <p class="footer-about">תוכן חינוכי על עולם המניות והנכסים הדיגיטליים — מדריכים, נתוני שוק ותובנות.</p>
+          <div class="footer-social">
+            <a href="https://www.instagram.com/horizon.psagot.group/" target="_blank" rel="noopener" aria-label="אינסטגרם"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></a>
+            <a href="https://www.facebook.com/profile.php?id=61588632111030" target="_blank" rel="noopener" aria-label="פייסבוק"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
+            <a href="https://wa.me/972549665999" aria-label="וואטסאפ"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-1.7-.1-.4-.1-.9-.3-1.6-.6-2.8-1.2-4.6-4-4.7-4.2-.1-.2-1.1-1.4-1.1-2.7s.7-1.9 .9-2.2c.2-.2.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 1.9c.1.2 0 .4-.1.5l-.4.5c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.3 2.4 1.5.2.1.4 0 .5-.1l.7-.8c.2-.2.4-.2.6-.1l1.8.9c.2.1.4.2.5.3.1.3.1.7-.1 1.2z"/></svg></a>
+          </div>
+        </div>
+
+        <div class="footer-col">
+          <h4>ניווט</h4>
+          <ul>
+            <li><a href="#markets">נתוני שוק</a></li>
+            <li><a href="#services">מה באתר</a></li>
+            <li><a href="#how">איך זה עובד</a></li>
+            <li><a href="#education">מרכז ידע</a></li>
+            <li><a href="#faq">שאלות נפוצות</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>מה באתר</h4>
+          <ul>
+            <li><a href="#services">יסודות ההשקעה</a></li>
+            <li><a href="#services">ניתוח שוק</a></li>
+            <li><a href="#services">עקרונות בניית תיק</a></li>
+            <li><a href="#services">ניהול סיכונים</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>יצירת קשר</h4>
+          <ul>
+            <li><a href="mailto:office@horizon-psagot-group.com">office@horizon-psagot-group.com</a></li>
+            <li><a href="https://wa.me/972549665999">054-966-5999</a></li>
+            <li><a href="/market/en/">English</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <p class="footer-disclaimer">
+        <strong>גילוי נאות:</strong> האמור באתר אינו מהווה ייעוץ השקעות, שיווק השקעות או המלצה לביצוע פעולה כלשהי,
+        ואינו מחליף ייעוץ אישי המתחשב בנתונים ובצרכים של כל אדם. השקעה במניות ובנכסים דיגיטליים כרוכה בסיכון,
+        לרבות אובדן מלוא ההשקעה. ביצועי עבר אינם מעידים על תשואה עתידית.
+      </p>
+
+      <div class="footer-bottom">
+        <p>© <span id="current-year">2026</span> הורייזון מרקט. כל הזכויות שמורות.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/market/js/main.js" defer></script>
+  <script src="/market/js/fx.js" defer></script>
+  <script src="/market/js/market.js" defer></script>
+  <script src="/market/js/lead.js" defer></script>
+</body>
+</html>

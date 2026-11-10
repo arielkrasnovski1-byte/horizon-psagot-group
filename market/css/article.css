@@ -1,0 +1,102 @@
+/* ============================================================
+   HORIZON MARKETS — article.css
+   עמוד מאמר: hero + טיפוגרפיית תוכן קריאה
+   ============================================================ */
+
+.article-hero {
+  padding-block: var(--space-2xl) var(--space-lg);
+  position: relative;
+}
+.article-hero .container-narrow { position: relative; z-index: 1; }
+.article-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-md);
+}
+.article-back:hover { color: var(--accent); }
+.article-back svg { width: 16px; height: 16px; }
+
+.article-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+  margin-bottom: var(--space-md);
+}
+.article-hero h1 {
+  font-size: var(--fs-4xl);
+  margin-bottom: var(--space-md);
+}
+.article-hero .article-dek {
+  font-size: var(--fs-lg);
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+/* גוף המאמר */
+.article-body { padding-block: var(--space-lg) var(--space-2xl); }
+.article-body .container-narrow { font-size: var(--fs-lg); }
+
+.article-body h2 {
+  font-size: var(--fs-2xl);
+  margin-top: var(--space-xl);
+  margin-bottom: var(--space-sm);
+  scroll-margin-top: 90px;
+}
+.article-body h2:first-child { margin-top: 0; }
+.article-body h3 {
+  font-size: var(--fs-xl);
+  margin-top: var(--space-lg);
+  margin-bottom: var(--space-xs);
+}
+.article-body p {
+  color: var(--text-secondary);
+  line-height: 1.85;
+  margin-bottom: var(--space-md);
+}
+.article-body .content-list { margin-bottom: var(--space-md); }
+.article-body .content-list li { font-size: var(--fs-base); line-height: 1.7; }
+
+.article-body blockquote {
+  margin: var(--space-lg) 0;
+  padding: var(--space-md) var(--space-lg);
+  border-inline-start: 3px solid var(--accent);
+  background: rgba(22,227,155,0.06);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  font-size: var(--fs-lg);
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* פס תחתון: חזרה + CTA */
+.article-foot {
+  margin-top: var(--space-xl);
+  padding-top: var(--space-lg);
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+.article-disclaimer {
+  margin-top: var(--space-lg);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+  .article-hero { padding-block: var(--space-xl) var(--space-md); }
+  .article-body .container-narrow { font-size: var(--fs-base); }
+}

@@ -1,0 +1,324 @@
+/* ============================================================
+   HORIZON MARKETS — enhance.css
+   שכבת "חדשנות": aurora, זכוכית, זוהר, זרקור, מיקרו-אינטראקציות
+   ============================================================ */
+
+/* ============== רקע AURORA גלובלי ============== */
+.bg-fx {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.bg-fx .orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.45;
+  will-change: transform;
+}
+.bg-fx .orb-1 {
+  width: 620px; height: 620px;
+  top: -180px; inset-inline-start: -120px;
+  background: radial-gradient(circle, rgba(22,227,155,0.55) 0%, transparent 70%);
+  animation: drift-1 22s ease-in-out infinite;
+}
+.bg-fx .orb-2 {
+  width: 560px; height: 560px;
+  top: 20%; inset-inline-end: -160px;
+  background: radial-gradient(circle, rgba(124,108,255,0.5) 0%, transparent 70%);
+  animation: drift-2 26s ease-in-out infinite;
+}
+.bg-fx .orb-3 {
+  width: 500px; height: 500px;
+  bottom: -160px; inset-inline-start: 30%;
+  background: radial-gradient(circle, rgba(22,227,155,0.32) 0%, transparent 70%);
+  animation: drift-3 30s ease-in-out infinite;
+}
+/* גרעין/רעש עדין מעל הכל */
+.bg-fx::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.03;
+  mix-blend-mode: overlay;
+}
+/* התוכן מעל הרקע */
+.site-header, main, .site-footer { position: relative; z-index: 1; }
+
+@keyframes drift-1 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(60px,50px) scale(1.1)} }
+@keyframes drift-2 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(-50px,40px) scale(1.12)} }
+@keyframes drift-3 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(40px,-40px) scale(1.08)} }
+
+
+/* ============== כותרת עם גרדיאנט מונפש ============== */
+.text-gradient {
+  background: linear-gradient(100deg, var(--accent-bright) 0%, var(--violet-bright) 30%, var(--accent) 55%, var(--accent-bright) 100%);
+  background-size: 220% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: gradient-pan 6s linear infinite;
+}
+@keyframes gradient-pan { to { background-position: 220% center; } }
+
+
+/* ============== ZAP: כרטיסי זכוכית + זרקור ============== */
+.card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.015));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--border);
+}
+/* מסגרת hairline עליונה זוהרת */
+.card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(140deg, rgba(255,255,255,0.18), transparent 40%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0.7;
+}
+/* אפקט זרקור שעוקב אחרי העכבר */
+.spotlight { position: relative; }
+.spotlight::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(240px circle at var(--mx, 50%) var(--my, 0%),
+              rgba(22,227,155,0.16), transparent 60%);
+  opacity: 0;
+  transition: opacity var(--transition-base);
+  pointer-events: none;
+  z-index: 0;
+}
+.spotlight:hover::before { opacity: 1; }
+.spotlight > * { position: relative; z-index: 1; }
+
+
+/* ============== מסגרת גרדיאנט זוהרת (לאלמנט מודגש) ============== */
+.gradient-border {
+  position: relative;
+  border: none !important;
+}
+.gradient-border::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(from var(--angle, 0deg), var(--accent), var(--violet), var(--accent-bright), var(--accent));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: spin-border 6s linear infinite;
+  z-index: 0;
+}
+@property --angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+@keyframes spin-border { to { --angle: 360deg; } }
+
+
+/* ============== כפתור עם ברק חולף ============== */
+.btn-primary { position: relative; overflow: hidden; }
+.btn-primary::after {
+  content: "";
+  position: absolute;
+  top: 0; inset-inline-start: -120%;
+  width: 60%; height: 100%;
+  background: linear-gradient(120deg, transparent, rgba(255,255,255,0.5), transparent);
+  transform: skewX(-20deg);
+  transition: inset-inline-start 0.6s ease;
+}
+.btn-primary:hover::after { inset-inline-start: 130%; }
+
+
+/* ============== צ'יפים של נכסים (ב-Hero) ============== */
+.asset-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs);
+  justify-content: center;
+  margin-top: var(--space-lg);
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  color: var(--text-secondary);
+  padding: 7px 13px;
+  border-radius: var(--radius-full);
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(8px);
+  transition: transform var(--transition-base), border-color var(--transition-base), color var(--transition-base);
+}
+.chip:hover { transform: translateY(-2px); border-color: var(--accent); color: var(--text-primary); }
+.chip .dot { width: 7px; height: 7px; border-radius: 50%; }
+.chip .dot.up { background: var(--up); box-shadow: 0 0 8px var(--up); }
+.chip .dot.down { background: var(--down); box-shadow: 0 0 8px var(--down); }
+
+
+/* ============== סטטיסטיקות כזכוכית ============== */
+.hero-stats {
+  gap: var(--space-md) !important;
+}
+.hero-stat {
+  padding: var(--space-md) var(--space-lg);
+  border-radius: var(--radius-lg);
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(8px);
+  transition: transform var(--transition-base), border-color var(--transition-base);
+}
+.hero-stat:hover { transform: translateY(-3px); border-color: var(--border-strong); }
+
+
+/* ============== BENTO GRID (למה אנחנו) ============== */
+.bento {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-auto-rows: 1fr;
+  gap: var(--space-md);
+}
+.bento .card { display: flex; flex-direction: column; justify-content: space-between; }
+.bento .b-lg { grid-column: span 2; grid-row: span 2; }
+.bento .b-wide { grid-column: span 2; }
+.bento .bento-eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--accent);
+  letter-spacing: 0.08em;
+  margin-bottom: var(--space-sm);
+}
+.bento .bento-big {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text-primary);
+  margin-bottom: var(--space-2xs);
+}
+.bento h4 { font-size: var(--fs-lg); margin-bottom: 6px; }
+.bento p { font-size: var(--fs-sm); margin: 0; }
+.bento .b-visual {
+  margin-top: var(--space-md);
+  height: 4px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--accent), var(--violet));
+  opacity: 0.6;
+}
+
+@media (max-width: 900px) {
+  .bento { grid-template-columns: repeat(2, 1fr); }
+  .bento .b-lg { grid-column: span 2; grid-row: span 1; }
+}
+@media (max-width: 560px) {
+  .bento { grid-template-columns: 1fr; }
+  .bento .b-lg, .bento .b-wide { grid-column: span 1; }
+}
+
+
+/* ============== "איך זה עובד" — צעדים ============== */
+.steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-md);
+  counter-reset: step;
+  position: relative;
+}
+.step {
+  position: relative;
+  padding: var(--space-lg) var(--space-md);
+  border-radius: var(--radius-lg);
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(8px);
+}
+.step .step-num {
+  display: inline-grid;
+  place-items: center;
+  width: 46px; height: 46px;
+  border-radius: 14px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-lg);
+  color: #04120C;
+  background: var(--gradient-accent);
+  box-shadow: 0 0 24px var(--accent-glow);
+  margin-bottom: var(--space-md);
+}
+.step h4 { font-size: var(--fs-lg); margin-bottom: 6px; }
+.step p { font-size: var(--fs-sm); margin: 0; }
+/* קו מחבר בין הצעדים */
+.step:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: calc(var(--space-lg) + 23px);
+  inset-inline-start: -webkit-calc(-1 * var(--space-md) / 2);
+  inset-inline-start: calc(-1 * var(--space-md) / 2);
+  width: var(--space-md);
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), transparent);
+  opacity: 0.4;
+}
+@media (max-width: 860px) {
+  .steps { grid-template-columns: repeat(2, 1fr); }
+  .step::after { display: none; }
+}
+@media (max-width: 480px) { .steps { grid-template-columns: 1fr; } }
+
+
+/* ============== מסגרת שוק פרימיום ============== */
+.market-frame {
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.frame-head .frame-title { position: relative; padding-inline-start: 16px; }
+.frame-head .frame-title::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0; top: 50%;
+  transform: translateY(-50%);
+  width: 8px; height: 8px;
+  border-radius: 2px;
+  background: var(--gradient-accent);
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+
+/* ============== מרקיזה עדינה (סרגל ערכים) ============== */
+.trust-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  justify-content: center;
+  flex-wrap: wrap;
+  padding-block: var(--space-md);
+  opacity: 0.7;
+}
+.trust-bar span {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+
+/* ============== reduce motion ============== */
+@media (prefers-reduced-motion: reduce) {
+  .bg-fx .orb, .text-gradient, .gradient-border::before { animation: none !important; }
+}
