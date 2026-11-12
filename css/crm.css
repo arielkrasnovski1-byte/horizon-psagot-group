@@ -713,3 +713,23 @@ tr.inv-row.inv-selected td { background: rgba(201,164,122,.14); }
 .ig-ign-sender { border-color: rgba(192,57,43,.4); color: #A5291D; }
 .ig-ign { flex: 0 0 auto; border: 0; background: none; color: var(--color-warm-gray); cursor: pointer; font-size: 12px; padding: 0 .35rem; line-height: 1; align-self: center; }
 .ig-ign:hover { color: #C0392B; }
+
+/* ---- תפריט הלשוניות בצד (מחשב בלבד; בנייד נשאר שורה נגללת) ---- */
+.crm-tabs .nav-title { display: none; }
+@media (min-width: 761px) {
+  #app-view { display: grid; grid-template-columns: 200px minmax(0, 1fr); grid-template-rows: auto 1fr; min-height: 100vh; }
+  #app-view > .crm-topbar { grid-column: 1 / -1; grid-row: 1; height: 64px; }
+  #app-view > .crm-tabs {
+    grid-column: 1; grid-row: 2; align-self: start; position: sticky; top: 64px; height: calc(100vh - 64px); overflow-y: auto;
+    flex-direction: column; gap: 2px; padding: var(--space-sm) var(--space-2xs);
+  }
+  #app-view > .crm-tabs .crm-tab {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; text-align: start;
+    border-bottom: 0; border-inline-start: 3px solid transparent; border-radius: var(--radius-sm); padding: 10px var(--space-sm);
+  }
+  #app-view > .crm-tabs .crm-tab:hover { background: rgba(255,255,255,0.07); }
+  #app-view > .crm-tabs .crm-tab.active { background: rgba(255,255,255,0.1); border-inline-start-color: var(--color-rose-gold); }
+  #app-view > .crm-tabs .nav-title { display: block; font-size: var(--fs-xs); font-weight: 600; letter-spacing: .06em; color: rgba(255,255,255,0.45); padding: var(--space-sm) var(--space-sm) 6px; }
+  #app-view > .crm-tabs .nav-title:first-child { padding-top: 4px; }
+  #app-view > .crm-main { grid-column: 2; grid-row: 2; }
+}

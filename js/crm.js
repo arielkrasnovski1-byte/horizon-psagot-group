@@ -134,6 +134,8 @@ async function boot() {
         const btn = document.querySelector('.crm-tab[data-tab="' + k + '"]'); if (btn) btn.hidden = !canContent;
       });
       $('tab-users').hidden = !(isOwner || !ownerExists);
+      $('nav-title-content').hidden = !canContent;
+      $('nav-title-admin').hidden = $('tab-users').hidden;
       // חשבוניות: בעלים בלבד (גם בחוקי Firestore/Storage) — לא נפתח ל-"אין בעלים עדיין"
       if (invoices) invoices.setOwner(isOwner);
       // אם הטאב הפעיל הוסתר — חוזרים ללידים

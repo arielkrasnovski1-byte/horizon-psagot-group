@@ -7,7 +7,7 @@
   <title>Desk — הורייזון פסגות גרופ</title>
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/logo/favicon-32.png">
   <link rel="stylesheet" href="/css/main.css">
-  <link rel="stylesheet" href="/css/crm.css">
+  <link rel="stylesheet" href="/css/crm.css?v=20261112c">
 </head>
 <body class="crm-body">
 
@@ -49,15 +49,18 @@
     </header>
 
     <nav class="crm-tabs">
+      <div class="nav-title">עבודה שוטפת</div>
       <button class="crm-tab active" data-tab="leads">לידים</button>
       <button class="crm-tab" data-tab="tasks">משימות <span class="tab-badge" id="tasks-badge" hidden>0</span></button>
       <button class="crm-tab" data-tab="cases">תיקים</button>
       <button class="crm-tab" data-tab="invoices" id="tab-invoices" hidden title="לבעלים בלבד">חשבוניות</button>
+      <div class="nav-title" id="nav-title-content" hidden>תוכן האתר</div>
       <button class="crm-tab" data-tab="deals" hidden>עסקאות</button>
       <button class="crm-tab" data-tab="testimonials" hidden>המלצות</button>
       <button class="crm-tab" data-tab="team" hidden>צוות</button>
       <button class="crm-tab" data-tab="faq" hidden>שאלות נפוצות</button>
       <button class="crm-tab" data-tab="articles" hidden>מאמרים</button>
+      <div class="nav-title" id="nav-title-admin" hidden>ניהול</div>
       <button class="crm-tab" data-tab="users" id="tab-users" hidden>משתמשים</button>
     </nav>
 
@@ -568,6 +571,6 @@
     </div>
   </div>
 
-  <script type="module" src="/js/crm.js?v=20261103a"></script>
+  <script type="module" src="/js/crm.js?v=20261112c"></script>
 </body>
 </html>
