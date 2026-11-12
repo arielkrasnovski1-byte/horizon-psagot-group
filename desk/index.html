@@ -7,7 +7,7 @@
   <title>Desk — הורייזון פסגות גרופ</title>
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/logo/favicon-32.png">
   <link rel="stylesheet" href="/css/main.css">
-  <link rel="stylesheet" href="/css/crm.css?v=20261112d">
+  <link rel="stylesheet" href="/css/crm.css?v=20261112e">
 </head>
 <body class="crm-body">
 
@@ -33,6 +33,9 @@
   <!-- ===== פאנל ===== -->
   <div id="app-view" hidden>
     <header class="crm-topbar">
+      <button class="nav-toggle" id="nav-toggle" type="button" aria-label="פתיחת התפריט" aria-expanded="false" aria-controls="side-nav">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
       <div class="brand">
         <img src="/assets/logo/logo-mark.png" alt="" width="34" height="34">
         <b>הורייזון פסגות</b> <span style="opacity:.6">· Desk</span>
@@ -48,7 +51,7 @@
       </div>
     </header>
 
-    <nav class="crm-tabs">
+    <nav class="crm-tabs" id="side-nav" aria-label="ניווט ראשי">
       <div class="nav-title">עבודה שוטפת</div>
       <button class="crm-tab active" data-tab="leads">לידים <span class="tab-badge tab-badge-new" id="leads-badge" hidden>0</span></button>
       <button class="crm-tab" data-tab="tasks">משימות <span class="tab-badge" id="tasks-badge" hidden>0</span></button>
@@ -62,7 +65,9 @@
       <button class="crm-tab" data-tab="articles" hidden>מאמרים</button>
       <div class="nav-title" id="nav-title-admin" hidden>ניהול</div>
       <button class="crm-tab" data-tab="users" id="tab-users" hidden>משתמשים</button>
+      <div class="nav-foot"><button type="button" class="logout" id="logout-btn-m">יציאה</button></div>
     </nav>
+    <div class="nav-backdrop" id="nav-backdrop" hidden></div>
 
     <main class="crm-main">
 
@@ -580,6 +585,6 @@
     </div>
   </div>
 
-  <script type="module" src="/js/crm.js?v=20261112d"></script>
+  <script type="module" src="/js/crm.js?v=20261112e"></script>
 </body>
 </html>

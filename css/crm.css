@@ -788,3 +788,33 @@ tr.inv-row.inv-selected td { background: rgba(201,164,122,.14); }
   .attn-item small { display: none; }
   .fpop { inset-inline-end: auto; inset-inline-start: 0; }
 }
+
+/* ---- נייד: תפריט המבורגר — אותו סרגל צד נפתח מהצד ---- */
+.nav-toggle, .nav-foot, .nav-backdrop { display: none; }
+@media (max-width: 760px) {
+  .nav-toggle { display: grid; place-items: center; width: 40px; height: 40px; flex: none; border-radius: var(--radius-md); border: 1px solid rgba(255,255,255,0.2); background: none; color: var(--color-white); cursor: pointer; }
+  .nav-toggle svg { width: 22px; height: 22px; }
+  .crm-topbar { justify-content: flex-start; gap: var(--space-xs); }
+  .crm-topbar .brand { flex: 1 1 auto; min-width: 0; }
+  .crm-topbar .user .logout { display: none; }
+  #app-view > .crm-tabs {
+    position: fixed; top: 0; bottom: 0; inset-inline-start: 0; width: min(280px, 82vw); z-index: 300;
+    flex-direction: column; gap: 2px; padding: var(--space-md) var(--space-2xs) var(--space-sm);
+    overflow-x: hidden; overflow-y: auto; scroll-snap-type: none;
+    transform: translateX(100%); visibility: hidden; transition: transform .22s ease, visibility .22s;
+    box-shadow: -12px 0 32px rgba(10,31,61,0.3);
+  }
+  body.nav-open #app-view > .crm-tabs { transform: none; visibility: visible; }
+  #app-view > .crm-tabs .nav-title { display: block; font-size: var(--fs-xs); font-weight: 600; letter-spacing: .06em; color: rgba(255,255,255,0.45); padding: var(--space-sm) var(--space-sm) 6px; }
+  #app-view > .crm-tabs .nav-title:first-child { padding-top: 0; }
+  #app-view > .crm-tabs .crm-tab {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; flex: none; text-align: start;
+    border-bottom: 0; border-inline-start: 3px solid transparent; border-radius: var(--radius-sm); padding: 12px var(--space-sm); font-size: var(--fs-base);
+  }
+  #app-view > .crm-tabs .crm-tab.active { background: rgba(255,255,255,0.1); border-inline-start-color: var(--color-rose-gold); }
+  .nav-foot { display: block; margin-top: auto; padding: var(--space-sm) var(--space-sm) 0; border-top: 1px solid rgba(255,255,255,0.1); }
+  .nav-foot .logout { width: 100%; background: none; cursor: pointer; font-family: var(--font-body); font-size: var(--fs-sm); font-weight: 600; color: var(--color-white); border: 1px solid rgba(255,255,255,0.3); border-radius: var(--radius-full); padding: 9px 14px; }
+  .nav-backdrop { display: block; position: fixed; inset: 0; z-index: 290; background: rgba(10,31,61,0.5); }
+  body.nav-open { overflow: hidden; }
+}
+@media (max-width: 760px) and (prefers-reduced-motion: reduce) { #app-view > .crm-tabs { transition: none; } }

@@ -78,10 +78,22 @@ async function boot() {
     } else { detachAll(); if (tasks) tasks.detach(); if (invoices) invoices.detach(); $('app-view').hidden = true; $('login-view').hidden = false; }
   });
 
+  /* ---------- תפריט נפתח בנייד (המבורגר) ---------- */
+  function setNav(open) {
+    document.body.classList.toggle('nav-open', open);
+    $('nav-toggle').setAttribute('aria-expanded', open ? 'true' : 'false');
+    $('nav-backdrop').hidden = !open;
+  }
+  $('nav-toggle').addEventListener('click', () => setNav(!document.body.classList.contains('nav-open')));
+  $('nav-backdrop').addEventListener('click', () => setNav(false));
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setNav(false); });
+  $('logout-btn-m').addEventListener('click', () => { setNav(false); $('logout-btn').click(); });
+
   /* ---------- טאבים ---------- */
   document.querySelectorAll('.crm-tab').forEach((tab) => {
     tab.addEventListener('click', () => {
       document.querySelectorAll('.crm-tab').forEach((t) => t.classList.toggle('active', t === tab));
+      setNav(false);
       ['leads', 'tasks', 'cases', 'invoices', 'deals', 'testimonials', 'team', 'faq', 'articles', 'users'].forEach((k) => { $('panel-' + k).hidden = (k !== tab.dataset.tab); });
       if (tab.dataset.tab === 'tasks' && tasks) tasks.refresh();
       if (tab.dataset.tab === 'invoices' && invoices) invoices.refresh();
