@@ -91,7 +91,7 @@ async function boot() {
   /* ============================================================
      לידים
      ============================================================ */
-  let allLeads = [], leadFilter = 'all', searchQ = '', userFilter = '';
+  let allLeads = [], leadFilter = 'all', searchQ = '', userFilter = '', quickFilter = '', sourceFilter = '', periodFilter = '';
   let teamUsers = [], allUsers = [], currentRole = 'agent';
   // הרשאות תיקים: סגירה/פתיחה מחדש — owner/manager · מחיקה — owner בלבד
   let canManageCases = false, canDeleteCase = false;
@@ -227,7 +227,7 @@ async function boot() {
     fu.innerHTML = '<option value="">כל המטפלים</option>' + teamUsers.map((e) => `<option value="${esc(e)}">${esc(displayName(e))}</option>`).join('');
     fu.value = cur;
   }
-  $('filter-user').addEventListener('change', (e) => { userFilter = e.target.value; renderLeads(); });
+  $('filter-user').addEventListener('change', (e) => { userFilter = e.target.value; syncFilterTags(); renderLeads(); });
 
   function listenLeads() {
     track(fs.onSnapshot(fs.collection(db, 'leads'), (snap) => {
@@ -240,36 +240,86 @@ async function boot() {
 
   function isFollowUpDue(l) { return l.followUpAt && l.followUpAt <= todayStr() && l.status !== 'closed'; }
 
+  const WAIT_MS = 48 * 3600 * 1000;   // ליד חדש שלא טופל מעל 48 שעות
+  function isNewLead(l) { return (l.status || 'new') === 'new'; }
+  function waitDays(l) { const d = toDateObj(l.createdAt); return d ? Math.floor((Date.now() - d.getTime()) / 86400000) : 0; }
+  function isWaiting(l) { const d = toDateObj(l.createdAt); return isNewLead(l) && d && (Date.now() - d.getTime()) > WAIT_MS; }
+  function isMineOpen(l) { return (l.assignedTo || '') === currentEmail && l.status !== 'closed'; }
+
   function renderLeadStats() {
     const now = new Date(); const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const nNew = allLeads.filter(isNewLead).length;
+    const waiting = allLeads.filter(isWaiting);
     $('stat-total').textContent = allLeads.length;
-    $('stat-new').textContent = allLeads.filter((l) => (l.status || 'new') === 'new').length;
+    $('stat-new').textContent = nNew;
     $('stat-month').textContent = allLeads.filter((l) => { const d = toDateObj(l.createdAt); return d && d >= monthStart; }).length;
     $('stat-followup').textContent = allLeads.filter(isFollowUpDue).length;
+    $('stat-wait').textContent = waiting.length;
+    $('stat-oldest').textContent = waiting.length ? ('הוותיק ביותר: ' + Math.max(...waiting.map(waitDays)) + ' ימים') : 'אין ממתינים';
+    $('stat-mine').textContent = allLeads.filter(isMineOpen).length;
+    const lb = $('leads-badge'); lb.textContent = nNew; lb.hidden = !nNew;
+    $('cnt-all').textContent = allLeads.length;
+    $('cnt-new').textContent = nNew;
+    $('cnt-contacted').textContent = allLeads.filter((l) => l.status === 'contacted' || l.status === 'in_progress').length;
+    $('cnt-closed').textContent = allLeads.filter((l) => l.status === 'closed').length;
   }
 
   /* חיפוש + סינון */
   $('lead-search').addEventListener('input', (e) => { searchQ = e.target.value.trim().toLowerCase(); renderLeads(); });
-  $('date-from').addEventListener('change', renderLeads);
-  $('date-to').addEventListener('change', renderLeads);
   $('filters').addEventListener('click', (e) => {
     const b = e.target.closest('.filter-btn'); if (!b) return;
     leadFilter = b.dataset.filter;
-    document.querySelectorAll('.filter-btn').forEach((x) => x.classList.toggle('active', x === b));
+    document.querySelectorAll('#filters .filter-btn').forEach((x) => x.classList.toggle('active', x === b));
     renderLeads();
   });
+  // כרטיסי "דורש טיפול עכשיו" — סינון מהיר; לחיצה חוזרת מבטלת
+  $('attn').addEventListener('click', (e) => {
+    const b = e.target.closest('.attn-item'); if (!b) return;
+    quickFilter = quickFilter === b.dataset.quick ? '' : b.dataset.quick;
+    document.querySelectorAll('#attn .attn-item').forEach((x) => x.setAttribute('aria-pressed', x.dataset.quick === quickFilter ? 'true' : 'false'));
+    renderLeads();
+  });
+  // כפתור "סינון" — מקור / מטפל / תקופה בחלונית אחת
+  const SOURCE_HE = { website: 'אתר', facebook: 'פייסבוק', whatsapp: 'וואטסאפ', manual: 'ידני' };
+  const PERIOD_HE = { today: 'היום', week: '7 הימים האחרונים', month: 'החודש' };
+  function toggleFilterPop(open) { $('filter-pop').hidden = !open; $('filter-toggle').setAttribute('aria-expanded', open ? 'true' : 'false'); }
+  $('filter-toggle').addEventListener('click', () => toggleFilterPop($('filter-pop').hidden));
+  $('filter-close').addEventListener('click', () => { toggleFilterPop(false); $('filter-toggle').focus(); });
+  document.addEventListener('click', (e) => { if (!$('filter-pop').hidden && !e.target.closest('.fwrap')) toggleFilterPop(false); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('filter-pop').hidden) { toggleFilterPop(false); $('filter-toggle').focus(); } });
+  function syncFilterTags() {
+    const items = [];
+    if (sourceFilter) items.push(['filter-source', 'מקור: ' + (SOURCE_HE[sourceFilter] || sourceFilter)]);
+    if (userFilter) items.push(['filter-user', 'מטפל: ' + displayName(userFilter)]);
+    if (periodFilter) items.push(['filter-period', 'תקופה: ' + PERIOD_HE[periodFilter]]);
+    const box = $('filter-tags');
+    box.hidden = !items.length;
+    box.innerHTML = items.map((i) => `<span class="ftag">${esc(i[1])}<button type="button" data-clear="${i[0]}" aria-label="הסרת הסינון ${esc(i[1])}">✕</button></span>`).join('');
+    const c = $('filter-count'); c.hidden = !items.length; c.textContent = items.length;
+  }
+  function readFilters() { sourceFilter = $('filter-source').value; userFilter = $('filter-user').value; periodFilter = $('filter-period').value; syncFilterTags(); renderLeads(); }
+  $('filter-source').addEventListener('change', readFilters);
+  $('filter-period').addEventListener('change', readFilters);
+  $('filter-clear').addEventListener('click', () => { ['filter-source', 'filter-user', 'filter-period'].forEach((id) => { $(id).value = ''; }); readFilters(); });
+  $('filter-tags').addEventListener('click', (e) => { const b = e.target.closest('[data-clear]'); if (!b) return; $(b.dataset.clear).value = ''; readFilters(); });
+  function periodStart() {
+    const d = new Date(); d.setHours(0, 0, 0, 0);
+    if (periodFilter === 'week') d.setDate(d.getDate() - 6);
+    else if (periodFilter === 'month') d.setDate(1);
+    return d;
+  }
 
   function filteredLeads() {
     let rows = allLeads;
     const f = leadFilter;
     if (['new','contacted','closed'].includes(f)) rows = rows.filter((l) => (l.status||'new')===f || (f==='contacted'&&l.status==='in_progress'));
-    else if (['website','facebook','whatsapp'].includes(f)) rows = rows.filter((l) => (l.source||'website')===f);
-    else if (f === 'mine') rows = rows.filter((l) => (l.assignedTo||'') === currentEmail);
-    else if (f === 'followup') rows = rows.filter(isFollowUpDue);
+    if (quickFilter === 'new') rows = rows.filter(isNewLead);
+    else if (quickFilter === 'wait') rows = rows.filter(isWaiting);
+    else if (quickFilter === 'followup') rows = rows.filter(isFollowUpDue);
+    else if (quickFilter === 'mine') rows = rows.filter(isMineOpen);
+    if (sourceFilter) rows = rows.filter((l) => (l.source||'website') === sourceFilter);
     if (searchQ) rows = rows.filter((l) => [l.name,l.phone,l.email,l.message,l.topic,l.audience].filter(Boolean).join(' ').toLowerCase().includes(searchQ));
-    const from = $('date-from').value, to = $('date-to').value;
-    if (from) rows = rows.filter((l) => fmtDay(l.createdAt) >= from);
-    if (to) rows = rows.filter((l) => fmtDay(l.createdAt) <= to);
+    if (periodFilter) { const from = periodStart(); rows = rows.filter((l) => { const d = toDateObj(l.createdAt); return d && d >= from; }); }
     if (userFilter) rows = rows.filter((l) => (l.assignedTo || '') === userFilter);
     return rows;
   }
@@ -283,17 +333,18 @@ async function boot() {
   function renderLeads() {
     const rows = filteredLeads();
     const body = $('leads-body');
-    if (!rows.length) { body.innerHTML = '<tr><td colspan="8" class="empty-state">אין פניות להצגה.</td></tr>'; return; }
+    if (!rows.length) { body.innerHTML = '<tr><td colspan="8" class="empty-state">אין פניות שמתאימות לסינון הזה.</td></tr>'; return; }
     body.innerHTML = rows.map((l) => {
       const st = STATUS[l.status||'new'] || STATUS.new;
       const src = srcBadge(l.source || 'website');
       const opts = STATUS_KEYS.filter((k)=>k!=='in_progress').map((k)=>`<option value="${k}"${(l.status||'new')===k?' selected':''}>${STATUS[k].he}</option>`).join('');
       const topic = [l.audience, l.topic].filter(Boolean).join(' · ') || '—';
       const assigned = l.assignedTo ? esc(displayName(l.assignedTo)) : '<span style="color:var(--color-warm-gray)">—</span>';
+      const late = isWaiting(l) ? ` <span class="lead-wait">ממתין ${waitDays(l)} ימים</span>` : '';
       const fu = isFollowUpDue(l) ? ' <span class="fu-clock" title="ממתין לפולו-אפ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg></span>' : '';
       return `<tr data-lead="${l.id}" class="lead-row ls-${st.cls}">`+
         `<td class="lead-date" data-label="תאריך">${fmtDate(l.createdAt)}</td>`+
-        `<td class="lead-name-cell" data-label="שם"><div class="lead-name"><span class="lead-dot"></span>${esc(l.name)}${fu}</div>${l.message?`<div class="lead-sub">${esc(l.message)}</div>`:''}</td>`+
+        `<td class="lead-name-cell" data-label="שם"><div class="lead-name"><span class="lead-dot"></span>${esc(l.name)}${fu}${late}</div>${l.message?`<div class="lead-sub">${esc(l.message)}</div>`:''}</td>`+
         `<td class="lead-contact" data-label="יצירת קשר"><a href="tel:${esc(l.phone)}" onclick="event.stopPropagation()">${esc(l.phone)}</a>${l.email?`<a href="mailto:${esc(l.email)}" onclick="event.stopPropagation()">${esc(l.email)}</a>`:''}</td>`+
         `<td data-label="קהל / נושא">${esc(topic)}</td><td data-label="מקור">${src}</td><td data-label="מטופל ע״י">${assigned}</td>`+
         `<td data-label="סטטוס"><select class="status-select ${st.cls}" data-id="${l.id}" onclick="event.stopPropagation()">${opts}</select></td>`+

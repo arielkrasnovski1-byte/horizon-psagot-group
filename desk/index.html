@@ -7,7 +7,7 @@
   <title>Desk — הורייזון פסגות גרופ</title>
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/logo/favicon-32.png">
   <link rel="stylesheet" href="/css/main.css">
-  <link rel="stylesheet" href="/css/crm.css?v=20261112c">
+  <link rel="stylesheet" href="/css/crm.css?v=20261112d">
 </head>
 <body class="crm-body">
 
@@ -50,7 +50,7 @@
 
     <nav class="crm-tabs">
       <div class="nav-title">עבודה שוטפת</div>
-      <button class="crm-tab active" data-tab="leads">לידים</button>
+      <button class="crm-tab active" data-tab="leads">לידים <span class="tab-badge tab-badge-new" id="leads-badge" hidden>0</span></button>
       <button class="crm-tab" data-tab="tasks">משימות <span class="tab-badge" id="tasks-badge" hidden>0</span></button>
       <button class="crm-tab" data-tab="cases">תיקים</button>
       <button class="crm-tab" data-tab="invoices" id="tab-invoices" hidden title="לבעלים בלבד">חשבוניות</button>
@@ -69,37 +69,46 @@
       <!-- ===== טאב לידים ===== -->
       <section class="tab-panel" id="panel-leads">
         <div class="panel-head">
-          <h2>לידים ולקוחות</h2>
-          <button class="crm-btn" style="width:auto" id="add-lead">+ לקוח חדש</button>
+          <div>
+            <h2>לידים ולקוחות</h2>
+            <p class="panel-sub"><span id="stat-total">0</span> פניות בסך הכול · <span id="stat-month">0</span> החודש</p>
+          </div>
+          <div class="head-actions">
+            <button class="btn-ghost" id="export-csv">ייצוא לאקסל</button>
+            <button class="crm-btn" style="width:auto" id="add-lead">+ לקוח חדש</button>
+          </div>
         </div>
-        <div class="stat-row">
-          <div class="stat-tile"><div class="n" id="stat-total">0</div><div class="l">סה״כ פניות</div></div>
-          <div class="stat-tile"><div class="n accent" id="stat-new">0</div><div class="l">חדשות (לא טופלו)</div></div>
-          <div class="stat-tile"><div class="n" id="stat-month">0</div><div class="l">החודש</div></div>
-          <div class="stat-tile"><div class="n" id="stat-followup">0</div><div class="l">ממתינות לפולו-אפ</div></div>
+
+        <div class="attn-title">דורש טיפול עכשיו</div>
+        <div class="attn" id="attn">
+          <button type="button" class="attn-item" data-quick="new" aria-pressed="false"><span class="sev sev-new"></span><span class="attn-n" id="stat-new">0</span><span><b>לידים חדשים</b><small>עדיין לא נוצר קשר</small></span></button>
+          <button type="button" class="attn-item" data-quick="wait" aria-pressed="false"><span class="sev sev-late"></span><span class="attn-n" id="stat-wait">0</span><span><b>ממתינים מעל 48 שעות</b><small id="stat-oldest">אין ממתינים</small></span></button>
+          <button type="button" class="attn-item" data-quick="followup" aria-pressed="false"><span class="sev sev-prog"></span><span class="attn-n" id="stat-followup">0</span><span><b>פולו-אפ להיום</b><small>לחזור אליהם היום</small></span></button>
+          <button type="button" class="attn-item" data-quick="mine" aria-pressed="false"><span class="sev sev-ok"></span><span class="attn-n" id="stat-mine">0</span><span><b>הלידים שלי</b><small>משויכים אליי ופתוחים</small></span></button>
         </div>
 
         <div class="lead-toolbar">
-          <input type="search" id="lead-search" class="lead-search" placeholder="חיפוש לפי שם / טלפון / אימייל…">
-          <div class="date-range">
-            <label>מ־<input type="date" id="date-from"></label>
-            <label>עד<input type="date" id="date-to"></label>
+          <div class="filters" id="filters" role="group" aria-label="סינון לפי סטטוס">
+            <button type="button" class="filter-btn active" data-filter="all">הכול<span class="seg-n" id="cnt-all"></span></button>
+            <button type="button" class="filter-btn" data-filter="new">חדשים<span class="seg-n" id="cnt-new"></span></button>
+            <button type="button" class="filter-btn" data-filter="contacted">בטיפול<span class="seg-n" id="cnt-contacted"></span></button>
+            <button type="button" class="filter-btn" data-filter="closed">נסגרו<span class="seg-n" id="cnt-closed"></span></button>
           </div>
-          <select id="filter-user" class="user-filter"><option value="">כל המטפלים</option></select>
-          <button class="btn-ghost" id="export-csv">⬇ ייצוא ל-Excel</button>
+          <input type="search" id="lead-search" class="lead-search" placeholder="חיפוש לפי שם, טלפון או נושא" aria-label="חיפוש לידים">
+          <div class="fwrap">
+            <button type="button" class="btn-ghost" id="filter-toggle" aria-expanded="false" aria-controls="filter-pop">סינון<span class="fdot" id="filter-count" hidden></span></button>
+            <div class="fpop" id="filter-pop" hidden>
+              <label for="filter-source">מקור
+                <select id="filter-source"><option value="">כל המקורות</option><option value="website">אתר</option><option value="facebook">פייסבוק</option><option value="whatsapp">וואטסאפ</option><option value="manual">ידני</option></select></label>
+              <label for="filter-user">מטפל
+                <select id="filter-user"><option value="">כל המטפלים</option></select></label>
+              <label for="filter-period">תקופה
+                <select id="filter-period"><option value="">כל הזמן</option><option value="today">היום</option><option value="week">7 הימים האחרונים</option><option value="month">החודש</option></select></label>
+              <div class="fpop-foot"><button type="button" class="link-btn" id="filter-clear">ניקוי הכול</button><button type="button" class="btn-ghost" id="filter-close">סגירה</button></div>
+            </div>
+          </div>
         </div>
-
-        <div class="filters" id="filters">
-          <button class="filter-btn active" data-filter="all">הכל</button>
-          <button class="filter-btn" data-filter="new">חדשות</button>
-          <button class="filter-btn" data-filter="contacted">בטיפול</button>
-          <button class="filter-btn" data-filter="closed">נסגרו</button>
-          <button class="filter-btn" data-filter="website">מהאתר</button>
-          <button class="filter-btn" data-filter="facebook">מפייסבוק</button>
-          <button class="filter-btn" data-filter="whatsapp">מוואטסאפ</button>
-          <button class="filter-btn" data-filter="mine">שלי</button>
-          <button class="filter-btn" data-filter="followup">פולו-אפ היום</button>
-        </div>
+        <div class="ftags" id="filter-tags" hidden></div>
 
         <div class="leads-table-wrap">
           <table class="leads">
@@ -571,6 +580,6 @@
     </div>
   </div>
 
-  <script type="module" src="/js/crm.js?v=20261112c"></script>
+  <script type="module" src="/js/crm.js?v=20261112d"></script>
 </body>
 </html>
