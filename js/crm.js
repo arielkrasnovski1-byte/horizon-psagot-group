@@ -7,6 +7,7 @@ import { firebaseConfig, isConfigured } from '/js/firebase-config.js?v=20261103a
 import { SERVICE_TYPES, buildItems, serviceLabel, docCatalog, storagePath, safeSeg } from '/js/case-templates.js?v=20261103a';
 import { initTasks } from '/js/crm-tasks.js?v=20261103a';
 import { initInvoices } from '/js/crm-invoices.js?v=20261103a';
+import { initConvert } from '/js/crm-convert.js?v=20261115a';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? '' : s).replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -94,7 +95,7 @@ async function boot() {
     tab.addEventListener('click', () => {
       document.querySelectorAll('.crm-tab').forEach((t) => t.classList.toggle('active', t === tab));
       setNav(false);
-      ['leads', 'tasks', 'cases', 'invoices', 'deals', 'testimonials', 'team', 'faq', 'articles', 'users'].forEach((k) => { $('panel-' + k).hidden = (k !== tab.dataset.tab); });
+      ['leads', 'tasks', 'cases', 'convert', 'invoices', 'deals', 'testimonials', 'team', 'faq', 'articles', 'users'].forEach((k) => { $('panel-' + k).hidden = (k !== tab.dataset.tab); });
       if (tab.dataset.tab === 'tasks' && tasks) tasks.refresh();
       if (tab.dataset.tab === 'invoices' && invoices) invoices.refresh();
     });
@@ -120,6 +121,9 @@ async function boot() {
     leads: () => allLeads, cases: () => allCases, currentLead: () => currentLead, currentCase: () => currentCase,
     openCase: (id) => { const c = allCases.find((x) => x.id === id); if (c) openCaseModal(c); },
   };
+
+  /* ---------- המרת מסמכים (js/crm-convert.js) — תמונות → PDF, בדפדפן בלבד ---------- */
+  initConvert({ $, esc, loadJSZip });
 
   /* ---------- חשבוניות (js/crm-invoices.js) — בעלים בלבד ---------- */
   let invoices = null;

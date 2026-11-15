@@ -7,7 +7,7 @@
   <title>Desk — הורייזון פסגות גרופ</title>
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/logo/favicon-32.png">
   <link rel="stylesheet" href="/css/main.css">
-  <link rel="stylesheet" href="/css/crm.css?v=20261112e">
+  <link rel="stylesheet" href="/css/crm.css?v=20261115a">
 </head>
 <body class="crm-body">
 
@@ -56,6 +56,7 @@
       <button class="crm-tab active" data-tab="leads">לידים <span class="tab-badge tab-badge-new" id="leads-badge" hidden>0</span></button>
       <button class="crm-tab" data-tab="tasks">משימות <span class="tab-badge" id="tasks-badge" hidden>0</span></button>
       <button class="crm-tab" data-tab="cases">תיקים</button>
+      <button class="crm-tab" data-tab="convert">המרת מסמכים</button>
       <button class="crm-tab" data-tab="invoices" id="tab-invoices" hidden title="לבעלים בלבד">חשבוניות</button>
       <div class="nav-title" id="nav-title-content" hidden>תוכן האתר</div>
       <button class="crm-tab" data-tab="deals" hidden>עסקאות</button>
@@ -185,6 +186,17 @@
         <p class="cases-hint">פותחים תיק ללקוח קיים, בוחרים סוג שירות → נטענת רשימת המסמכים. הלקוח נכנס ל-<b>/portal</b> (ב-SMS או מייל) ומעלה. כאן רואים בזמן אמת מה התקבל.</p>
         <div class="cases-filter" id="cases-filter"></div>
         <div class="editor-grid" id="cases-grid"><p class="empty-state">טוען…</p></div>
+      </section>
+
+      <!-- ===== טאב המרת מסמכים (תמונות → PDF, בדפדפן בלבד) ===== -->
+      <section class="tab-panel" id="panel-convert" hidden>
+        <div class="panel-head"><h2>המרת מסמכים</h2></div>
+        <p class="cases-hint">הופכים תמונות לקובץ PDF — <b>קובץ אחד משותף</b> או <b>קובץ נפרד לכל תמונה</b>. אפשר גם לצרף קובצי PDF קיימים ולאחד אותם. ההמרה נעשית במחשב שלכם: הקבצים לא עולים לשרת ולא נשמרים במערכת.</p>
+        <div class="inv-drop" id="cv-drop">
+          <input type="file" id="cv-files" multiple accept="image/*,application/pdf,.heic,.heif" hidden>
+          <b>גררו לכאן תמונות (או קובצי PDF)</b> או לחצו לבחירה · אפשר כמה קבצים בבת אחת
+        </div>
+        <div id="cv-body"></div>
       </section>
 
       <!-- ===== טאב חשבוניות (בעלים בלבד) ===== -->
@@ -585,6 +597,6 @@
     </div>
   </div>
 
-  <script type="module" src="/js/crm.js?v=20261112e"></script>
+  <script type="module" src="/js/crm.js?v=20261115a"></script>
 </body>
 </html>
