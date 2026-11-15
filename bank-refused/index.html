@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>סורבתם בבנק? הלוואה כנגד נכס גם עם BDI שלילי | הורייזון פסגות גרופ</title>
+  <meta name="description" content="הבנק סירב או שיש לכם דירוג אשראי שלילי (BDI)? לבעלי נכס רשום בטאבו יש מסלולי מימון מפוקחים כנגד הנכס. בדיקה אישית ללא התחייבות, דיסקרטיות מלאה, ליווי בכל הארץ.">
+  <meta name="theme-color" content="#0A1F3D">
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/logo/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/assets/logo/favicon-192.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/assets/logo/apple-touch-icon.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/animations.css">
+  <!-- SEO: canonical + hreflang + OG url (auto) -->
+  <link rel="canonical" href="https://horizonpsagotgroup.com/bank-refused/">
+  <link rel="alternate" hreflang="he" href="https://horizonpsagotgroup.com/bank-refused/">
+  <link rel="alternate" hreflang="x-default" href="https://horizonpsagotgroup.com/bank-refused/">
+  <meta property="og:url" content="https://horizonpsagotgroup.com/bank-refused/">
+  <meta property="og:locale" content="he_IL">
+  <script defer src="/js/analytics.js"></script>
+  <script defer src="/js/form.js?v=20261110"></script>
+  <style>
+    /* עיצוב דף נחיתה — בתחום העמוד הזה בלבד */
+    .lp-hero { background: linear-gradient(135deg, #0A1F3D 0%, #1B3258 100%); color: #F4EFE6; padding: clamp(2.2rem, 6vw, 4.5rem) 0; }
+    .lp-hero .breadcrumb, .lp-hero .breadcrumb a { color: rgba(244,239,230,.65); }
+    .lp-hero h1 { color: #fff; }
+    .lp-hero .lead { color: rgba(244,239,230,.88); }
+    .lp-hero strong, .lp-hero b { color: var(--color-rose-gold); font-weight: 700; }
+    /* ציר זמן — איך ההליך עובד */
+    .lp-steps { list-style: none; max-width: 720px; margin: 2.2rem auto 0; padding: 0; }
+    .lp-step { position: relative; padding-inline-start: 4.4rem; padding-bottom: 2.1rem; }
+    .lp-step::before { content: ""; position: absolute; inset-inline-start: 1.6rem; top: 3.4rem; bottom: .3rem; width: 2px; background: linear-gradient(var(--color-rose-gold), var(--color-border)); }
+    .lp-step:last-child::before { display: none; }
+    .lp-step:last-child { padding-bottom: 0; }
+    .lp-num { position: absolute; inset-inline-start: 0; top: 0; width: 3.3rem; height: 3.3rem; border-radius: 50%; background: var(--color-white); border: 2px solid var(--color-rose-gold); color: var(--color-navy-deep); display: grid; place-items: center; font-family: var(--font-heading); font-size: 1.15rem; font-weight: 700; box-shadow: var(--shadow-sm); }
+    .lp-step h3 { font-family: var(--font-heading); color: var(--color-navy-deep); font-size: var(--fs-lg); margin: .35rem 0 .35rem; display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+    .lp-step p { color: var(--color-charcoal-soft); line-height: 1.7; margin: 0; max-width: 60ch; }
+    .lp-step .lp-when { font-family: var(--font-body); font-size: var(--fs-xs); font-weight: 700; color: var(--color-rose-gold-deep); background: rgba(201,164,122,.14); border-radius: 999px; padding: .2rem .7rem; }
+    .lp-step.hl .lp-num { background: var(--color-navy-deep); color: var(--color-rose-gold); border-color: var(--color-navy-deep); }
+    .lp-step.hl h3 .lp-when { background: var(--color-navy-deep); color: var(--color-rose-gold); }
+    .lp-hero-grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: clamp(1.5rem, 4vw, 3.5rem); align-items: center; }
+    @media (max-width: 900px) { .lp-hero-grid { grid-template-columns: 1fr; } }
+    .lp-form { background: #fff; border-radius: var(--radius-lg); padding: clamp(1.2rem, 3vw, 1.8rem); box-shadow: 0 18px 50px rgba(0,0,0,.35); }
+    .lp-form h2 { font-family: var(--font-heading); color: var(--color-navy-deep); font-size: var(--fs-xl); margin: 0 0 .3rem; }
+    .lp-form .form-intro { margin: 0 0 1rem; font-size: var(--fs-sm); color: var(--color-warm-gray); }
+    .lp-form .form-field { margin-bottom: .8rem; }
+    .lp-form .form-submit { width: 100%; font-size: 1.05rem; }
+    .lp-form .form-field-checkbox { display: flex; gap: .5rem; align-items: flex-start; font-size: var(--fs-xs); color: var(--color-warm-gray); margin: .6rem 0 .9rem; }
+    .lp-form .form-field-checkbox label { line-height: 1.5; }
+    .lp-trust { display: flex; flex-wrap: wrap; gap: .5rem 1.6rem; justify-content: center; padding: 1rem 0; margin: 0; list-style: none; font-size: var(--fs-sm); font-weight: 600; color: var(--color-navy-deep); }
+    .lp-trust li::before { content: "✓ "; color: var(--color-rose-gold-deep); font-weight: 800; }
+    .lp-cta-row { text-align: center; margin-top: 1.6rem; }
+    .lp-quotes { text-align: center; font-family: var(--font-heading); font-size: clamp(1rem, 2.2vw, 1.25rem); color: var(--color-navy-mid); line-height: 2; }
+    .lp-sticky { position: fixed; bottom: 0; inset-inline: 0; z-index: 950; display: none; background: var(--color-navy-deep); padding: .55rem .8rem calc(.55rem + env(safe-area-inset-bottom)); gap: .5rem; box-shadow: 0 -6px 24px rgba(10,31,61,.35); }
+    .lp-sticky a { flex: 1; display: grid; place-items: center; padding: .7rem .4rem; border-radius: var(--radius-md); font-weight: 700; font-size: .95rem; text-decoration: none; }
+    .lp-sticky .s-call { background: rgba(255,255,255,.12); color: #fff; }
+    .lp-sticky .s-wa { background: #25D366; color: #fff; }
+    .lp-sticky .s-form { background: var(--color-rose-gold); color: #fff; }
+    @media (max-width: 760px) { .lp-sticky { display: flex; } body { padding-bottom: 64px; } .whatsapp-float { display: none; } }
+      .lp-form select { width: 100%; }
+    .lp-note { text-align:center; font-size:.85rem; color:var(--color-warm-gray); margin-top:1.2rem; line-height:1.7; }
+  </style>
+</head>
+<body>
+
+  <a href="#main" class="skip-link">דלג לתוכן הראשי</a>
+
+  <header class="site-header" role="banner">
+    <div class="container header-inner">
+      <a href="/" class="site-logo" aria-label="הורייזון פסגות גרופ - דף בית">
+        <img src="/assets/logo/logo-mark.png" alt="" class="site-logo-mark" width="48" height="48">
+        <div class="logo-wordmark">
+          <span class="main">Horizon Psagot</span>
+          <span class="sub">G&nbsp;R&nbsp;O&nbsp;U&nbsp;P</span>
+        </div>
+      </a>
+      <button class="menu-toggle" type="button" aria-label="פתח תפריט ניווט" aria-expanded="false" aria-controls="primary-nav">
+        <span class="menu-toggle-bar" aria-hidden="true"></span>
+        <span class="menu-toggle-bar" aria-hidden="true"></span>
+        <span class="menu-toggle-bar" aria-hidden="true"></span>
+      </button>
+      <nav class="site-nav" id="primary-nav" aria-label="ניווט ראשי" aria-hidden="true">
+        <ul class="nav-list">
+          <li><a class="nav-link" href="/">בית</a></li>
+          <li><a class="nav-link" href="/about/">אודות</a></li>
+          <li><a class="nav-link" href="/financial/">ליווי פיננסי-עסקי</a></li>
+          <li><a class="nav-link" href="/insolvency/">חדלות פירעון</a></li>
+          <li><a class="nav-link" href="/real-estate/">נדל"ן והשקעות</a></li><li><a class="nav-link" href="/deals/">עסקאות</a></li>
+          <li><a class="nav-link" href="/solutions/">הפתרונות שלך</a></li>
+          <li><a class="nav-link" href="/knowledge/">מרכז המידע</a></li>
+          <li><a class="nav-link" href="/team/">צוות</a></li>
+        </ul>
+        <a href="/en/" class="lang-toggle" aria-label="Switch to English" lang="en">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M2 12h20"/>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+          </svg>
+          <span>EN</span>
+        </a>
+        <a href="/contact/" class="btn btn-primary btn-sm nav-cta">קבעו שיחת ייעוץ</a>
+      </nav>
+    </div>
+  </header>
+
+
+  <main id="main">
+
+    <section class="lp-hero" aria-labelledby="page-heading">
+      <div class="container">
+        <div class="lp-hero-grid">
+          <div>
+            <nav class="breadcrumb" aria-label="פירורי לחם"><a href="/">בית</a> · <span>מסורבי בנק ו-BDI שלילי</span></nav>
+            <h1 id="page-heading" class="reveal">סירוב אחד לא סוגר<br>את כל האפשרויות.</h1>
+            <p class="lead reveal" data-delay="1">
+              סירוב בבנק או דירוג אשראי שלילי (BDI) סוגרים דלת אחת. <strong>לבעלי נכס רשום בטאבו</strong> יש דלתות נוספות: מסלולי מימון מפוקחים שמסתכלים על הנכס שבבעלותכם, ולא רק על הדוח. בעזרת הנכס אפשר לסדר את התמונה הפיננסית, לסגור את מה שמכביד ולחזור למסלול.
+            </p>
+            <div class="reveal" data-delay="2" style="display:flex;gap:.8rem;flex-wrap:wrap;margin-top:1.2rem">
+              <a href="tel:+972549665999" class="btn btn-secondary">התקשרו: 054-966-5999</a>
+              <a href="https://wa.me/972549665999?text=%D7%A9%D7%9C%D7%95%D7%9D%2C%20%D7%A1%D7%95%D7%A8%D7%91%D7%AA%D7%99%20%D7%91%D7%91%D7%A0%D7%A7%20%D7%95%D7%99%D7%A9%20%D7%9C%D7%99%20%D7%A0%D7%9B%D7%A1.%20%D7%90%D7%A9%D7%9E%D7%97%20%D7%9C%D7%91%D7%93%D7%99%D7%A7%D7%94" target="_blank" rel="noopener" class="btn btn-secondary">שלחו וואטסאפ</a>
+            </div>
+          </div>
+
+          <div class="contact-form lp-form" id="lead-form">
+            <h2>בדיקה אישית — ללא התחייבות</h2>
+            <p class="form-intro">שתי שאלות, שם וטלפון. נציג יחזור אליכם עם תשובה ראשונית.</p>
+            <form novalidate>
+              <input type="hidden" name="access_key" value="2ac246b9-2132-4601-a985-38868169ffb3">
+              <input type="hidden" name="subject" value="ליד חדש — מסורבי בנק / BDI (דף נחיתה)">
+              <input type="hidden" id="topic" name="סיבת הפנייה" value="מימון ומשכנתאות — מסורבי בנק / BDI">
+              <input type="checkbox" name="botcheck" style="display:none" tabindex="-1" aria-hidden="true">
+              <div class="form-field">
+                <label for="name">שם מלא <span class="required" aria-hidden="true">*</span></label>
+                <input type="text" id="name" name="name" required autocomplete="name">
+                <span class="form-error" role="alert">שדה חובה</span>
+              </div>
+              <div class="form-field">
+                <label for="phone">טלפון <span class="required" aria-hidden="true">*</span></label>
+                <input type="tel" id="phone" name="טלפון" required autocomplete="tel" placeholder="050-0000000">
+                <span class="form-error" role="alert">טלפון לא תקין</span>
+              </div>
+              <div class="form-field">
+                <label for="tabu">יש נכס רשום בטאבו (שלך או של בן משפחה שיכול לערוב)? <span class="required" aria-hidden="true">*</span></label>
+                <select id="tabu" name="נכס רשום בטאבו" required data-crm-extra="נכס רשום בטאבו">
+                  <option value="">-- בחרו --</option>
+                  <option>כן, שלי</option>
+                  <option>כן, של בן משפחה</option>
+                  <option>לא</option>
+                </select>
+                <span class="form-error" role="alert">שדה חובה</span>
+              </div>
+              <div class="form-field">
+                <label for="need">מה אתם צריכים? <span class="required" aria-hidden="true">*</span></label>
+                <select id="need" name="מה אתם צריכים" required data-crm-extra="מה צריך">
+                  <option value="">-- בחרו --</option>
+                  <option>הלוואה כנגד הנכס / סגירת חובות</option>
+                  <option>איחוד הלוואות</option>
+                  <option>משכנתא לרכישת דירה</option>
+                  <option>עוד לא יודע/ת</option>
+                </select>
+                <span class="form-error" role="alert">שדה חובה</span>
+              </div>
+              <div class="form-field-checkbox">
+                <input type="checkbox" id="consent" name="consent" required>
+                <label for="consent">אני מאשר/ת פנייה חוזרת ושמירת הפרטים לצורך מתן שירות. הפרטים לא יועברו לצד שלישי.</label>
+              </div>
+              <button type="submit" class="btn btn-primary form-submit">בדקו את המקרה שלי — חינם</button>
+            </form>
+            <div class="form-success" role="alert">
+              <h3 style="margin-bottom: var(--space-2xs);">הפרטים התקבלו.</h3>
+              <p style="margin: 0;">נציג מקצועי יחזור אליכם בהקדם עם בדיקה ראשונית.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section style="background:var(--color-white);border-bottom:1px solid var(--color-border)">
+      <div class="container">
+        <ul class="lp-trust">
+          <li>מיועד לבעלי נכס רשום בטאבו</li>
+          <li>גם למסורבי בנקים ובעלי BDI שלילי</li>
+          <li>דיסקרטיות מלאה מהשיחה הראשונה</li>
+          <li>ליווי פיננסי ומשפטי תחת קורת גג אחת</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section section-cream">
+      <div class="container container-narrow">
+        <p class="lp-quotes reveal">
+          "הבנק אמר לא בלי להסביר" · "יש לי דירה, אבל הדירוג שלי הרוס" · "כל חודש אני סוגר חור בחור אחר" · "אמרו לי שאין מה לעשות עד שה-BDI יתנקה"
+        </p>
+        <p class="reveal" data-delay="1" style="text-align:center">
+          אם אחד מהמשפטים האלה נשמע מוכר — הבדיקה הזאת נועדה לכם. הבנק בוחן את הדוח. גופי מימון חוץ-בנקאיים מפוקחים בוחנים את <strong>הנכס</strong> — ולכן בעל נכס רשום בטאבו כמעט תמיד מקבל תשובה אחרת. התפקיד שלנו הוא למצוא את המסלול הנכון, ולוודא שההחזר החודשי נשאר בגבולות שאפשר לחיות איתם.
+        </p>
+      </div>
+    </section>
+
+    <section class="section section-light">
+      <div class="container">
+        <article class="service-detail reveal">
+          <div class="service-detail-header">
+            <div class="service-detail-num" aria-hidden="true">01</div>
+            <h2>מה אפשר לעשות כשהבנק סירב</h2>
+          </div>
+          <div class="service-detail-grid">
+            <div class="service-detail-col">
+              <h4>המסלולים שבודקים</h4>
+              <ul>
+                <li><strong>הלוואה כנגד הנכס</strong> — מימון מגוף חוץ-בנקאי מפוקח, בשעבוד הנכס, גם כשדירוג האשראי שלילי</li>
+                <li><strong>משכנתא שנייה / משכנתא לכל מטרה</strong> — ניצול הערך הפנוי בנכס לסגירת חובות או למטרה אחרת</li>
+                <li><strong>איחוד כל ההתחייבויות</strong> — הלוואות, אשראי ומינוס להחזר חודשי אחד, נמוך יותר</li>
+                <li><strong>תוכנית חזרה לבנק</strong> — אחרי שהתמונה מסודרת, בונים את הדרך לניקוי הדירוג ולמחזור בתנאים טובים יותר</li>
+              </ul>
+            </div>
+            <div class="service-detail-col">
+              <h4>מה חשוב לדעת — ביושר</h4>
+              <ul>
+                <li>זה מיועד <strong>לבעלי נכס רשום בטאבו</strong> (שלכם או של בן משפחה שמוכן לערוב). בלי נכס — אין לנו פתרון במסלול הזה, ונגיד את זה מיד</li>
+                <li>הריבית במימון חוץ-בנקאי גבוהה מריבית בנקאית. היא משתלמת כשהיא מחליפה חובות יקרים יותר או מונעת הליכים — לא סתם</li>
+                <li>הנכס משמש בטוחה. לכן בונים את ההחזר עם מרווח ביטחון ומתכננים מראש את היציאה מהמימון</li>
+                <li><strong>זה לא מתאים לכל אחד.</strong> אם המספרים לא עובדים — נגיד את זה, גם אם זה אומר שלא נעבוד יחד</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section section-cream">
+      <div class="container">
+        <h2 class="section-title reveal" style="text-align:center">איך זה עובד — צעד אחר צעד</h2>
+        <ol class="lp-steps">
+          <li class="lp-step reveal">
+            <span class="lp-num" aria-hidden="true">1</span>
+            <h3>שיחת בדיקה <span class="lp-when">חינם, דיסקרטי</span></h3>
+            <p>מה המצב היום: חובות, החזרים, הנכס, מה הבנק אמר. בלי שיפוטיות ובלי התחייבות.</p>
+          </li>
+          <li class="lp-step reveal" data-delay="1">
+            <span class="lp-num" aria-hidden="true">2</span>
+            <h3>תמונת מצב מלאה <span class="lp-when">לפני שמחליטים</span></h3>
+            <p>אוספים את כל ההתחייבויות (סכומים, ריביות, תאריכים) ומעריכים את שווי הנכס והערך הפנוי בו.</p>
+          </li>
+          <li class="lp-step reveal" data-delay="2">
+            <span class="lp-num" aria-hidden="true">3</span>
+            <h3>התאמת מסלול <span class="lp-when">בשקלים, לא בסיסמאות</span></h3>
+            <p>בוחרים את גוף המימון והמבנה הנכונים, ומציגים לכם את ההחזר החודשי החדש מול הקיים.</p>
+          </li>
+          <li class="lp-step reveal" data-delay="3">
+            <span class="lp-num" aria-hidden="true">4</span>
+            <h3>אישור וביצוע <span class="lp-when">ליווי מלא</span></h3>
+            <p>הכנת התיק, הגשה, ליווי משפטי מול עורכי הדין השותפים, עד שהכסף עובר והחובות נסגרים.</p>
+          </li>
+          <li class="lp-step hl reveal" data-delay="4">
+            <span class="lp-num" aria-hidden="true">5</span>
+            <h3>היום שאחרי <span class="lp-when">הייחוד שלנו</span></h3>
+            <p>לא נעלמים אחרי החתימה: תוכנית לשיפור הדירוג ולמחזור חזרה לבנק כשהתנאים מאפשרים.</p>
+          </li>
+        </ol>
+        <div class="lp-cta-row reveal"><a href="#lead-form" class="btn btn-primary">יש לכם נכס והבנק סירב? השאירו פרטים לבדיקה</a></div>
+      </div>
+    </section>
+
+    <section class="section section-light">
+      <div class="container">
+        <article class="service-detail reveal">
+          <div class="service-detail-header">
+            <div class="service-detail-num" aria-hidden="true">02</div>
+            <h2>למה לעשות את זה עם הורייזון פסגות</h2>
+          </div>
+          <p class="service-detail-lead">
+            מסורבי בנק מגיעים אלינו בדרך כלל אחרי כמה "לא". אנחנו בית מקצועי אחד למימון, להתנהלות פיננסית ולליווי משפטי — ולכן לא רק משיגים את הכסף, אלא מסדרים את התמונה כולה כדי שלא תחזרו לאותה נקודה.
+          </p>
+          <div class="service-detail-grid">
+            <div class="service-detail-col">
+              <h4>מה הליווי כולל</h4>
+              <ul>
+                <li>בדיקה כנה אם יש פתרון — ובאיזה מחיר חודשי</li>
+                <li>השוואה בין גופי מימון חוץ-בנקאיים מפוקחים ובחירת המסלול הזול והבטוח</li>
+                <li>הכנת התיק והגשתו, כולל טיפול בשעבודים ובהערות אזהרה</li>
+                <li>ליווי משפטי מלא בשיתוף עורכי דין שותפים</li>
+                <li>תוכנית יציאה: מתי ואיך חוזרים למימון בנקאי</li>
+              </ul>
+            </div>
+            <div class="service-detail-col">
+              <h4>למה זה משנה</h4>
+              <ul>
+                <li>כתובת אחת לכל התהליך — במקום להתרוצץ בין גופים, יועצים ועורכי דין</li>
+                <li>ניסיון בתיקים מורכבים: BDI שלילי, הוצאה לפועל, עיקולים, סירובים חוזרים</li>
+                <li>דיסקרטיות מלאה — אף אחד מסביבכם לא צריך לדעת</li>
+                <li>יושרה לפני הכול: מימון שלא נכון לכם — לא נקדם</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+        <div class="lp-cta-row reveal"><a href="#lead-form" class="btn btn-primary">בדקו את המקרה שלכם — ללא התחייבות</a></div>
+      </div>
+    </section>
+
+    <section class="section section-cream" aria-labelledby="faq-heading">
+      <div class="container container-narrow">
+        <h2 class="section-title reveal" id="faq-heading" style="text-align:center">שאלות שכולם שואלים</h2>
+        <div class="faq-list">
+          <details class="faq-item reveal">
+            <summary class="faq-question">הבנק סירב לי. יש בכלל למי לפנות?</summary>
+            <div class="faq-answer"><p>כן. סירוב של בנק אינו סוף הדרך. בנקים כפופים למגבלות דירוג נוקשות; גופי מימון חוץ-בנקאיים מפוקחים בוחנים בעיקר את הנכס ואת יכולת ההחזר בפועל. לבעל נכס רשום בטאבו יש כמעט תמיד מסלול — השאלה היא רק אם הוא משתלם, וזה מה שבודקים.</p></div>
+          </details>
+          <details class="faq-item reveal">
+            <summary class="faq-question">יש לי BDI שלילי. זה חוסם אותי?</summary>
+            <div class="faq-answer"><p>בבנק — לרוב כן. במימון כנגד נכס — בדרך כלל לא. הדירוג משפיע על התנאים, אבל הבטוחה היא הנכס. אחרי שמסדרים את החובות אפשר לבנות תוכנית לשיפור הדירוג ולחזרה לבנק.</p></div>
+          </details>
+          <details class="faq-item reveal">
+            <summary class="faq-question">אין לי נכס, אבל להורים שלי יש. אפשר?</summary>
+            <div class="faq-answer"><p>אפשר, אם בן המשפחה מוכן שהנכס שלו ישמש בטוחה. חשוב להבין את המשמעות עד הסוף: הנכס חשוף אם ההחזרים לא משולמים. לכן בונים מרווח ביטחון ומתכננים מראש את שחרור השעבוד. אם הסיכון למשפחה גדול מדי — נמליץ לא לעשות את זה.</p></div>
+          </details>
+          <details class="faq-item reveal">
+            <summary class="faq-question">כמה זה עולה?</summary>
+            <div class="faq-answer"><p>הבדיקה הראשונית חינם וללא התחייבות. הריבית במימון חוץ-בנקאי גבוהה מבנקאית, ולכן המסלול משתלם כשהוא מחליף חובות יקרים יותר (אשראי, מינוס, הלוואות חוץ-בנקאיות קיימות) או מונע הליכים. את המספרים המלאים תקבלו בשקלים לפני שמתחייבים למשהו.</p></div>
+          </details>
+          <details class="faq-item reveal">
+            <summary class="faq-question">כמה זמן לוקח?</summary>
+            <div class="faq-answer"><p>הבדיקה הראשונית נעשית בשיחה אחת. אישור עקרוני מגוף מימון אורך בדרך כלל ימים בודדים עד שבועות ספורים, בהתאם למסמכים ולמצב הרישום של הנכס.</p></div>
+          </details>
+          <details class="faq-item reveal">
+            <summary class="faq-question">זה דיסקרטי?</summary>
+            <div class="faq-answer"><p>לחלוטין. השיחה, הבדיקה והטיפול נעשים ישירות מולכם. אף אחד מסביבכם לא צריך לדעת.</p></div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-light">
+      <div class="container container-narrow">
+        <div class="cta-banner reveal-scale">
+          <h2>סירוב בבנק הוא לא סוף הסיפור</h2>
+          <p>אם יש לכם נכס רשום בטאבו — יש מה לבדוק. בדיקה אישית, חינם, ללא התחייבות ובדיסקרטיות מלאה.</p>
+          <a href="#lead-form" class="btn btn-secondary">השאירו פרטים למעלה</a>
+        </div>
+        <p class="lp-note">
+          המידע בעמוד זה כללי ואינו מהווה ייעוץ, הצעה או התחייבות למתן אשראי. הורייזון פסגות גרופ אינה מוסד פיננסי ואינה מעמידה הלוואות; כל מימון כפוף לאישור הגורם המממן ולתנאיו. אי-עמידה בפירעון הלוואה או משכנתא עלולה לגרור חיוב בריבית פיגורים והליכי הוצאה לפועל.
+        </p>
+      </div>
+    </section>
+
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "Service", "name": "מימון כנגד נכס למסורבי בנק ובעלי BDI שלילי", "provider": {"@type": "ProfessionalService", "name": "Horizon Psagot Group", "url": "https://horizonpsagotgroup.com/", "telephone": "+972-54-966-5999", "address": {"@type": "PostalAddress", "streetAddress": "העמק 6", "addressLocality": "באר יעקב", "addressCountry": "IL"}}, "areaServed": "IL", "description": "בדיקה והתאמת מסלולי מימון חוץ-בנקאיים מפוקחים כנגד נכס רשום בטאבו — למסורבי בנקים ובעלי דירוג אשראי שלילי, כולל איחוד התחייבויות, ליווי משפטי ותוכנית חזרה למימון בנקאי."}</script>
+  <script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "הבנק סירב לי. יש בכלל למי לפנות?", "acceptedAnswer": {"@type": "Answer", "text": "כן. סירוב של בנק אינו סוף הדרך. בנקים כפופים למגבלות דירוג נוקשות; גופי מימון חוץ-בנקאיים מפוקחים בוחנים בעיקר את הנכס ואת יכולת ההחזר בפועל. לבעל נכס רשום בטאבו יש כמעט תמיד מסלול — השאלה היא רק אם הוא משתלם, וזה מה שבודקים."}}, {"@type": "Question", "name": "יש לי BDI שלילי. זה חוסם אותי?", "acceptedAnswer": {"@type": "Answer", "text": "בבנק — לרוב כן. במימון כנגד נכס — בדרך כלל לא. הדירוג משפיע על התנאים, אבל הבטוחה היא הנכס. אחרי שמסדרים את החובות אפשר לבנות תוכנית לשיפור הדירוג ולחזרה לבנק."}}, {"@type": "Question", "name": "אין לי נכס, אבל להורים שלי יש. אפשר?", "acceptedAnswer": {"@type": "Answer", "text": "אפשר, אם בן המשפחה מוכן שהנכס שלו ישמש בטוחה. חשוב להבין את המשמעות עד הסוף: הנכס חשוף אם ההחזרים לא משולמים. לכן בונים מרווח ביטחון ומתכננים מראש את שחרור השעבוד. אם הסיכון למשפחה גדול מדי — נמליץ לא לעשות את זה."}}, {"@type": "Question", "name": "כמה זה עולה?", "acceptedAnswer": {"@type": "Answer", "text": "הבדיקה הראשונית חינם וללא התחייבות. הריבית במימון חוץ-בנקאי גבוהה מבנקאית, ולכן המסלול משתלם כשהוא מחליף חובות יקרים יותר (אשראי, מינוס, הלוואות חוץ-בנקאיות קיימות) או מונע הליכים. את המספרים המלאים תקבלו בשקלים לפני שמתחייבים למשהו."}}, {"@type": "Question", "name": "כמה זמן לוקח?", "acceptedAnswer": {"@type": "Answer", "text": "הבדיקה הראשונית נעשית בשיחה אחת. אישור עקרוני מגוף מימון אורך בדרך כלל ימים בודדים עד שבועות ספורים, בהתאם למסמכים ולמצב הרישום של הנכס."}}, {"@type": "Question", "name": "זה דיסקרטי?", "acceptedAnswer": {"@type": "Answer", "text": "לחלוטין. השיחה, הבדיקה והטיפול נעשים ישירות מולכם. אף אחד מסביבכם לא צריך לדעת."}}]}</script>
+
+  </main>
+
+
+  <footer class="site-footer" role="contentinfo">
+    <div class="container">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <div class="site-logo"><img src="/assets/logo/logo-mark.png" alt="" class="site-logo-mark" width="48" height="48"><div class="logo-wordmark"><span class="main">Horizon Psagot</span><span class="sub">G&nbsp;R&nbsp;O&nbsp;U&nbsp;P</span></div></div>
+          <p class="footer-tagline">בית מקצועי אחד לפתרונות פיננסיים, עסקיים ונדל"ניים מורכבים. ראייה משולבת, עומק מקצועי, מיקוד בביצוע.</p>
+          <div class="footer-socials" aria-label="קישורים חברתיים">
+            <a href="https://www.facebook.com/profile.php?id=61588632111030" class="footer-social" aria-label="Facebook" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c5.05-.5 9-4.76 9-9.95z"/></svg></a>
+            <a href="https://www.instagram.com/horizon.psagot.group/" class="footer-social" aria-label="Instagram" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg></a>
+            <a href="https://wa.me/972549665999?text=%D7%A9%D7%9C%D7%95%D7%9D%21%20%D7%A4%D7%A0%D7%99%D7%AA%D7%99%20%D7%93%D7%A8%D7%9A%20%D7%90%D7%AA%D7%A8%20%D7%94%D7%95%D7%A8%D7%99%D7%99%D7%96%D7%95%D7%9F%20%D7%A4%D7%A1%D7%92%D7%95%D7%AA%20%D7%92%D7%A8%D7%95%D7%A4%20%D7%95%D7%90%D7%A9%D7%9E%D7%97%20%D7%9C%D7%A7%D7%91%D7%9C%20%D7%A4%D7%A8%D7%98%D7%99%D7%9D%20%D7%A0%D7%95%D7%A1%D7%A4%D7%99%D7%9D." class="footer-social" aria-label="WhatsApp" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413"/></svg></a>
+          </div>
+        </div>
+        <div class="footer-col"><h4>שירותים</h4><ul><li><a href="/financial/">ליווי פיננסי-עסקי</a></li><li><a href="/insolvency/">חדלות פירעון</a></li><li><a href="/real-estate/">נדל"ן והשקעות</a></li><li><a href="/solutions/">פתרונות לפי קהל יעד</a></li></ul></div>
+        <div class="footer-col"><h4>החברה</h4><ul><li><a href="/about/">אודות</a></li><li><a href="/team/">צוות ושותפים</a></li><li><a href="/testimonials/">המלצות</a></li><li><a href="/knowledge/">מרכז המידע</a></li><li><a href="/faq/">שאלות נפוצות</a></li></ul></div>
+        <div class="footer-col">
+          <h4>יצירת קשר</h4>
+          <div class="footer-contact-line"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg><span><a href="tel:+972549665999" style="color: rgba(244, 239, 230, 0.85);">054-966-5999</a></span></div>
+          <div class="footer-contact-line"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg><a href="mailto:office@horizon-psagot-group.com">office@horizon-psagot-group.com</a></div>
+          <div class="footer-contact-line"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span><span style="color: rgba(244, 239, 230, 0.85);">העמק 6, באר יעקב · ליווי בכל הארץ</span></span></div>
+        </div>
+        <div class="footer-disclaimer"><strong>הערה משפטית:</strong> הורייזון פסגות גרופ אינה מוסד פיננסי ואינה מנהלת כספי לקוחות. טיפול משפטי מבוצע בשיתוף עורכי דין חיצוניים. התכנים באתר מהווים מידע כללי בלבד ואינם מהווים תחליף לייעוץ פרטני.</div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; <span data-current-year>2026</span> Horizon Psagot Group · כל הזכויות שמורות</p>
+        <p><a href="/accessibility/">הצהרת נגישות</a> · <a href="/privacy/">מדיניות פרטיות</a></p>
+      </div>
+    </div>
+  </footer>
+
+  <a href="https://wa.me/972549665999?text=%D7%A9%D7%9C%D7%95%D7%9D%21%20%D7%A4%D7%A0%D7%99%D7%AA%D7%99%20%D7%93%D7%A8%D7%9A%20%D7%90%D7%AA%D7%A8%20%D7%94%D7%95%D7%A8%D7%99%D7%99%D7%96%D7%95%D7%9F%20%D7%A4%D7%A1%D7%92%D7%95%D7%AA%20%D7%92%D7%A8%D7%95%D7%A4%20%D7%95%D7%90%D7%A9%D7%9E%D7%97%20%D7%9C%D7%A7%D7%91%D7%9C%20%D7%A4%D7%A8%D7%98%D7%99%D7%9D%20%D7%A0%D7%95%D7%A1%D7%A4%D7%99%D7%9D." target="_blank" rel="noopener" class="whatsapp-float" aria-label="צרו קשר ב-WhatsApp">
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413"/></svg>
+    <span class="whatsapp-tooltip">צרו קשר ב-WhatsApp</span>
+  </a>
+
+  <nav class="lp-sticky" aria-label="יצירת קשר מהירה">
+    <a class="s-call" href="tel:+972549665999">📞 שיחה</a>
+    <a class="s-wa" href="https://wa.me/972549665999?text=%D7%A9%D7%9C%D7%95%D7%9D%2C%20%D7%A1%D7%95%D7%A8%D7%91%D7%AA%D7%99%20%D7%91%D7%91%D7%A0%D7%A7%20%D7%95%D7%99%D7%A9%20%D7%9C%D7%99%20%D7%A0%D7%9B%D7%A1.%20%D7%90%D7%A9%D7%9E%D7%97%20%D7%9C%D7%91%D7%93%D7%99%D7%A7%D7%94" target="_blank" rel="noopener">וואטסאפ</a>
+    <a class="s-form" href="#lead-form">לבדיקה חינם</a>
+  </nav>
+
+  <script src="/js/animations.js" defer></script>
+  <script src="/js/main.js" defer></script>
+  <script src="/js/accessibility.js" defer></script>
+</body>
+</html>
