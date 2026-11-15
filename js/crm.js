@@ -7,7 +7,7 @@ import { firebaseConfig, isConfigured } from '/js/firebase-config.js?v=20261103a
 import { SERVICE_TYPES, buildItems, serviceLabel, docCatalog, storagePath, safeSeg } from '/js/case-templates.js?v=20261103a';
 import { initTasks } from '/js/crm-tasks.js?v=20261103a';
 import { initInvoices } from '/js/crm-invoices.js?v=20261103a';
-import { initConvert } from '/js/crm-convert.js?v=20261115a';
+import { initConvert } from '/js/crm-convert.js?v=20261115b';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? '' : s).replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -123,7 +123,11 @@ async function boot() {
   };
 
   /* ---------- המרת מסמכים (js/crm-convert.js) — תמונות → PDF, בדפדפן בלבד ---------- */
-  initConvert({ $, esc, loadJSZip });
+  initConvert({
+    $, esc, loadJSZip, serviceLabel,
+    cases: () => allCases, isClosed: (c) => isClosed(c),
+    attachToCase: (caseId, itemKey, files) => attachToCase(caseId, itemKey, files),
+  });
 
   /* ---------- חשבוניות (js/crm-invoices.js) — בעלים בלבד ---------- */
   let invoices = null;
@@ -1097,6 +1101,27 @@ async function boot() {
       await fs.updateDoc(fs.doc(db, 'cases', c.id), { items });
       c.items = items; renderCaseItems(c); renderSendBar(c);
     } catch (e) { say('ההעלאה נכשלה: ' + (e && e.message ? e.message : e), true); console.warn('staff upload', e); }
+  }
+  /* הוספת קבצים למסמך בתיק מחוץ לכרטיס התיק (לשונית "המרת מסמכים") — אותה שמירה כמו staffUpload */
+  async function attachToCase(caseId, itemKey, files) {
+    const c = allCases.find((x) => x.id === caseId); if (!c) throw new Error('התיק לא נמצא.');
+    if (isClosed(c)) throw new Error('התיק סגור — פתחו אותו מחדש כדי להוסיף מסמכים.');
+    const item = (c.items || []).find((x) => x.key === itemKey); if (!item) throw new Error('המסמך כבר לא קיים בתיק.');
+    const uploaded = [];
+    for (const file of files) {
+      if (file.size > 20 * 1024 * 1024) throw new Error('הקובץ ' + file.name + ' גדול מ-20MB — המירו באיכות רגילה או פצלו לכמה קבצים.');
+      const path = storagePath(c, item, file.name);
+      const sref = st.ref(storage, path);
+      await st.uploadBytes(sref, file, { contentType: file.type });
+      const url = await st.getDownloadURL(sref);
+      uploaded.push({ name: file.name, path, url, size: file.size, at: nowISO(), by: currentEmail });
+    }
+    // כותבים על בסיס המצב העדכני של התיק (ייתכן שהלקוח העלה בינתיים)
+    const cur = allCases.find((x) => x.id === caseId) || c;
+    const items = (cur.items || []).slice();
+    const gi = items.findIndex((x) => x.key === itemKey); if (gi < 0) throw new Error('המסמך הוסר מהתיק בזמן ההעלאה.');
+    items[gi] = { ...items[gi], status: 'received', rejectReason: '', files: [...(items[gi].files || []), ...uploaded] };
+    await fs.updateDoc(fs.doc(db, 'cases', caseId), { items });
   }
   async function deleteCaseFile(gi, fi) {
     const c = currentCase; if (!c) return;

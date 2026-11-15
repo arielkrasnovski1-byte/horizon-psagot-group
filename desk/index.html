@@ -7,7 +7,7 @@
   <title>Desk — הורייזון פסגות גרופ</title>
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/logo/favicon-32.png">
   <link rel="stylesheet" href="/css/main.css">
-  <link rel="stylesheet" href="/css/crm.css?v=20261115a">
+  <link rel="stylesheet" href="/css/crm.css?v=20261115b">
 </head>
 <body class="crm-body">
 
@@ -191,7 +191,7 @@
       <!-- ===== טאב המרת מסמכים (תמונות → PDF, בדפדפן בלבד) ===== -->
       <section class="tab-panel" id="panel-convert" hidden>
         <div class="panel-head"><h2>המרת מסמכים</h2></div>
-        <p class="cases-hint">הופכים תמונות לקובץ PDF — <b>קובץ אחד משותף</b> או <b>קובץ נפרד לכל תמונה</b>. אפשר גם לצרף קובצי PDF קיימים ולאחד אותם. ההמרה נעשית במחשב שלכם: הקבצים לא עולים לשרת ולא נשמרים במערכת.</p>
+        <p class="cases-hint">הופכים תמונות לקובץ PDF — <b>קובץ אחד משותף</b> או <b>קובץ נפרד לכל תמונה</b>. אפשר גם לצרף קובצי PDF קיימים ולאחד אותם. ההמרה נעשית במחשב שלכם; הקובץ נשמר במערכת רק אם בוחרים <b>הוספה לתיק לקוח</b>.</p>
         <div class="inv-drop" id="cv-drop">
           <input type="file" id="cv-files" multiple accept="image/*,application/pdf,.heic,.heif" hidden>
           <b>גררו לכאן תמונות (או קובצי PDF)</b> או לחצו לבחירה · אפשר כמה קבצים בבת אחת
@@ -564,6 +564,25 @@
   </div>
 
   <!-- ===== העברת מסמכים לעו״ד — בחירת מסמכים ===== -->
+  <!-- המרת מסמכים: הוספת הקובץ המוכן לתיק לקוח -->
+  <div class="modal-overlay" id="cv-case-modal" hidden>
+    <div class="modal lead-card">
+      <div class="lead-card-head">
+        <div>
+          <h3>📁 הוספה לתיק לקוח</h3>
+          <div class="lc-sub" id="cvc-sub"></div>
+        </div>
+        <button class="icon-btn" id="cvc-close" title="סגירה">✕</button>
+      </div>
+      <div id="cvc-body"></div>
+      <div class="cvc-msg" id="cvc-msg" hidden></div>
+      <div class="modal-actions lw-actions">
+        <button class="crm-btn" style="width:auto" type="button" id="cvc-go" disabled>הוספה לתיק</button>
+        <button class="btn-ghost" type="button" id="cvc-cancel">סגירה</button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal-overlay" id="lawyer-modal" hidden>
     <div class="modal lead-card">
       <div class="lead-card-head">
@@ -597,6 +616,6 @@
     </div>
   </div>
 
-  <script type="module" src="/js/crm.js?v=20261115a"></script>
+  <script type="module" src="/js/crm.js?v=20261115b"></script>
 </body>
 </html>

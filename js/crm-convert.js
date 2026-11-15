@@ -5,6 +5,7 @@
    ============================================================ */
 export function initConvert(ctx) {
   const { $, esc, loadJSZip } = ctx;
+  const canAttach = typeof ctx.attachToCase === 'function' && !!$('cv-case-modal');
   const A4 = [595.28, 841.89];
   const QUALITY = { normal: { max: 1800, q: 0.8 }, high: { max: 2800, q: 0.92 } };
 
@@ -167,6 +168,62 @@ export function initConvert(ctx) {
     } catch (e) { say('יצירת ה-ZIP נכשלה: ' + (e.message || e)); }
   }
 
+
+  /* ---------- הוספה לתיק לקוח: בוחרים לקוח ← בוחרים מסמך ← הקובץ נשמר בתיק ---------- */
+  const STATUS = { pending: 'טרם התקבל', received: 'התקבל', rejected: 'נדחה' };
+  const pick = { idx: [], caseId: '', itemKey: '', q: '', busy: false, msg: '', err: false };
+  const openCases = () => (ctx.cases() || []).filter((c) => !ctx.isClosed(c));
+  function openCasePick(idx) {
+    idx = idx.filter((i) => results[i]); if (!idx.length) return;
+    pick.idx = idx; pick.itemKey = ''; pick.q = ''; pick.msg = ''; pick.err = false; pick.busy = false;
+    if (!openCases().some((c) => c.id === pick.caseId)) pick.caseId = '';   // זוכרים את הלקוח האחרון — נוח כשמוסיפים כמה קבצים לאותו תיק
+    $('cv-case-modal').hidden = false; renderPick();
+    if (!pick.caseId) { const q = $('cvc-q'); if (q) q.focus(); }
+  }
+  const closePick = () => { if (!pick.busy) $('cv-case-modal').hidden = true; };
+  function caseListHTML() {
+    const q = pick.q.trim().toLowerCase(), qd = q.replace(/\D/g, '');
+    const list = openCases().filter((c) => !q || String(c.clientName || '').toLowerCase().includes(q) || (qd.length >= 3 && String(c.clientPhone || '').replace(/\D/g, '').includes(qd.replace(/^0/, ''))))
+      .sort((a, b) => String(a.clientName || '').localeCompare(String(b.clientName || ''), 'he'));
+    if (!list.length) return '<p class="cvc-empty">' + (q ? 'לא נמצא תיק פעיל שמתאים לחיפוש.' : 'אין תיקים פעילים. פותחים תיק בלשונית "תיקים".') + '</p>';
+    return list.slice(0, 60).map((c) => '<button type="button" class="cvc-row" data-case="' + esc(c.id) + '"><b>' + esc(c.clientName || 'ללא שם') + '</b><span>' + esc(ctx.serviceLabel(c.serviceType) || '') + '</span><span dir="ltr">' + esc(c.clientPhone || c.clientEmail || '') + '</span></button>').join('') +
+      (list.length > 60 ? '<p class="cvc-empty">מוצגים 60 הראשונים — צמצמו בחיפוש.</p>' : '');
+  }
+  function renderPick() {
+    const files = pick.idx.map((i) => results[i]);
+    $('cvc-sub').textContent = files.length === 1 ? files[0].name : files.length + ' קבצים: ' + files.map((f) => f.name).join(' · ');
+    const c = openCases().find((x) => x.id === pick.caseId);
+    let h;
+    if (!c) {
+      h = '<div class="field"><label>1. לאיזה לקוח?</label><input type="search" id="cvc-q" placeholder="חיפוש לפי שם או טלפון" value="' + esc(pick.q) + '"></div><div class="cvc-list" id="cvc-cases">' + caseListHTML() + '</div>';
+    } else {
+      const its = c.items || [];
+      h = '<div class="cvc-chosen"><span>לקוח: <b>' + esc(c.clientName || 'ללא שם') + '</b> · ' + esc(ctx.serviceLabel(c.serviceType) || '') + '</span><button type="button" class="btn-ghost" data-pick="change">החלפת לקוח</button></div>' +
+        '<div class="field"><label>2. על איזה מסמך לשים את ' + (files.length === 1 ? 'הקובץ' : 'הקבצים') + '?</label></div><div class="cvc-list">' +
+        (its.length ? its.map((it) => { const n = (it.files || []).length; return '<label class="cvc-item' + (pick.itemKey === it.key ? ' on' : '') + '"><input type="radio" name="cvc-item" value="' + esc(it.key) + '"' + (pick.itemKey === it.key ? ' checked' : '') + '><b>' + esc(it.label) + '</b>' +
+          '<span class="cvc-st cvc-st-' + esc(it.status || 'pending') + '">' + (STATUS[it.status] || STATUS.pending) + (n ? ' · ' + n + (n === 1 ? ' קובץ' : ' קבצים') : '') + (it.stage === 2 ? ' · שלב 2' : '') + '</span></label>'; }).join('')
+          : '<p class="cvc-empty">בתיק הזה אין עדיין בקשות למסמכים. מוסיפים מסמך בכרטיס התיק ("הוספת בקשת מסמך לתיק") וחוזרים לכאן.</p>') + '</div>' +
+        '<div class="field-hint">הקובץ יתווסף למסמך שנבחר (קבצים קיימים נשארים), והמסמך יסומן "התקבל".</div>';
+    }
+    $('cvc-body').innerHTML = h;
+    const m = $('cvc-msg'); m.textContent = pick.msg; m.hidden = !pick.msg; m.className = 'cvc-msg' + (pick.err ? ' err' : '');
+    const go = $('cvc-go'); go.disabled = pick.busy || !c || !pick.itemKey; go.textContent = pick.busy ? 'שומר בתיק…' : 'הוספה לתיק';
+  }
+  async function savePick() {
+    const c = openCases().find((x) => x.id === pick.caseId); const it = c && (c.items || []).find((x) => x.key === pick.itemKey);
+    if (!c || !it || pick.busy) return;
+    const targets = pick.idx.map((i) => results[i]).filter(Boolean);
+    pick.busy = true; pick.msg = ''; pick.err = false; renderPick();
+    try {
+      await ctx.attachToCase(c.id, it.key, targets.map((r) => new File([r.blob], r.name, { type: 'application/pdf' })));
+      targets.forEach((r) => { r.saved = (c.clientName || 'ללא שם') + ' · ' + it.label; });
+      pick.busy = false; pick.itemKey = ''; $('cv-case-modal').hidden = true; render();
+    } catch (e) {
+      console.warn('attach to case', e);
+      pick.busy = false; pick.err = true; pick.msg = 'השמירה בתיק נכשלה: ' + (e && e.message ? e.message : e); renderPick();
+    }
+  }
+
   /* ---------- תצוגה ---------- */
   function cardHTML(it, i) {
     const one = isOne();
@@ -197,10 +254,12 @@ export function initConvert(ctx) {
       : '';
     const resHTML = results.length
       ? '<div class="cv-results"><div class="cv-results-head"><b>✅ ' + (results.length === 1 ? 'הקובץ מוכן' : results.length + ' קבצים מוכנים') + '</b>' +
-          (results.length > 1 ? '<button type="button" class="crm-btn" style="width:auto" data-act="zip">⬇ הורדת כולם (ZIP)</button>' : '') + '</div>' +
+          (results.length > 1 ? '<span class="cv-results-btns">' + (canAttach ? '<button type="button" class="btn-ghost" data-act="case-all">📁 הוספת כולם לתיק לקוח</button>' : '') + '<button type="button" class="crm-btn" style="width:auto" data-act="zip">⬇ הורדת כולם (ZIP)</button></span>' : '') + '</div>' +
           results.map((r, i) => '<div class="cv-res"><span class="cv-res-name">' + esc(r.name) + '</span><span class="cv-res-size">' + (r.pages ? r.pages + ' עמ׳ · ' : '') + fmtSize(r.blob.size) + '</span>' +
             '<a class="btn-ghost" href="' + r.url + '" target="_blank" rel="noopener">צפייה</a>' +
-            '<button type="button" class="btn-ghost" data-act="dl" data-i="' + i + '">⬇ הורדה</button></div>').join('') +
+            '<button type="button" class="btn-ghost" data-act="dl" data-i="' + i + '">⬇ הורדה</button>' +
+            (canAttach ? '<button type="button" class="btn-ghost cv-to-case" data-act="case" data-i="' + i + '">📁 הוספה לתיק לקוח</button>' : '') +
+            (r.saved ? '<span class="cv-saved">✓ נוסף לתיק: ' + esc(r.saved) + '</span>' : '') + '</div>').join('') +
         '</div>'
       : '';
     const failHTML = failed.length ? '<div class="cv-fail">לא הומרו: ' + failed.map(esc).join(' · ') + '</div>' : '';
@@ -234,6 +293,8 @@ export function initConvert(ctx) {
     if (act === 'go') return convert();
     if (act === 'zip') return downloadZip();
     if (act === 'dl') { const r = results[+b.dataset.i]; if (r) download(r); return; }
+    if (act === 'case') return openCasePick([+b.dataset.i]);
+    if (act === 'case-all') return openCasePick(results.map((_, k) => k));
     if (act === 'more') return input.click();
     if (act === 'clear') return clearAll();
     if (i < 0) return;
@@ -274,6 +335,21 @@ export function initConvert(ctx) {
   });
   body.addEventListener('dragend', () => { dragId = null; body.querySelectorAll('.dragging').forEach((x) => x.classList.remove('dragging')); });
 
-  if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.__cvTest = { addFiles, convert, opts, items: () => items, results: () => results, failed: () => failed, render };
+  if (canAttach) {
+    const cm = $('cv-case-modal');
+    $('cvc-close').addEventListener('click', closePick); $('cvc-cancel').addEventListener('click', closePick);
+    cm.addEventListener('click', (e) => { if (e.target === cm) closePick(); });
+    $('cvc-go').addEventListener('click', savePick);
+    $('cvc-body').addEventListener('click', (e) => {
+      if (pick.busy) return;
+      const row = e.target.closest('[data-case]');
+      if (row) { pick.caseId = row.dataset.case; pick.itemKey = ''; pick.msg = ''; return renderPick(); }
+      if (e.target.closest('[data-pick="change"]')) { pick.caseId = ''; pick.itemKey = ''; pick.q = ''; pick.msg = ''; renderPick(); const q = $('cvc-q'); if (q) q.focus(); }
+    });
+    $('cvc-body').addEventListener('input', (e) => { if (e.target.id === 'cvc-q') { pick.q = e.target.value; $('cvc-cases').innerHTML = caseListHTML(); } });
+    $('cvc-body').addEventListener('change', (e) => { if (e.target.name === 'cvc-item') { pick.itemKey = e.target.value; pick.msg = ''; renderPick(); } });
+  }
+
+  if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) window.__cvTest = { addFiles, convert, opts, items: () => items, results: () => results, failed: () => failed, render, pick };
   return { addFiles, convert };
 }
