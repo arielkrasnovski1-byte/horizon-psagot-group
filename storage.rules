@@ -11,7 +11,9 @@ service firebase.storage {
 
     function isStaff() {
       return request.auth != null
-        && firestore.exists(/databases/(default)/documents/crm_users/$(request.auth.uid));
+        && firestore.exists(/databases/(default)/documents/crm_users/$(request.auth.uid))
+        && firestore.get(/databases/(default)/documents/crm_users/$(request.auth.uid)).data.get('role', 'none')
+             in ['owner', 'manager', 'agent'];
     }
     function phoneMatch(caseId) {
       return request.auth.token.phone_number != null

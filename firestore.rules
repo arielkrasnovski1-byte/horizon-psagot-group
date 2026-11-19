@@ -12,9 +12,13 @@ service cloud.firestore {
     function signedIn() {
       return request.auth != null;
     }
+    // איש צוות = יש לו מסמך ב-crm_users עם תפקיד תקף שהוגדר ע"י בעלים.
+    // התחברות בלבד (למשל לקוח פורטל ב-SMS) או מסמך בלי תפקיד — אינם צוות.
     function hasProfile() {
       return signedIn()
-        && exists(/databases/$(database)/documents/crm_users/$(request.auth.uid));
+        && exists(/databases/$(database)/documents/crm_users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/crm_users/$(request.auth.uid)).data.get('role', 'none')
+             in ['owner', 'manager', 'agent'];
     }
     function myRole() {
       // מחזיר את התפקיד של המשתמש המחובר, או 'none' אם אין לו פרופיל
@@ -36,8 +40,8 @@ service cloud.firestore {
                         && request.resource.data.phone is string
                         && request.resource.data.name.size() < 300
                         && request.resource.data.phone.size() < 60)
-                     || signedIn();               // צוות יכול ליצור ליד ידני
-      allow read, update, delete: if signedIn();  // כל תפקיד מטפל בלידים
+                     || hasProfile();             // צוות יכול ליצור ליד ידני
+      allow read, update, delete: if hasProfile(); // צוות בלבד (לא לקוחות פורטל מחוברים)
     }
 
     // ---------- תוכן מוצג באתר ----------
@@ -54,11 +58,11 @@ service cloud.firestore {
     // כל משתמש מעדכן רק את המסמך של עצמו — ולעולם לא את שדה 'role' של עצמו
     // (מונע הסלמת הרשאות: agent לא יכול להפוך את עצמו ל-owner).
     match /crm_users/{uid} {
-      allow read: if signedIn();
+      allow read: if hasProfile() || (signedIn() && request.auth.uid == uid);
       allow delete: if isOwner();
-      // owner יוצר משתמשים עם תפקיד · משתמש חדש יוצר את המסמך של עצמו בלי 'role'
-      allow create: if isOwner()
-                    || (request.auth.uid == uid && !('role' in request.resource.data));
+      // רק owner יוצר משתמשים. אין יצירה עצמית — אחרת כל מי שמתחבר (גם לקוח פורטל)
+      // היה יכול לרשום את עצמו כצוות.
+      allow create: if isOwner();
       allow update: if isOwner()
                     || (request.auth.uid == uid && !touchesRole());
       // הערה: יצירת ה-owner הראשון נעשית ידנית ב-Firebase Console
