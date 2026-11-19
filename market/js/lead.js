@@ -54,7 +54,7 @@
       fd.append('email', val('email'));
       fd.append('תחום עניין', val('interest'));
       fd.append('message', val('message'));
-      var res = await fetch('https://api.web3forms.com/submit', { method: 'POST', headers: { Accept: 'application/json' }, body: fd });
+      var res = await fetch('https://api.web3forms.com/submit', { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(Object.fromEntries(fd)) });
       var data = await res.json();
       if (!data.success) throw new Error(data.message || 'failed');
       toDesk();

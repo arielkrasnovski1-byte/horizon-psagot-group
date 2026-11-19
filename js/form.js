@@ -154,8 +154,9 @@
     try {
       const response = await fetch('https://api.web3forms.com/submit', {
         method: 'POST',
-        headers: { Accept: 'application/json' },
-        body: new FormData(form),
+        // JSON ולא multipart — אחרת שמות שדות בעברית מגיעים למייל כג'יבריש
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify(Object.fromEntries(new FormData(form))),
       });
       const data = await response.json();
 
