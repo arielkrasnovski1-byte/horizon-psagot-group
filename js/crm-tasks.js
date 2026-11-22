@@ -47,7 +47,9 @@ export function initTasks(ctx) {
   const weekEnd = () => addDays(todayStr(), 7);
   const nowHM = () => { const d = new Date(); return `${p2(d.getHours())}:${p2(d.getMinutes())}`; };
   const fmtDue = (t) => {
-    if (!t.dueDate) return 'ללא תאריך';
+    // תאריך/שעה שאינם בתבנית הצפויה לא מוצגים כלל (הערך מגיע מהמסד ונכנס ל-innerHTML)
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(t.dueDate || ''))) return 'ללא תאריך';
+    if (t.dueTime && !/^\d{1,2}:\d{2}$/.test(String(t.dueTime))) t = { ...t, dueTime: '' };
     const [y, m, d] = t.dueDate.split('-');
     const today = todayStr();
     let s = t.dueDate === today ? 'היום' : t.dueDate === addDays(today, 1) ? 'מחר' : t.dueDate === addDays(today, -1) ? 'אתמול' : `${d}/${m}/${y.slice(2)}`;
@@ -157,8 +159,8 @@ export function initTasks(ctx) {
     const st = TASK_STATUS[t.status] || TASK_STATUS.open;
     const od = isOverdue(t);
     const checkable = canProgress(t) && OPEN(t);
-    return `<div class="task-row st-${st.cls}${od ? ' overdue' : ''}${!OPEN(t) ? ' closed' : ''}" data-task="${t.id}">` +
-      `<button type="button" class="t-check${t.status === 'done' ? ' on' : ''}" data-done="${t.id}" title="${t.status === 'done' ? 'הושלמה' : 'סימון כהושלמה'}" ${checkable ? '' : 'disabled'}>${t.status === 'done' ? '✓' : ''}</button>` +
+    return `<div class="task-row st-${st.cls}${od ? ' overdue' : ''}${!OPEN(t) ? ' closed' : ''}" data-task="${esc(t.id)}">` +
+      `<button type="button" class="t-check${t.status === 'done' ? ' on' : ''}" data-done="${esc(t.id)}" title="${t.status === 'done' ? 'הושלמה' : 'סימון כהושלמה'}" ${checkable ? '' : 'disabled'}>${t.status === 'done' ? '✓' : ''}</button>` +
       `<div class="t-main"><div class="t-title">${esc(t.title)} ${prioTag(t)} ${repeatTag(t)}</div>` +
       `<div class="t-meta">${linkTag(t)}<span class="t-assignee">${esc(nameOfUid(t.assignedUid))}</span>` +
       `${t.createdByUid !== t.assignedUid ? `<span class="t-by">מאת ${esc(nameOfUid(t.createdByUid))}</span>` : ''}` +
@@ -192,7 +194,7 @@ export function initTasks(ctx) {
     el.innerHTML = BOARD_COLS.map((k) => {
       const items = base.filter((t) => t.status === k && (k !== 'done' || (t.completedAt || '').slice(0, 10) >= weekAgo));
       return `<div class="board-col st-${TASK_STATUS[k].cls}" data-col="${k}"><h4>${TASK_STATUS[k].he} <span>${items.length}</span>${k === 'done' ? '<small>7 ימים אחרונים</small>' : ''}</h4>` +
-        `<div class="board-cards">${items.map((t) => `<div class="board-card${isOverdue(t) ? ' overdue' : ''}" draggable="${canProgress(t)}" data-task="${t.id}">` +
+        `<div class="board-cards">${items.map((t) => `<div class="board-card${isOverdue(t) ? ' overdue' : ''}" draggable="${canProgress(t)}" data-task="${esc(t.id)}">` +
           `<div class="t-title">${esc(t.title)} ${prioTag(t)}</div><div class="t-meta">${linkTag(t)}<span class="t-assignee">${esc(nameOfUid(t.assignedUid))}</span></div>` +
           `<span class="t-due${isOverdue(t) ? ' late' : ''}">${fmtDue(t)}</span></div>`).join('') || '<div class="board-empty">—</div>'}</div></div>`;
     }).join('');
@@ -223,7 +225,7 @@ export function initTasks(ctx) {
       const ymd = `${y}-${p2(m + 1)}-${p2(d)}`;
       const items = base.filter((t) => t.dueDate === ymd);
       cells += `<div class="cal-cell${ymd === todayStr() ? ' today' : ''}" data-day="${ymd}"><div class="cal-day">${d}</div>` +
-        items.slice(0, 4).map((t) => `<div class="cal-item st-${(TASK_STATUS[t.status] || TASK_STATUS.open).cls}${isOverdue(t) ? ' late' : ''}" data-task="${t.id}" title="${esc(t.title)} · ${esc(nameOfUid(t.assignedUid))}">${t.dueTime ? `<b>${t.dueTime}</b> ` : ''}${esc(t.title)}</div>`).join('') +
+        items.slice(0, 4).map((t) => `<div class="cal-item st-${(TASK_STATUS[t.status] || TASK_STATUS.open).cls}${isOverdue(t) ? ' late' : ''}" data-task="${esc(t.id)}" title="${esc(t.title)} · ${esc(nameOfUid(t.assignedUid))}">${t.dueTime ? `<b>${esc(t.dueTime)}</b> ` : ''}${esc(t.title)}</div>`).join('') +
         (items.length > 4 ? `<div class="cal-more">+${items.length - 4}</div>` : '') + '</div>';
     }
     $('tasks-calendar').innerHTML = `<div class="cal-head"><button class="btn-ghost" type="button" data-cal="-1">‹ הקודם</button><h4>${monthName}</h4><button class="btn-ghost" type="button" data-cal="1">הבא ›</button><button class="btn-ghost" type="button" data-cal="0">היום</button></div>` +
@@ -272,7 +274,7 @@ export function initTasks(ctx) {
     const name = type === 'lead' ? (obj.name || '') : (obj.clientName || '');
     box.innerHTML = `<div class="lt-head"><h4>משימות ${ts.length ? `<span>${ts.filter(OPEN).length} פתוחות</span>` : ''}</h4>` +
       `<div><button class="btn-ghost" type="button" data-newlinked="1">+ משימה</button>${type === 'case' && isMgr() ? '<button class="btn-ghost" type="button" data-casetpl="1">משימות סטנדרטיות לתיק</button>' : ''}</div></div>` +
-      (ts.length ? ts.map((t) => `<div class="lt-row${!OPEN(t) ? ' closed' : ''}" data-task="${t.id}"><span class="t-status ${(TASK_STATUS[t.status] || TASK_STATUS.open).cls}">${(TASK_STATUS[t.status] || TASK_STATUS.open).he}</span><span class="lt-title">${esc(t.title)}</span><span class="t-assignee">${esc(nameOfUid(t.assignedUid))}</span><span class="t-due${isOverdue(t) ? ' late' : ''}">${fmtDue(t)}</span></div>`).join('') : '<div class="lt-empty">אין משימות מקושרות.</div>');
+      (ts.length ? ts.map((t) => `<div class="lt-row${!OPEN(t) ? ' closed' : ''}" data-task="${esc(t.id)}"><span class="t-status ${(TASK_STATUS[t.status] || TASK_STATUS.open).cls}">${(TASK_STATUS[t.status] || TASK_STATUS.open).he}</span><span class="lt-title">${esc(t.title)}</span><span class="t-assignee">${esc(nameOfUid(t.assignedUid))}</span><span class="t-due${isOverdue(t) ? ' late' : ''}">${fmtDue(t)}</span></div>`).join('') : '<div class="lt-empty">אין משימות מקושרות.</div>');
     box.querySelector('[data-newlinked]').addEventListener('click', () => openNew({ link: { type, id: obj.id, name }, assignedUid: (type === 'lead' ? uidOfEmail(obj.assignedTo) : uidOfEmail(obj.createdBy)) || me().uid }));
     const tpl = box.querySelector('[data-casetpl]'); if (tpl) tpl.addEventListener('click', () => createCaseTemplate(obj));
     box.querySelectorAll('[data-task]').forEach((r) => r.addEventListener('click', () => openTask(allTasks.find((t) => t.id === r.dataset.task))));
@@ -428,8 +430,8 @@ export function initTasks(ctx) {
   }
   function fillLinkList() {
     const dl = $('tm-link-list');
-    dl.innerHTML = ctx.leads().slice(0, 300).map((l) => `<option value="👤 ${esc(l.name || '')} · ${esc(l.phone || '')}" data-type="lead" data-id="${l.id}"></option>`).join('') +
-      ctx.cases().map((c) => `<option value="📁 ${esc(c.clientName || '')} · ${esc(ctx.serviceLabel(c.serviceType))}" data-type="case" data-id="${c.id}"></option>`).join('');
+    dl.innerHTML = ctx.leads().slice(0, 300).map((l) => `<option value="👤 ${esc(l.name || '')} · ${esc(l.phone || '')}" data-type="lead" data-id="${esc(l.id)}"></option>`).join('') +
+      ctx.cases().map((c) => `<option value="📁 ${esc(c.clientName || '')} · ${esc(ctx.serviceLabel(c.serviceType))}" data-type="case" data-id="${esc(c.id)}"></option>`).join('');
   }
   function setLink(l) {
     link = l || null;
@@ -476,7 +478,7 @@ export function initTasks(ctx) {
       (t.status === 'done' && t.completedAt ? ` · הושלמה ${fmtDate(t.completedAt)} ע״י ${esc(displayName(t.completedBy))}` : '') +
       ((t.occurrences || []).length ? ` · בוצעה ${t.occurrences.length} פעמים` : '');
     $('tm-title').value = t.title || ''; $('tm-desc').value = t.desc || '';
-    $('tm-assignee').innerHTML = full ? assigneeOptions(t.assignedUid) : `<option value="${t.assignedUid}">${esc(nameOfUid(t.assignedUid))}</option>`;
+    $('tm-assignee').innerHTML = full ? assigneeOptions(t.assignedUid) : `<option value="${esc(t.assignedUid)}">${esc(nameOfUid(t.assignedUid))}</option>`;
     $('tm-status').innerHTML = STATUS_KEYS.map((k) => `<option value="${k}"${t.status === k ? ' selected' : ''}>${TASK_STATUS[k].he}</option>`).join('');
     $('tm-status').className = 'status-select ' + (TASK_STATUS[t.status] || TASK_STATUS.open).cls;
     $('tm-due').value = t.dueDate || ''; $('tm-due-time').value = t.dueTime || '';

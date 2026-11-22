@@ -5,12 +5,14 @@
    ============================================================ */
 import { firebaseConfig, isConfigured } from '/js/firebase-config.js?v=20261103a';
 import { SERVICE_TYPES, buildItems, serviceLabel, docCatalog, storagePath, safeSeg } from '/js/case-templates.js?v=20261103a';
-import { initTasks } from '/js/crm-tasks.js?v=20261103a';
+import { initTasks } from '/js/crm-tasks.js?v=20261122a';
 import { initInvoices } from '/js/crm-invoices.js?v=20261103a';
 import { initConvert } from '/js/crm-convert.js?v=20261115b';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? '' : s).replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]));
+// קישור קובץ בתיק נשמר ע"י הלקוח — מציגים/שולחים אותו רק אם הוא באמת מצביע לאחסון שלנו
+const safeUrl = (u) => /^https:\/\/firebasestorage\.googleapis\.com\//.test(String(u || '')) ? String(u) : '#';
 
 if (!isConfigured) { $('login-view').hidden = true; $('setup-view').hidden = false; }
 else boot();
@@ -41,7 +43,8 @@ async function boot() {
   const STATUS_KEYS = ['new', 'contacted', 'in_progress', 'closed'];
 
   /* ---------- עזרי תאריך ---------- */
-  function toDateObj(ts) { if (!ts) return null; if (ts.toDate) return ts.toDate(); const d = new Date(ts); return isNaN(d.getTime()) ? null : d; }
+  // סובלני לערכים פגומים: ליד נוצר ע"י כל גולש, ושדה תאריך משובש לא אמור להפיל את המסך
+  function toDateObj(ts) { if (!ts) return null; if (typeof ts.toDate === 'function') { try { return ts.toDate(); } catch (e) { return null; } } if (typeof ts !== 'string' && typeof ts !== 'number') return null; const d = new Date(ts); return isNaN(d.getTime()) ? null : d; }
   function nowISO() { return new Date().toISOString(); }
   const p2 = (n) => ('0' + n).slice(-2);
   function fmtDate(ts) { const d = toDateObj(ts); if (!d) return '—'; return `${p2(d.getDate())}/${p2(d.getMonth()+1)}/${d.getFullYear()} ${p2(d.getHours())}:${p2(d.getMinutes())}`; }
@@ -111,7 +114,7 @@ async function boot() {
   const ROLES = { owner: 'בעלים', manager: 'מנהל', agent: 'נציג' };
   const normRole = (r) => (r === 'owner' || r === 'manager' || r === 'agent') ? r : 'agent';
   // שם תצוגה של מטפל לפי המייל — מהשם שהוגדר, אחרת החלק שלפני ה-@
-  const displayName = (email) => { if (!email) return ''; const u = allUsers.find((x) => x.email === email); return (u && u.name) ? u.name : email.split('@')[0]; };
+  const displayName = (email) => { if (!email) return ''; email = String(email); const u = allUsers.find((x) => x.email === email); return (u && u.name) ? u.name : email.split('@')[0]; };
 
   /* ---------- משימות (js/crm-tasks.js) ---------- */
   let tasks = null;
@@ -362,14 +365,14 @@ async function boot() {
       const assigned = l.assignedTo ? esc(displayName(l.assignedTo)) : '<span style="color:var(--color-warm-gray)">—</span>';
       const late = isWaiting(l) ? ` <span class="lead-wait">ממתין ${waitDays(l)} ימים</span>` : '';
       const fu = isFollowUpDue(l) ? ' <span class="fu-clock" title="ממתין לפולו-אפ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg></span>' : '';
-      return `<tr data-lead="${l.id}" class="lead-row ls-${st.cls}">`+
+      return `<tr data-lead="${esc(l.id)}" class="lead-row ls-${st.cls}">`+
         `<td class="lead-date" data-label="תאריך">${fmtDate(l.createdAt)}</td>`+
         `<td class="lead-name-cell" data-label="שם"><div class="lead-name"><span class="lead-dot"></span>${esc(l.name)}${fu}${late}</div>${l.message?`<div class="lead-sub">${esc(l.message)}</div>`:''}</td>`+
         `<td class="lead-contact" data-label="יצירת קשר"><a href="tel:${esc(l.phone)}" onclick="event.stopPropagation()">${esc(l.phone)}</a>${l.email?`<a href="mailto:${esc(l.email)}" onclick="event.stopPropagation()">${esc(l.email)}</a>`:''}</td>`+
         `<td data-label="קהל / נושא">${esc(topic)}</td><td data-label="מקור">${src}</td><td data-label="מטופל ע״י">${assigned}</td>`+
-        `<td data-label="סטטוס"><select class="status-select ${st.cls}" data-id="${l.id}" onclick="event.stopPropagation()">${opts}</select></td>`+
+        `<td data-label="סטטוס"><select class="status-select ${st.cls}" data-id="${esc(l.id)}" onclick="event.stopPropagation()">${opts}</select></td>`+
         `<td class="actions-cell"><div class="row-actions"><span class="open-hint">פרטים ›</span>`+
-        `<button type="button" class="icon-btn case-btn${caseForLead(l.id)?' has-case':''}" data-newcase="${l.id}" title="${caseForLead(l.id)?'תיק לקוח קיים — פתיחה':'פתיחת תיק לקוח'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>${caseForLead(l.id)?'<path d="m9 13 2 2 4-4"/>':'<path d="M12 10v6M9 13h6"/>'}</svg></button>`+
+        `<button type="button" class="icon-btn case-btn${caseForLead(l.id)?' has-case':''}" data-newcase="${esc(l.id)}" title="${caseForLead(l.id)?'תיק לקוח קיים — פתיחה':'פתיחת תיק לקוח'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>${caseForLead(l.id)?'<path d="m9 13 2 2 4-4"/>':'<path d="M12 10v6M9 13h6"/>'}</svg></button>`+
         `<a class="icon-btn" href="https://wa.me/${phoneIntl(l.phone)}" target="_blank" rel="noopener" title="וואטסאפ" onclick="event.stopPropagation()"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1 0 12 2z"/></svg></a></div></td></tr>`;
     }).join('');
     body.querySelectorAll('[data-newcase]').forEach((b) => b.addEventListener('click', (e) => {
@@ -1033,7 +1036,7 @@ async function boot() {
     const closed = isClosed(c);
     const row = (it, gi) => {
       const files = (it.files || []).map((f, fi) =>
-        '<span class="file-chip-wrap"><a class="file-chip' + (f.by ? ' staff' : '') + '" href="' + esc(f.url) + '" target="_blank" rel="noopener" title="' +
+        '<span class="file-chip-wrap"><a class="file-chip' + (f.by ? ' staff' : '') + '" href="' + esc(safeUrl(f.url)) + '" target="_blank" rel="noopener" title="' +
           esc((f.by ? 'הועלה ע״י ' + displayName(f.by) : 'הועלה ע״י הלקוח') + (f.at ? ' · ' + fmtDate(f.at) : '')) + '">📄 ' + esc(f.name) + '</a>' +
         (closed ? '' : '<button class="file-del" type="button" data-fdel="' + gi + ':' + fi + '" title="מחיקת הקובץ מהתיק">✕</button>') + '</span>').join('');
       const st = it.status === 'received' ? '<span class="pill received">✓ התקבל</span>'
@@ -1201,7 +1204,7 @@ async function boot() {
     msg += '\n';
     got.forEach((it) => {
       msg += '▸ ' + it.label + (it.status === 'received' ? '' : ' (טרם אושר)') + ':\n';
-      (it.files || []).forEach((f) => { msg += '   ' + f.name + ' — ' + f.url + '\n'; });
+      (it.files || []).forEach((f) => { const u = safeUrl(f.url); if (u !== '#') msg += '   ' + f.name + ' — ' + u + '\n'; });
     });
     if (!got.length) msg += '(לא נבחרו מסמכים)\n';
     if ($('lw-missing').checked) {

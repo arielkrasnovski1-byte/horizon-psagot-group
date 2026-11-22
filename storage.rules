@@ -21,7 +21,9 @@ service firebase.storage {
              == request.auth.token.phone_number;
     }
     function emailMatch(caseId) {
+      // מייל מאומת בלבד — ראו ההערה ב-firestore.rules (ownsCase)
       return request.auth.token.email != null
+        && request.auth.token.email_verified == true
         && firestore.get(/databases/(default)/documents/cases/$(caseId)).data.clientEmail
              == request.auth.token.email;
     }

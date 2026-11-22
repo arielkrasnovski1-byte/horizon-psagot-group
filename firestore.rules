@@ -36,7 +36,10 @@ service cloud.firestore {
     // ---------- לידים ----------
     // כל אחד יכול לשלוח פנייה (טופס האתר / פייסבוק); רק צוות מחובר רואה ועורך.
     match /leads/{doc} {
-      allow create: if (request.resource.data.name is string
+      // מזהה המסמך חייב להיות מזהה אוטומטי רגיל (20 אותיות/ספרות) — מזהה חופשי
+      // מוצג ב-Desk ויכול לשמש להזרקת קוד לדפדפן של הצוות.
+      allow create: if (doc.matches('^[A-Za-z0-9]{20}$')
+                        && request.resource.data.name is string
                         && request.resource.data.phone is string
                         && request.resource.data.name.size() < 300
                         && request.resource.data.phone.size() < 60)
@@ -90,7 +93,10 @@ service cloud.firestore {
     function ownsCase(data) {
       return (data.clientPhone != null && request.auth.token.phone_number != null
                 && data.clientPhone == request.auth.token.phone_number)
+          // המייל חייב להיות מאומת (כניסה בקישור למייל). בלי זה, כל אחד יכול לפתוח
+          // חשבון מייל+סיסמה עם כתובת של לקוח ולקבל את התיק שלו.
           || (data.clientEmail != null && request.auth.token.email != null
+                && request.auth.token.email_verified == true
                 && data.clientEmail == request.auth.token.email);
     }
     match /cases/{caseId} {

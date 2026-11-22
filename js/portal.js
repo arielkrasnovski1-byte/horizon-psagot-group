@@ -12,6 +12,9 @@ import { serviceLabel, storagePath, CONSENT_VERSION } from '/js/case-templates.j
   const show = (el, v) => { if (el) el.hidden = !v; };
   const esc = (s) => String(s == null ? '' : s).replace(/[<>&"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]));
 
+  // קישור קובץ מוצג רק אם הוא באמת מצביע לאחסון שלנו (הכתובת נשמרת בתיק ע"י הלקוח)
+  const safeUrl = (u) => /^https:\/\/firebasestorage\.googleapis\.com\//.test(String(u || '')) ? String(u) : '#';
+
   if (!isConfigured) { show($('login-view'), false); show($('setup-view'), true); return; }
 
   const [appMod, authMod, fsMod, stMod] = await Promise.all([
@@ -346,7 +349,7 @@ import { serviceLabel, storagePath, CONSENT_VERSION } from '/js/case-templates.j
   function itemRow(c, it) {
     const closed = c.status === 'closed';
     const files = (it.files || []).map((f, fi) =>
-      '<span class="file-row"><a class="file-chip" href="' + esc(f.url) + '" target="_blank" rel="noopener">📄 ' + esc(f.name) + '</a>' +
+      '<span class="file-row"><a class="file-chip" href="' + esc(safeUrl(f.url)) + '" target="_blank" rel="noopener">📄 ' + esc(f.name) + '</a>' +
       (closed ? '' : '<label class="file-swap" title="החלפת הקובץ בקובץ אחר">↻ החלפה<input type="file" accept="image/*,application/pdf" data-swap-key="' + esc(it.key) + '" data-swap-fi="' + fi + '" hidden></label>') +
       '</span>').join('');
     const reject = it.status === 'rejected' && it.rejectReason
