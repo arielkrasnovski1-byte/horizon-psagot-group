@@ -36,10 +36,10 @@ service cloud.firestore {
     // ---------- לידים ----------
     // כל אחד יכול לשלוח פנייה (טופס האתר / פייסבוק); רק צוות מחובר רואה ועורך.
     match /leads/{doc} {
-      // מזהה המסמך חייב להיות מזהה אוטומטי רגיל (20 אותיות/ספרות) — מזהה חופשי
-      // מוצג ב-Desk ויכול לשמש להזרקת קוד לדפדפן של הצוות.
-      allow create: if (doc.matches('^[A-Za-z0-9]{20}$')
-                        && request.resource.data.name is string
+      // אין כאן בדיקה על מזהה המסמך: לידים מפייסבוק נכנסים דרך Make ב-REST בלי מזהה,
+      // ובמצב הזה תנאי על תבנית המזהה נכשל וחוסם אותם (נבדק 2026-11-22).
+      // ההגנה מפני מזהה זדוני היא בקוד ה-Desk, שמסנן את המזהה לפני הצגה.
+      allow create: if (request.resource.data.name is string
                         && request.resource.data.phone is string
                         && request.resource.data.name.size() < 300
                         && request.resource.data.phone.size() < 60)
