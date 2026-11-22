@@ -73,32 +73,66 @@
     box.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
-  // כתיבת הפנייה ל-CRM (Firestore) — לא חוסמת; נכשלת בשקט אם Firebase לא מוגדר
+  // כתיבת הפנייה ל-CRM (Firestore) — לא חוסמת את המייל.
+  // נשלחת בבקשת REST אחת עם keepalive (שורדת גם אם הגולש סוגר את הדף מיד),
+  // ורק אם היא נכשלת — ניסיון שני דרך ה-SDK. נכתבת פעם אחת בלבד לכל שליחה.
+  let crmCaptured = false;
+  function leadData() {
+    const v = (id) => { const el = form.querySelector('#' + id); return el ? (el.value || '').trim() : ''; };
+    // שדות ייעודיים לדפי נחיתה (data-crm-extra="תווית") — מצורפים לפירוט הפנייה
+    const extras = Array.from(form.querySelectorAll('[data-crm-extra]'))
+      .map((el) => { const val = (el.value || '').trim(); return val ? el.getAttribute('data-crm-extra') + ': ' + val : ''; })
+      .filter(Boolean);
+    return {
+      name: v('name'), phone: v('phone'), email: v('email'),
+      audience: v('audience'), topic: v('topic'), hasAsset: v('asset'),
+      message: [v('message')].concat(extras).filter(Boolean).join('\n'),
+      source: 'website', status: 'new', notes: '',
+      lang: document.documentElement.lang === 'en' ? 'en' : 'he',
+    };
+  }
   async function captureToCRM() {
+    if (crmCaptured) return true;
+    crmCaptured = true;
+    const data = leadData();
+    let cfg;
     try {
-      const cfg = await import('/js/firebase-config.js');
-      if (!cfg.isConfigured) return;
+      cfg = await import('/js/firebase-config.js');
+      if (!cfg.isConfigured) return true;   // אין CRM מוגדר — אין על מה להתריע
+    } catch (err) {
+      crmCaptured = false;
+      if (window.console) console.warn('CRM capture skipped:', err);
+      return false;
+    }
+    try {
+      const fields = {};
+      Object.keys(data).forEach((k) => { fields[k] = { stringValue: data[k] }; });
+      fields.createdAt = { timestampValue: new Date().toISOString() };
+      const url = 'https://firestore.googleapis.com/v1/projects/' + cfg.firebaseConfig.projectId +
+        '/databases/(default)/documents/leads?key=' + cfg.firebaseConfig.apiKey;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fields }),
+        keepalive: true,
+      });
+      if (!res.ok) throw new Error('REST ' + res.status);
+      return true;
+    } catch (err) {
+      if (window.console) console.warn('CRM REST capture failed, trying SDK:', err);
+    }
+    try {
       const [{ initializeApp }, { getFirestore, collection, addDoc, serverTimestamp }] = await Promise.all([
         import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js'),
         import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js'),
       ]);
-      const app = initializeApp(cfg.firebaseConfig);
-      const db = getFirestore(app);
-      const v = (id) => { const el = form.querySelector('#' + id); return el ? (el.value || '').trim() : ''; };
-      // שדות ייעודיים לדפי נחיתה (data-crm-extra="תווית") — מצורפים לפירוט הפנייה
-      const extras = Array.from(form.querySelectorAll('[data-crm-extra]'))
-        .map((el) => { const val = (el.value || '').trim(); return val ? el.getAttribute('data-crm-extra') + ': ' + val : ''; })
-        .filter(Boolean);
-      await addDoc(collection(db, 'leads'), {
-        name: v('name'), phone: v('phone'), email: v('email'),
-        audience: v('audience'), topic: v('topic'), hasAsset: v('asset'),
-        message: [v('message')].concat(extras).filter(Boolean).join('\n'),
-        source: 'website', status: 'new', notes: '',
-        lang: document.documentElement.lang === 'en' ? 'en' : 'he',
-        createdAt: serverTimestamp(),
-      });
+      const db = getFirestore(initializeApp(cfg.firebaseConfig));
+      await addDoc(collection(db, 'leads'), Object.assign({}, data, { createdAt: serverTimestamp() }));
+      return true;
     } catch (err) {
+      crmCaptured = false;   // מאפשר ניסיון נוסף בשליחה חוזרת
       if (window.console) console.warn('CRM capture skipped:', err);
+      return false;
     }
   }
 
@@ -143,6 +177,24 @@
     }
     renderSummary([]);   // ניקוי הסיכום אם הכל תקין
 
+    // סינון: שדה עם data-disqualify="ערך" — מי שבחר בערך הזה אינו בקהל היעד.
+    // מוצגת לו הודעה מנומסת; לא נשלח מייל, לא נוצר ליד ולא נספרת המרה בגוגל.
+    const dq = Array.from(form.querySelectorAll('[data-disqualify]'))
+      .find((el) => (el.value || '').trim() === el.getAttribute('data-disqualify'));
+    if (dq) {
+      const box = formWrap.querySelector('.form-success');
+      if (box) {
+        box.innerHTML = '<h3 style="margin-bottom: var(--space-2xs);">' + (isEnglish ? 'Thank you for reaching out.' : 'תודה על הפנייה.') + '</h3>' +
+          '<p style="margin: 0;">' + (isEnglish
+            ? 'This service is for property owners only (your own property, or a family member who can act as guarantor), so we are unable to help in this case.'
+            : 'השירות מיועד לבעלי נכס בלבד (שלכם, או של בן משפחה שיכול לערוב), ולכן לא נוכל לסייע במקרה הזה.') + '</p>';
+      }
+      if (window.gtag) window.gtag('event', 'lead_disqualified', { form_location: location.pathname });
+      formWrap.classList.add('is-submitted');
+      formWrap.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
     // שליחה אמיתית ל-Web3Forms
     const submitBtn = form.querySelector('.form-submit');
     const originalLabel = submitBtn ? submitBtn.textContent : '';
@@ -151,17 +203,28 @@
       submitBtn.textContent = t.sending;
     }
 
+    // קודם נשמר במערכת (עד 4 שניות המתנה), ואז נשלח המייל עם שורת סטטוס:
+    // אם השמירה נכשלה — המייל עצמו מתריע שצריך להוסיף את הליד ידנית.
+    const saved = await Promise.race([
+      captureToCRM(),
+      new Promise((resolve) => setTimeout(() => resolve(null), 4000)),
+    ]);
+    const payload = Object.fromEntries(new FormData(form));
+    payload['נשמר במערכת'] = saved === true
+      ? 'כן'
+      : (saved === false ? '⚠️ לא נשמר — יש להוסיף את הליד ידנית ל-Desk' : '⚠️ לא ודאי — לבדוק ב-Desk ולהוסיף ידנית אם חסר');
+    if (saved !== true && payload.subject) payload.subject = '⚠️ לא נשמר במערכת — ' + payload.subject;
+
     try {
       const response = await fetch('https://api.web3forms.com/submit', {
         method: 'POST',
         // JSON ולא multipart — אחרת שמות שדות בעברית מגיעים למייל כג'יבריש
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify(Object.fromEntries(new FormData(form))),
+        body: JSON.stringify(payload),
       });
       const data = await response.json();
 
       if (data.success) {
-        captureToCRM();               // כתיבה ל-CRM (לא חוסמת — לא מפריעה למייל)
         if (window.gtag) window.gtag('event', 'generate_lead', { form_location: location.pathname });
         if (window.adsConversion) window.adsConversion('lead');   // המרה ל-Google Ads
         formWrap.classList.add('is-submitted');
