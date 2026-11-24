@@ -1,7 +1,8 @@
 /* ============================================================
    הורייזון פסגות גרופ — nadlanIngest: כתובת הקליטה של סורק הנדל"ן
    המחשב של השמאי שולח לכאן את תוצאות הסריקה (POST, JSON) עם קוד סודי בכותרת.
-   הקוד מאפשר רק דבר אחד: להוסיף/לעדכן נכסים ב-properties. אי אפשר לקרוא דרכו שום דבר.
+   הקוד מאפשר: להוסיף/לעדכן נכסים ב-properties, לקרוא את הגדרות החיפושים (עיר, מחיר, חדרים),
+   ולדווח על מצב סריקה. אי אפשר לקרוא דרכו לידים, תיקים, מסמכים או את המעקב על הנכסים.
    הלוגיקה ב-nadlan-core.js. הגדרות והתקנה: README-NADLAN.md
    ============================================================ */
 'use strict';
@@ -25,7 +26,12 @@ exports.nadlanIngest = onRequest(
     if (req.method !== 'POST') return res.sendStatus(405);
     if (!validToken(String(req.get('x-nadlan-token') || ''), String(NADLAN_TOKEN.value() || '').trim())) return res.sendStatus(401);
     try {
-      const out = await core.ingest({ db: admin.firestore(), now: () => new Date() }, req.body);
+      const deps = { db: admin.firestore(), now: () => new Date() };
+      const body = req.body || {};
+      // op: 'poll' — אילו חיפושים לסרוק · 'report' — התחלה/תקלה של סריקה · ברירת מחדל — קליטת תוצאות
+      const out = body.op === 'poll' ? await core.poll(deps, body)
+        : body.op === 'report' ? await core.report(deps, body)
+        : await core.ingest(deps, body);
       res.status(200).json(out);
     } catch (e) {
       if (e && e.status) return res.status(e.status).json({ ok: false, error: e.message });

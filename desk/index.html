@@ -16,7 +16,7 @@
   <meta property="og:url" content="https://horizonpsagotgroup.com/desk/">
   <meta property="og:image" content="https://horizonpsagotgroup.com/assets/logo/og-image.png">
   <link rel="stylesheet" href="/css/main.css">
-  <link rel="stylesheet" href="/css/crm.css?v=20261124a">
+  <link rel="stylesheet" href="/css/crm.css?v=20261124b">
 </head>
 <body class="crm-body">
 
@@ -234,9 +234,13 @@
       <section class="tab-panel" id="panel-properties" hidden>
         <div class="panel-head">
           <h2>נכסים <span class="inv-owner-badge" title="הלשונית והנתונים נגישים רק למשתמשים בתפקיד בעלים — נאכף בחוקי האבטחה של Firebase">🔒 בעלים בלבד</span></h2>
+          <button class="crm-btn" style="width:auto" id="prop-search-new" type="button">+ חיפוש חדש</button>
         </div>
         <p class="cases-hint">נכסים למכירה שהסריקה היומית מוצאת, עם הערכת שווי מול עסקאות שנסגרו. ההערכה היא <b>כלי לאיתור ולא שומה</b> — כל נכס מסומן דורש בדיקה.</p>
         <div class="prop-scan" id="prop-scan"></div>
+
+        <div class="attn-title">החיפושים</div>
+        <div class="prop-searches" id="prop-searches"></div>
 
         <div class="attn" id="prop-attn">
           <button type="button" class="attn-item" data-quick="deal" aria-pressed="false"><span class="sev sev-new"></span><span class="attn-n" id="prop-n-deal">0</span><span><b>מתחת לשוק</b><small>הערכה בביטחון בינוני ומעלה</small></span></button>
@@ -247,6 +251,7 @@
 
         <div class="lead-toolbar">
           <input type="search" id="prop-search" class="lead-search" placeholder="חיפוש לפי כתובת, שכונה, סוג נכס או הערה" aria-label="חיפוש נכסים">
+          <select id="prop-search-f" class="user-filter" aria-label="סינון לפי חיפוש" hidden></select>
           <select id="prop-status" class="user-filter" aria-label="סינון לפי סטטוס"></select>
           <select id="prop-sort" class="user-filter" aria-label="מיון">
             <option value="smart">מיון: מציאות קודם</option>
@@ -496,6 +501,43 @@
     </div>
   </div>
 
+  <!-- ===== נכסים: הוספה / עריכה של חיפוש ===== -->
+  <div class="modal-overlay" id="prop-search-modal" hidden>
+    <div class="modal">
+      <div class="lead-card-head">
+        <h3 id="psm-title" style="margin:0">חיפוש חדש</h3>
+        <button class="icon-btn" id="psm-close" type="button" title="סגירה">✕</button>
+      </div>
+      <form id="psm-form" style="margin-top:var(--space-sm)">
+        <div class="field-row">
+          <div class="field"><label for="psm-city">עיר</label><input type="text" id="psm-city" maxlength="60" placeholder="למשל: אשקלון" required><div class="field-hint">שם העיר כפי שהוא מופיע ביד2. עיר אחת לכל חיפוש.</div></div>
+          <div class="field"><label for="psm-hood">שכונה (לא חובה)</label><input type="text" id="psm-hood" maxlength="200" placeholder="ריק = כל העיר"></div>
+        </div>
+        <div class="field"><label>סוג נכס</label><div class="psm-types" id="psm-types"></div><div class="field-hint">בלי סימון = כל הסוגים.</div></div>
+        <div class="field-row">
+          <div class="field"><label for="psm-minp">מחיר מ- (₪)</label><input type="text" id="psm-minp" inputmode="numeric" dir="ltr" placeholder="1000000"></div>
+          <div class="field"><label for="psm-maxp">מחיר עד (₪)</label><input type="text" id="psm-maxp" inputmode="numeric" dir="ltr" placeholder="1800000"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label for="psm-minr">חדרים מ-</label><input type="text" id="psm-minr" inputmode="decimal" dir="ltr" placeholder="4"></div>
+          <div class="field"><label for="psm-maxr">חדרים עד</label><input type="text" id="psm-maxr" inputmode="decimal" dir="ltr" placeholder="ריק = ללא הגבלה"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label for="psm-thr">סף "מתחת לשוק" (%)</label><input type="text" id="psm-thr" inputmode="numeric" dir="ltr"><div class="field-hint">נכס מסומן כשהמחיר נמוך מההערכה לפחות באחוז הזה.</div></div>
+          <div class="field"><label for="psm-name">שם לחיפוש (לא חובה)</label><input type="text" id="psm-name" maxlength="90" placeholder="למשל: אשקלון למשקיעים"></div>
+        </div>
+        <label class="lw-check"><input type="checkbox" id="psm-mamad"> רק נכסים עם ממ״ד</label>
+        <label class="lw-check" style="margin-bottom:var(--space-sm)"><input type="checkbox" id="psm-active" checked> חיפוש פעיל (נסרק כל יום)</label>
+        <p class="cm-upload-prog err" id="psm-err" style="min-height:1.2em"></p>
+        <div class="modal-actions">
+          <button class="crm-btn" type="submit" id="psm-save">שמירה</button>
+          <button class="btn-ghost" type="button" id="psm-cancel">ביטול</button>
+          <button class="btn-ghost cm-closebtn" type="button" id="psm-delete" style="margin-inline-start:auto" hidden>מחיקה</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- ===== הדפסת חשבוניות בנפרד ===== -->
   <div class="modal-overlay" id="inv-print-modal" hidden>
     <div class="modal lead-card inv-print-card">
@@ -660,6 +702,6 @@
     </div>
   </div>
 
-  <script type="module" src="/js/crm.js?v=20261124a"></script>
+  <script type="module" src="/js/crm.js?v=20261124b"></script>
 </body>
 </html>

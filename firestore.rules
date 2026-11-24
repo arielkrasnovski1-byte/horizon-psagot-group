@@ -207,6 +207,31 @@ service cloud.firestore {
       allow create, delete: if false;
     }
 
+    // ---------- חיפושי נכסים — בעלים בלבד ----------
+    // בעלים מגדירים את החיפוש (עיר / מחיר / חדרים / סוג) ומבקשים "סרוק עכשיו".
+    // את מצב הסריקה (lastScanAt, scanState, lastCount …) כותב רק ה-Cloud Function.
+    function searchDefKeys() {
+      return ['name', 'cities', 'neighborhoods', 'propertyTypes', 'minPrice', 'maxPrice', 'minRooms', 'maxRooms',
+              'requireMamad', 'thresholdPct', 'active'];
+    }
+    function validSearch(d) {
+      return d.name is string && d.name.size() < 120
+          && d.cities is list && d.cities.size() == 1 && d.cities[0] is string && d.cities[0].size() < 80
+          && d.neighborhoods is list && d.neighborhoods.size() <= 10
+          && d.propertyTypes is list && d.propertyTypes.size() <= 10
+          && d.minPrice is number && d.maxPrice is number && d.minRooms is number && d.maxRooms is number
+          && d.requireMamad is bool && d.active is bool
+          && d.thresholdPct is number && d.thresholdPct >= 5 && d.thresholdPct <= 90;
+    }
+    match /property_searches/{searchId} {
+      allow read, delete: if isOwner();
+      allow create: if isOwner() && validSearch(request.resource.data)
+                    && request.resource.data.keys().hasOnly(searchDefKeys().concat(['createdAt', 'createdBy', 'scanRequestedAt', 'scanRequestedBy']));
+      allow update: if isOwner() && validSearch(request.resource.data)
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(searchDefKeys().concat(['updatedAt', 'updatedBy', 'scanRequestedAt', 'scanRequestedBy']));
+    }
+
     // ---------- ברירת מחדל: כל השאר חסום ----------
     match /{document=**} {
       allow read, write: if false;

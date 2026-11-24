@@ -928,3 +928,24 @@ tr.inv-row.inv-selected td { background: rgba(201,164,122,.14); }
 .prop-foot .prop-task { padding: .35em .9em; font-size: var(--fs-xs); white-space: nowrap; }
 .prop-notes { flex: 1 1 100%; min-height: 38px; resize: vertical; border: 1px solid var(--color-border); border-radius: var(--radius-md, 8px); padding: .45rem .6rem; font-family: inherit; font-size: var(--fs-sm); color: var(--color-charcoal); background: var(--color-cream-soft); }
 .sev-gold { background: var(--color-rose-gold); }
+
+/* ---- נכסים: חיפושים ---- */
+.prop-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-inline-end: 6px; background: #B9AFA2; }
+.prop-dot.on { background: #2E9E5B; }
+.prop-searches { display: grid; gap: var(--space-2xs); margin-bottom: var(--space-lg); }
+.prop-searches-empty { margin: 0; padding: var(--space-md); background: var(--color-white); border: 1px dashed var(--color-border); border-radius: var(--radius-lg); color: var(--color-charcoal-soft); font-size: var(--fs-sm); }
+.prop-search { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; background: var(--color-white); border: 1px solid var(--color-border); border-inline-start: 4px solid var(--color-rose-gold); border-radius: var(--radius-lg); padding: .6rem .9rem; box-shadow: var(--shadow-sm); }
+.prop-search.paused { border-inline-start-color: var(--color-warm-gray-light); }
+.prop-search.paused .ps-main b { color: var(--color-warm-gray); }
+.prop-search.picked { box-shadow: 0 0 0 2px rgba(201,164,122,0.45); }
+.ps-main { flex: 1 1 260px; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ps-main b { color: var(--color-navy-deep); font-size: var(--fs-base); overflow-wrap: anywhere; }
+.ps-main small { color: var(--color-charcoal-soft); font-size: var(--fs-sm); overflow-wrap: anywhere; line-height: 1.5; }
+.ps-main small.ps-state { color: var(--color-warm-gray); font-size: var(--fs-xs); }
+.ps-main small.ps-state.busy { color: #96700F; font-weight: 600; }
+.ps-main small.ps-state.warn { color: #6E520B; }
+.ps-actions { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
+.ps-actions .btn-ghost { padding: .4em 1em; font-size: var(--fs-sm); white-space: nowrap; }
+.ps-actions .btn-ghost:disabled { opacity: .5; cursor: not-allowed; }
+.ps-actions .link-btn { white-space: nowrap; }
+.psm-types { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 4px 12px; }

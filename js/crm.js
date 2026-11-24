@@ -8,7 +8,7 @@ import { SERVICE_TYPES, buildItems, serviceLabel, docCatalog, storagePath, safeS
 import { initTasks } from '/js/crm-tasks.js?v=20261122a';
 import { initInvoices } from '/js/crm-invoices.js?v=20261103a';
 import { initConvert } from '/js/crm-convert.js?v=20261115b';
-import { initProperties } from '/js/crm-properties.js?v=20261124a';
+import { initProperties } from '/js/crm-properties.js?v=20261124b';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? '' : s).replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]));

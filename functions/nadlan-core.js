@@ -5,6 +5,8 @@
    · שדות הסריקה נדרסים בכל סריקה; שדות המעקב של הדסק (status / notes / favorite) לא נוגעים בהם
    · שינוי מחיר נרשם ב-priceHistory
    · סימוני מעקב מהמחשב של הסורק נקלטים רק כל עוד אף אחד לא נגע בנכס בדסק
+   · חיפושים מנוהלים בדסק (property_searches/{id}); מחשב הסריקה מושך אותם (poll),
+     מדווח התחלה/תקלה (report), ושולח תוצאות לכל חיפוש (ingest עם search_id)
    הקלט מגיע ממחשב חיצוני — כל שדה מנוקה ומוגבל כאן לפני שמירה.
    ============================================================ */
 'use strict';
@@ -17,6 +19,9 @@ const HISTORY_MAX = 20;
 const STATUS_MAP = { 'חדש': 'new', 'לבדיקה': 'check', 'יצרתי קשר': 'contacted', 'במשא ומתן': 'negotiation', 'נסגר': 'closed', 'לא רלוונטי': 'irrelevant' };
 const CONFIDENCE = ['גבוהה', 'בינונית', 'נמוכה'];
 // מאיפה מותר לקבל קישור מודעה / תמונה (הדסק מציג אותם כקישור וכתמונה)
+// סוגי נכס שהסורק מכיר (ערכים של config.json אצלו)
+const SEARCH_TYPES = ['צמוד קרקע', 'דירה', 'דירת גן', 'פנטהאוז', 'דופלקס', 'נחלה'];
+const ID_RE = /^[A-Za-z0-9_-]{1,40}$/;
 const HOSTS = { yad2: /(^|\.)yad2\.co\.il$/i, madlan: /(^|\.)madlan\.co\.il$/i };
 
 /* ---------- ניקוי ערכים ---------- */
@@ -89,6 +94,76 @@ function cleanMark(raw) {
   return (status || notes || favorite) ? { status, notes, favorite } : null;
 }
 
+/** הגדרת חיפוש מהדסק → הצורה שהסורק מבין (שמות השדות של config.json אצלו). */
+function searchForAgent(id, d) {
+  d = d || {};
+  const thr = int(d.thresholdPct, 5, 90) || 30;
+  return {
+    id,
+    name: str(d.name, 100),
+    cities: strList(d.cities, 1, 60),                       // עיר אחת לחיפוש — ההערכה נשענת על עסקאות של אותה עיר
+    neighborhoods: strList(d.neighborhoods, 10, 80),
+    min_price: int(d.minPrice, 0, 1e9) || 0, max_price: int(d.maxPrice, 0, 1e9) || 0,
+    min_rooms: num(d.minRooms, 0, 50) || 0, max_rooms: num(d.maxRooms, 0, 50) || 0,
+    property_types: strList(d.propertyTypes, 10, 60).filter((t) => SEARCH_TYPES.includes(t)),
+    require_mamad: bool(d.requireMamad),
+    below_market_threshold: thr / 100,
+    scan_requested_at: str(d.scanRequestedAt, 40),
+    last_scan_at: str(d.lastScanAt, 40),
+  };
+}
+
+/** החיפוש המקומי של הסורק (config.json) → מסמך חיפוש בדסק. משמש פעם אחת, כשאין עדיין חיפושים בדסק. */
+function searchFromLocal(raw, nowISO) {
+  const s = cleanSearch(raw);
+  if (!s.cities.length) return null;
+  const types = s.propertyTypes.filter((t) => SEARCH_TYPES.includes(t));
+  const thr = int(((raw && raw.below_market_threshold) || 0) * 100, 5, 90) || 30;
+  return {
+    name: [s.cities[0], types.join(', ')].filter(Boolean).join(' · ').slice(0, 100),
+    cities: s.cities.slice(0, 1), neighborhoods: s.neighborhoods, propertyTypes: types,
+    minPrice: s.minPrice, maxPrice: s.maxPrice, minRooms: s.minRooms, maxRooms: s.maxRooms,
+    requireMamad: s.requireMamad, thresholdPct: thr, active: true,
+    createdAt: nowISO, createdBy: 'scanner', importedFromScanner: true,
+  };
+}
+
+/**
+ * מחשב הסריקה שואל: אילו חיפושים פעילים יש, ומה ביקשו לסרוק עכשיו.
+ * גם מסמן "המחשב מחובר" (agentSeenAt) בשביל שורת המצב בדסק.
+ */
+async function poll(deps, body) {
+  const { db } = deps;
+  const nowISO = (deps.now ? deps.now() : new Date()).toISOString();
+  const col = db.collection('property_searches');
+  const docs = [];
+  (await col.get()).forEach((snap) => docs.push({ id: snap.id, data: snap.data() || {} }));
+  let imported = false;
+  if (!docs.length && body && body.local_search) {
+    const first = searchFromLocal(body.local_search, nowISO);
+    if (first) { await col.doc('local').set(first); docs.push({ id: 'local', data: first }); imported = true; }
+  }
+  await db.collection('settings').doc('nadlanScan').set({ agentSeenAt: nowISO, agentVersion: int(body && body.v, 0, 1000) || 0 }, { merge: true });
+  const searches = docs.filter((d) => ID_RE.test(d.id) && d.data.active !== false).map((d) => searchForAgent(d.id, d.data)).filter((x) => x.cities.length);
+  return { ok: true, now: nowISO, imported, searches };
+}
+
+/** מחשב הסריקה מדווח על חיפוש: התחיל לסרוק / נכשל / דילג. */
+async function report(deps, body) {
+  const { db } = deps;
+  const nowISO = (deps.now ? deps.now() : new Date()).toISOString();
+  const fail = (status, message) => { const e = new Error(message); e.status = status; return e; };
+  const id = str(body && body.search_id, 40);
+  if (!ID_RE.test(id)) throw fail(400, 'search_id missing');
+  const ref = db.collection('property_searches').doc(id);
+  if (!(await ref.get()).exists) throw fail(404, 'search not found');
+  const state = str(body.state, 20);
+  if (state === 'running') await ref.set({ scanState: 'running', scanStartedAt: nowISO }, { merge: true });
+  else if (state === 'error' || state === 'skipped') await ref.set({ scanState: state, lastError: str(body.message, 400), lastErrorAt: nowISO, scanRequestedAt: '' }, { merge: true });
+  else throw fail(400, 'unknown state');
+  return { ok: true };
+}
+
 /**
  * קליטת סריקה אחת.
  * deps: { db (Firestore Admin), now: () => Date }
@@ -110,6 +185,15 @@ async function ingest(deps, body) {
   const items = [...byId.values()];
   const marks = (body.marks && typeof body.marks === 'object') ? body.marks : {};
 
+  // סריקה של חיפוש מסוים מהדסק (search_id) — הנכסים מתויגים בו, ומצב החיפוש מתעדכן בסוף
+  let searchRef = null;
+  const searchId = str(body.search_id, 40);
+  if (searchId) {
+    if (!ID_RE.test(searchId)) throw fail(400, 'bad search_id');
+    searchRef = db.collection('property_searches').doc(searchId);
+    if (!(await searchRef.get()).exists) throw fail(404, 'search not found');
+  }
+
   const col = db.collection('properties');
   const existing = new Map();
   for (let i = 0; i < items.length; i += BATCH) {
@@ -124,6 +208,7 @@ async function ingest(deps, body) {
     items.slice(i, i + BATCH).forEach((it) => {
       const old = existing.get(it.id);
       const doc = { ...it.data, lastSeenAt: nowISO };
+      if (searchId) doc.searchIds = [...new Set([...((old && Array.isArray(old.searchIds)) ? old.searchIds : []), searchId])].slice(-20);
       if (!old) {
         created++;
         Object.assign(doc, { createdAt: nowISO, status: '', notes: '', favorite: false, priceHistory: [] });
@@ -153,9 +238,18 @@ async function ingest(deps, body) {
     thresholdPct: int(body.threshold_pct, 0, 100),
     search: cleanSearch(body.search),
     clientVersion: int(body.v, 0, 1000) || 0,
-  });
+  }, { merge: true });
+
+  if (searchRef) {
+    await searchRef.set({
+      scanState: 'done', lastScanAt: nowISO, scanRequestedAt: '', lastError: '',
+      lastCount: items.length, lastBelow: items.filter((it) => it.data.below).length, lastReview: items.filter((it) => it.data.review).length, lastNew: created,
+      // על כמה עסקאות שנסגרו נשענה ההערכה בחיפוש הזה (הנתונים עצמם נשארים אצל הסורק)
+      dealsCount: int(body.deals_count, 0, 1e6) || 0, dealsNote: str(body.deals_note, 300),
+    }, { merge: true });
+  }
 
   return { ok: true, saved: items.length, created, priceChanges, marksApplied, skipped };
 }
 
-module.exports = { ingest, cleanListing, cleanSearch, cleanMark, STATUS_MAP, MAX_LISTINGS };
+module.exports = { ingest, poll, report, cleanListing, cleanSearch, cleanMark, searchForAgent, searchFromLocal, STATUS_MAP, MAX_LISTINGS, SEARCH_TYPES };

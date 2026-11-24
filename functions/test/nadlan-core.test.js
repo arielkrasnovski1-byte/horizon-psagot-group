@@ -10,10 +10,11 @@ function fakeDb(seed) {
   const data = JSON.parse(JSON.stringify(seed || {}));
   const col = (n) => (data[n] = data[n] || {});
   const clone = (v) => JSON.parse(JSON.stringify(v));
-  const ref = (n, id) => ({ _n: n, id, set: async (v, o) => { col(n)[id] = (o && o.merge) ? { ...(col(n)[id] || {}), ...clone(v) } : clone(v); } });
+  const snap = (n, id) => ({ id, exists: id in col(n), data: () => (id in col(n) ? clone(col(n)[id]) : undefined) });
+  const ref = (n, id) => ({ _n: n, id, get: async () => snap(n, id), set: async (v, o) => { col(n)[id] = (o && o.merge) ? { ...(col(n)[id] || {}), ...clone(v) } : clone(v); } });
   return {
     data, writes: 0,
-    collection: (n) => ({ doc: (id) => ref(n, id) }),
+    collection: (n) => ({ doc: (id) => ref(n, id), get: async () => ({ forEach: (fn) => Object.keys(col(n)).forEach((id) => fn(snap(n, id))) }) }),
     getAll: async (...refs) => refs.map((r) => ({ id: r.id, exists: r.id in col(r._n), data: () => clone(col(r._n)[r.id]) })),
     batch() { const ops = []; const self = this; return { set: (r, v, o) => ops.push([r, v, o]), commit: async () => { for (const [r, v, o] of ops) { await r.set(v, o); self.writes++; } } }; },
   };
@@ -111,4 +112,55 @@ test('בדיקת הקוד הסודי', () => {
   assert.equal(_validToken(secret + 'x', secret), false);
   assert.equal(_validToken('', secret), false);
   assert.equal(_validToken('short', 'short'), false);
+});
+
+/* ---------- חיפושים מנוהלים בדסק ---------- */
+const searchDoc = (over) => ({ name: 'עיר לדוגמה · דירת גן', cities: ['עיר לדוגמה'], neighborhoods: [], propertyTypes: ['דירת גן'], minPrice: 1000000, maxPrice: 1800000, minRooms: 4, maxRooms: 0, requireMamad: false, thresholdPct: 25, active: true, ...over });
+
+test('poll: מחזיר רק חיפושים פעילים, בצורה שהסורק מבין, ומסמן שהמחשב מחובר', async () => {
+  const db = fakeDb({ property_searches: { s1: searchDoc({ scanRequestedAt: '2026-11-24T09:00:00Z' }), s2: searchDoc({ active: false }), s3: searchDoc({ cities: [] }), 'bad id!': searchDoc() } });
+  const out = await core.poll(deps(db), { op: 'poll', v: 2 });
+  assert.deepEqual(out.searches.map((s) => s.id), ['s1']);
+  const s = out.searches[0];
+  assert.deepEqual([s.cities, s.property_types, s.min_price, s.max_price, s.min_rooms, s.below_market_threshold, s.scan_requested_at], [['עיר לדוגמה'], ['דירת גן'], 1000000, 1800000, 4, 0.25, '2026-11-24T09:00:00Z']);
+  assert.equal(db.data.settings.nadlanScan.agentSeenAt, NOW.toISOString());
+  assert.equal(out.imported, false);
+});
+
+test('poll: כשאין חיפושים בדסק, החיפוש המקומי של הסורק מיובא פעם אחת', async () => {
+  const db = fakeDb();
+  const local = { cities: ['עיר לדוגמה'], property_types: ['צמוד קרקע', 'סוג לא מוכר'], min_price: 1000000, max_price: 1800000, min_rooms: 4, below_market_threshold: 0.3 };
+  const out = await core.poll(deps(db), { op: 'poll', local_search: local });
+  assert.equal(out.imported, true); assert.equal(out.searches.length, 1); assert.equal(out.searches[0].id, 'local');
+  const d = db.data.property_searches.local;
+  assert.deepEqual([d.name, d.propertyTypes, d.thresholdPct, d.active], ['עיר לדוגמה · צמוד קרקע', ['צמוד קרקע'], 30, true]);
+  const again = await core.poll(deps(db), { op: 'poll', local_search: { cities: ['עיר אחרת'] } });
+  assert.equal(again.imported, false); assert.deepEqual(Object.keys(db.data.property_searches), ['local']);
+});
+
+test('report + ingest עם search_id: מצב החיפוש מתעדכן והנכסים מתויגים', async () => {
+  const db = fakeDb({ property_searches: { s1: searchDoc({ scanRequestedAt: '2026-11-24T09:00:00Z' }), s2: searchDoc() } });
+  await core.report(deps(db), { op: 'report', search_id: 's1', state: 'running' });
+  assert.equal(db.data.property_searches.s1.scanState, 'running');
+  const out = await core.ingest(deps(db), body([listing(), listing({ listing_id: 'r1', is_below_market: false, needs_review: true })], { search_id: 's1', deals_count: 433, deals_note: 'עסקאות מהתוכנה' }));
+  assert.equal(out.saved, 2);
+  const s = db.data.property_searches.s1;
+  assert.deepEqual([s.scanState, s.lastScanAt, s.scanRequestedAt, s.lastCount, s.lastBelow, s.lastReview, s.dealsCount], ['done', NOW.toISOString(), '', 2, 1, 1, 433]);
+  assert.deepEqual(db.data.properties.yad2_abc123.searchIds, ['s1']);
+  // אותו נכס עולה גם בחיפוש אחר — מתויג בשניהם, בלי כפילות
+  await core.ingest(deps(db), body([listing()], { search_id: 's2' }));
+  await core.ingest(deps(db), body([listing()], { search_id: 's2' }));
+  assert.deepEqual(db.data.properties.yad2_abc123.searchIds, ['s1', 's2']);
+  assert.equal(db.data.settings.nadlanScan.count, 1);
+});
+
+test('report: תקלה נרשמת ומנקה את בקשת הסריקה; חיפוש לא קיים נדחה', async () => {
+  const db = fakeDb({ property_searches: { s1: searchDoc({ scanRequestedAt: '2026-11-24T09:00:00Z' }) } });
+  await core.report(deps(db), { search_id: 's1', state: 'error', message: 'העיר לא נמצאה' });
+  assert.deepEqual([db.data.property_searches.s1.scanState, db.data.property_searches.s1.lastError, db.data.property_searches.s1.scanRequestedAt], ['error', 'העיר לא נמצאה', '']);
+  await assert.rejects(core.report(deps(db), { search_id: 'nope', state: 'running' }), (e) => e.status === 404);
+  await assert.rejects(core.report(deps(db), { search_id: '../x', state: 'running' }), (e) => e.status === 400);
+  await assert.rejects(core.report(deps(db), { search_id: 's1', state: 'whatever' }), (e) => e.status === 400);
+  await assert.rejects(core.ingest(deps(db), body([listing()], { search_id: 'nope' })), (e) => e.status === 404);
+  assert.equal(db.data.properties, undefined);
 });
