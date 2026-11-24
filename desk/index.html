@@ -16,7 +16,7 @@
   <meta property="og:url" content="https://horizonpsagotgroup.com/desk/">
   <meta property="og:image" content="https://horizonpsagotgroup.com/assets/logo/og-image.png">
   <link rel="stylesheet" href="/css/main.css">
-  <link rel="stylesheet" href="/css/crm.css?v=20261115b">
+  <link rel="stylesheet" href="/css/crm.css?v=20261124a">
 </head>
 <body class="crm-body">
 
@@ -67,6 +67,7 @@
       <button class="crm-tab" data-tab="cases">תיקים</button>
       <button class="crm-tab" data-tab="convert">המרת מסמכים</button>
       <button class="crm-tab" data-tab="invoices" id="tab-invoices" hidden title="לבעלים בלבד">חשבוניות</button>
+      <button class="crm-tab" data-tab="properties" id="tab-properties" hidden title="לבעלים בלבד">נכסים</button>
       <div class="nav-title" id="nav-title-content" hidden>תוכן האתר</div>
       <button class="crm-tab" data-tab="deals" hidden>עסקאות</button>
       <button class="crm-tab" data-tab="testimonials" hidden>המלצות</button>
@@ -96,7 +97,7 @@
 
         <div class="attn-title">דורש טיפול עכשיו</div>
         <div class="attn" id="attn">
-          <button type="button" class="attn-item" data-quick="new" aria-pressed="false"><span class="sev sev-new"></span><span class="attn-n" id="stat-new">0</span><span><b>לידים חדשים</b><small>עדיין לא נוצר קשר</small></span></button>
+          <button type="button" class="attn-item" data-quick="new" aria-pressed="false"><span class="sev sev-ok"></span><span class="attn-n" id="stat-new">0</span><span><b>לידים חדשים</b><small>עדיין לא נוצר קשר</small></span></button>
           <button type="button" class="attn-item" data-quick="wait" aria-pressed="false"><span class="sev sev-late"></span><span class="attn-n" id="stat-wait">0</span><span><b>ממתינים מעל 48 שעות</b><small id="stat-oldest">אין ממתינים</small></span></button>
           <button type="button" class="attn-item" data-quick="followup" aria-pressed="false"><span class="sev sev-prog"></span><span class="attn-n" id="stat-followup">0</span><span><b>פולו-אפ להיום</b><small>לחזור אליהם היום</small></span></button>
           <button type="button" class="attn-item" data-quick="mine" aria-pressed="false"><span class="sev sev-ok"></span><span class="attn-n" id="stat-mine">0</span><span><b>הלידים שלי</b><small>משויכים אליי ופתוחים</small></span></button>
@@ -227,6 +228,40 @@
         <div class="cases-filter inv-filter" id="inv-filter"></div>
         <div class="inv-summary" id="inv-summary"></div>
         <div id="inv-table-wrap"><p class="empty-state">טוען…</p></div>
+      </section>
+
+      <!-- ===== טאב נכסים (סורק הנדל"ן — בעלים בלבד) ===== -->
+      <section class="tab-panel" id="panel-properties" hidden>
+        <div class="panel-head">
+          <h2>נכסים <span class="inv-owner-badge" title="הלשונית והנתונים נגישים רק למשתמשים בתפקיד בעלים — נאכף בחוקי האבטחה של Firebase">🔒 בעלים בלבד</span></h2>
+        </div>
+        <p class="cases-hint">נכסים למכירה שהסריקה היומית מוצאת, עם הערכת שווי מול עסקאות שנסגרו. ההערכה היא <b>כלי לאיתור ולא שומה</b> — כל נכס מסומן דורש בדיקה.</p>
+        <div class="prop-scan" id="prop-scan"></div>
+
+        <div class="attn" id="prop-attn">
+          <button type="button" class="attn-item" data-quick="deal" aria-pressed="false"><span class="sev sev-new"></span><span class="attn-n" id="prop-n-deal">0</span><span><b>מתחת לשוק</b><small>הערכה בביטחון בינוני ומעלה</small></span></button>
+          <button type="button" class="attn-item" data-quick="review" aria-pressed="false"><span class="sev sev-prog"></span><span class="attn-n" id="prop-n-review">0</span><span><b>לבדוק נתונים</b><small>נראה זול, אבל הנתונים חלשים</small></span></button>
+          <button type="button" class="attn-item" data-quick="new" aria-pressed="false"><span class="sev sev-ok"></span><span class="attn-n" id="prop-n-new">0</span><span><b>חדשים השבוע</b><small>עלו ב-7 הימים האחרונים</small></span></button>
+          <button type="button" class="attn-item" data-quick="fav" aria-pressed="false"><span class="sev sev-gold"></span><span class="attn-n" id="prop-n-fav">0</span><span><b>מועדפים</b><small>סומנו בכוכב</small></span></button>
+        </div>
+
+        <div class="lead-toolbar">
+          <input type="search" id="prop-search" class="lead-search" placeholder="חיפוש לפי כתובת, שכונה, סוג נכס או הערה" aria-label="חיפוש נכסים">
+          <select id="prop-status" class="user-filter" aria-label="סינון לפי סטטוס"></select>
+          <select id="prop-sort" class="user-filter" aria-label="מיון">
+            <option value="smart">מיון: מציאות קודם</option>
+            <option value="newest">החדשים קודם</option>
+            <option value="price_asc">מחיר: מהזול ליקר</option>
+            <option value="price_desc">מחיר: מהיקר לזול</option>
+            <option value="size_desc">שטח: מהגדול לקטן</option>
+          </select>
+        </div>
+        <div class="prop-meta">
+          <span id="prop-shown"></span>
+          <label id="prop-gone-wrap" hidden><input type="checkbox" id="prop-gone"> להציג גם נכסים שירדו מהאתר (<span id="prop-gone-n">0</span>)</label>
+          <span class="prop-msg" id="prop-msg" role="status" hidden></span>
+        </div>
+        <div class="prop-grid" id="prop-grid"><p class="empty-state">טוען…</p></div>
       </section>
 
       <!-- ===== טאב עסקאות ===== -->
@@ -625,6 +660,6 @@
     </div>
   </div>
 
-  <script type="module" src="/js/crm.js?v=20261122a"></script>
+  <script type="module" src="/js/crm.js?v=20261124a"></script>
 </body>
 </html>

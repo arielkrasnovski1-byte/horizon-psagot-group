@@ -878,3 +878,53 @@ tr.inv-row.inv-selected td { background: rgba(201,164,122,.14); }
 .cvc-msg { font-size: var(--fs-sm); margin-bottom: var(--space-sm); }
 .cvc-msg.err { color: #8f2c23; background: #fdf0ee; border: 1px solid #e7b9b3; border-radius: var(--radius-md); padding: 8px 12px; }
 @media (max-width: 640px) { .cvc-row { grid-template-columns: 1fr; gap: 2px; } }
+
+
+/* ============================================================
+   נכסים (סורק הנדל"ן) — js/crm-properties.js
+   ============================================================ */
+.prop-scan { font-size: var(--fs-sm); color: var(--color-charcoal-soft); background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: .6rem .9rem; margin-bottom: var(--space-md); line-height: 1.6; }
+.prop-scan:empty { display: none; }
+.prop-scan.stale { border-color: #D6A419; background: rgba(214,164,25,0.10); color: #6E520B; }
+.prop-meta { display: flex; flex-wrap: wrap; gap: .4rem 1rem; align-items: center; font-size: var(--fs-sm); color: var(--color-warm-gray); margin-bottom: var(--space-sm); }
+.prop-meta label { display: inline-flex; align-items: center; gap: .35rem; cursor: pointer; color: var(--color-charcoal-soft); }
+.prop-meta label[hidden] { display: none; }
+.prop-msg { color: #A5291D; font-weight: 600; }
+.prop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr)); gap: var(--space-md); }
+.prop-grid > .empty-state { grid-column: 1 / -1; }
+.prop-card { display: flex; flex-direction: column; background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); overflow: hidden; border-top: 4px solid var(--color-border); }
+.prop-card.deal { border-top-color: #2E9E5B; }
+.prop-card.review { border-top-color: #D6A419; }
+.prop-card.gone { opacity: .6; }
+.prop-img { position: relative; aspect-ratio: 16 / 10; background: var(--color-cream); overflow: hidden; }
+.prop-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.prop-img.noimg { aspect-ratio: auto; min-height: 46px; }
+.prop-badges { position: absolute; inset-block-start: 8px; inset-inline-start: 8px; display: flex; flex-wrap: wrap; gap: 4px; max-width: calc(100% - 56px); }
+.prop-badge { font-size: var(--fs-xs); font-weight: 700; padding: .2rem .6rem; border-radius: 999px; white-space: nowrap; background: var(--color-white); color: var(--color-navy-deep); box-shadow: 0 1px 3px rgba(10,31,61,.18); }
+.prop-badge.deal { background: #23794A; color: #fff; }
+.prop-badge.warn { background: #FBEFC9; color: #6E520B; }
+.prop-badge.new { background: var(--color-navy-deep); color: #fff; }
+.prop-badge.gone { background: #EDE7DE; color: var(--color-charcoal-soft); }
+.prop-star { position: absolute; inset-block-start: 6px; inset-inline-end: 6px; width: 36px; height: 36px; border-radius: 50%; border: none; cursor: pointer; font-size: 18px; line-height: 1; background: rgba(255,255,255,.92); color: var(--color-warm-gray-light); box-shadow: 0 1px 3px rgba(10,31,61,.18); }
+.prop-star.on { color: var(--color-rose-gold-deep); }
+.prop-star:focus-visible, .prop-notes:focus-visible { outline: 2px solid var(--color-rose-gold); outline-offset: 2px; }
+.prop-body { padding: var(--space-sm) var(--space-md) 0; display: flex; flex-direction: column; gap: 4px; flex: 1; }
+.prop-price { font-family: var(--font-heading); font-size: var(--fs-xl); font-weight: 700; color: var(--color-navy-deep); font-variant-numeric: tabular-nums; }
+.prop-drop { font-family: var(--font-body); font-size: var(--fs-xs); font-weight: 600; color: #23794A; }
+.prop-addr { font-weight: 600; color: var(--color-charcoal); font-size: var(--fs-sm); overflow-wrap: anywhere; }
+.prop-chips { font-size: var(--fs-sm); color: var(--color-charcoal-soft); }
+.prop-val { margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--color-border); font-size: var(--fs-sm); color: var(--color-charcoal); display: flex; flex-wrap: wrap; gap: 2px 8px; align-items: center; }
+.prop-val b { font-variant-numeric: tabular-nums; }
+.prop-val small { flex: 1 1 100%; color: var(--color-warm-gray); font-size: var(--fs-xs); line-height: 1.5; overflow-wrap: anywhere; }
+.prop-val.none { color: var(--color-warm-gray); }
+.prop-conf { font-size: var(--fs-xs); font-weight: 700; padding: .1rem .5rem; border-radius: 999px; white-space: nowrap; }
+.prop-conf.c-hi { background: rgba(46,158,91,.14); color: #23794A; }
+.prop-conf.c-mid { background: rgba(214,164,25,.16); color: #6E520B; }
+.prop-conf.c-low { background: rgba(138,122,104,.16); color: #5F5245; }
+.prop-note { font-size: var(--fs-xs); color: #6E520B; background: rgba(214,164,25,0.10); border-radius: var(--radius-md, 8px); padding: .3rem .5rem; line-height: 1.5; overflow-wrap: anywhere; }
+.prop-tags { font-size: var(--fs-xs); color: var(--color-warm-gray); overflow-wrap: anywhere; }
+.prop-foot { padding: var(--space-sm) var(--space-md) var(--space-md); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.prop-foot .link-btn { margin-inline-start: auto; white-space: nowrap; text-decoration: none; font-weight: 600; font-size: var(--fs-sm); color: var(--color-navy-mid); }
+.prop-foot .prop-task { padding: .35em .9em; font-size: var(--fs-xs); white-space: nowrap; }
+.prop-notes { flex: 1 1 100%; min-height: 38px; resize: vertical; border: 1px solid var(--color-border); border-radius: var(--radius-md, 8px); padding: .45rem .6rem; font-family: inherit; font-size: var(--fs-sm); color: var(--color-charcoal); background: var(--color-cream-soft); }
+.sev-gold { background: var(--color-rose-gold); }

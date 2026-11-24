@@ -8,6 +8,7 @@ import { SERVICE_TYPES, buildItems, serviceLabel, docCatalog, storagePath, safeS
 import { initTasks } from '/js/crm-tasks.js?v=20261122a';
 import { initInvoices } from '/js/crm-invoices.js?v=20261103a';
 import { initConvert } from '/js/crm-convert.js?v=20261115b';
+import { initProperties } from '/js/crm-properties.js?v=20261124a';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? '' : s).replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -77,9 +78,10 @@ async function boot() {
       fs.setDoc(fs.doc(db, 'crm_users', user.uid), { email: user.email, lastSeen: nowISO() }, { merge: true }).catch(() => {});
       if (!tasks) tasks = initTasks(taskCtx);
       if (!invoices) invoices = initInvoices(invCtx);
+      if (!properties) properties = initProperties(propCtx);
       listenUsers();
       listenLeads(); listenCases(); listenDeals(); listenTestimonials(); teamCol.listen(); faqCol.listen(); articlesCol.listen();
-    } else { detachAll(); if (tasks) tasks.detach(); if (invoices) invoices.detach(); $('app-view').hidden = true; $('login-view').hidden = false; }
+    } else { detachAll(); if (tasks) tasks.detach(); if (invoices) invoices.detach(); if (properties) properties.detach(); $('app-view').hidden = true; $('login-view').hidden = false; }
   });
 
   /* ---------- תפריט נפתח בנייד (המבורגר) ---------- */
@@ -98,9 +100,10 @@ async function boot() {
     tab.addEventListener('click', () => {
       document.querySelectorAll('.crm-tab').forEach((t) => t.classList.toggle('active', t === tab));
       setNav(false);
-      ['leads', 'tasks', 'cases', 'convert', 'invoices', 'deals', 'testimonials', 'team', 'faq', 'articles', 'users'].forEach((k) => { $('panel-' + k).hidden = (k !== tab.dataset.tab); });
+      ['leads', 'tasks', 'cases', 'convert', 'invoices', 'properties', 'deals', 'testimonials', 'team', 'faq', 'articles', 'users'].forEach((k) => { $('panel-' + k).hidden = (k !== tab.dataset.tab); });
       if (tab.dataset.tab === 'tasks' && tasks) tasks.refresh();
       if (tab.dataset.tab === 'invoices' && invoices) invoices.refresh();
+      if (tab.dataset.tab === 'properties' && properties) properties.refresh();
     });
   });
 
@@ -139,6 +142,14 @@ async function boot() {
     me: () => ({ email: currentEmail, uid: currentUid }), role: () => currentRole, callFn,
   };
 
+  /* ---------- נכסים (js/crm-properties.js) — סורק הנדל"ן, בעלים בלבד ---------- */
+  let properties = null;
+  const propCtx = {
+    fs, db, $, esc, nowISO,
+    me: () => ({ email: currentEmail, uid: currentUid }),
+    openTask: (prefill) => { if (tasks) tasks.openNew(prefill); },
+  };
+
   /* רשימת בעלי גישה — לבחירת מטפל, סינון וניהול משתמשים + הרשאות */
   function listenUsers() {
     track(fs.onSnapshot(fs.collection(db, 'crm_users'), (snap) => {
@@ -161,6 +172,7 @@ async function boot() {
       $('nav-title-admin').hidden = $('tab-users').hidden;
       // חשבוניות: בעלים בלבד (גם בחוקי Firestore/Storage) — לא נפתח ל-"אין בעלים עדיין"
       if (invoices) invoices.setOwner(isOwner);
+      if (properties) properties.setOwner(isOwner);
       // אם הטאב הפעיל הוסתר — חוזרים ללידים
       const active = document.querySelector('.crm-tab.active');
       if (active && active.hidden) document.querySelector('.crm-tab[data-tab="leads"]').click();

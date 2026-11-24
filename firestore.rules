@@ -191,6 +191,22 @@ service cloud.firestore {
                             && request.resource.data.kind in ['expense', 'income'];
     }
 
+    // ---------- נכסים (סורק הנדל"ן) — בעלים בלבד ----------
+    // הנכסים נכתבים רק ע"י Cloud Function (nadlanIngest, Admin SDK) מהסריקה של השמאי.
+    // בדסק בעלים קוראים, ומעדכנים אך ורק את שדות המעקב — לא את נתוני הסריקה.
+    // מצב הסריקה האחרונה: settings/nadlanScan (קריאה לבעלים, למעלה).
+    match /properties/{propertyId} {
+      allow read: if isOwner();
+      allow update: if isOwner()
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['status', 'notes', 'favorite', 'trackUpdatedAt', 'trackUpdatedBy'])
+                    && request.resource.data.status in ['', 'new', 'check', 'contacted', 'negotiation', 'closed', 'irrelevant']
+                    && request.resource.data.notes is string
+                    && request.resource.data.notes.size() < 4000
+                    && request.resource.data.favorite is bool;
+      allow create, delete: if false;
+    }
+
     // ---------- ברירת מחדל: כל השאר חסום ----------
     match /{document=**} {
       allow read, write: if false;
