@@ -949,3 +949,10 @@ tr.inv-row.inv-selected td { background: rgba(201,164,122,.14); }
 .ps-actions .btn-ghost:disabled { opacity: .5; cursor: not-allowed; }
 .ps-actions .link-btn { white-space: nowrap; }
 .psm-types { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 4px 12px; }
+/* טופס חיפוש: תיבות סימון בשורה אחת עם הטקסט (כללי .modal .field נותנים לכל input רוחב מלא) */
+#psm-form .lw-check { display: flex; align-items: center; gap: 8px; margin: 0; padding: 4px 0; font-weight: 400; font-size: var(--fs-sm); color: var(--color-charcoal); cursor: pointer; line-height: 1.4; }
+#psm-form .lw-check input[type="checkbox"] { flex: none; width: 18px; height: 18px; margin: 0; padding: 0; accent-color: var(--color-navy-deep); cursor: pointer; }
+#psm-form .psm-types { grid-template-columns: 1fr 1fr; gap: 2px 16px; }
+#psm-form .psm-types .lw-check:first-child { grid-column: 1 / -1; }
+#psm-form .psm-opts { display: grid; gap: 2px; margin: var(--space-2xs) 0 var(--space-sm); }
+@media (max-width: 560px) { #psm-form .psm-types { grid-template-columns: 1fr; } }

@@ -16,7 +16,7 @@
   <meta property="og:url" content="https://horizonpsagotgroup.com/desk/">
   <meta property="og:image" content="https://horizonpsagotgroup.com/assets/logo/og-image.png">
   <link rel="stylesheet" href="/css/main.css">
-  <link rel="stylesheet" href="/css/crm.css?v=20261124b">
+  <link rel="stylesheet" href="/css/crm.css?v=20261124c">
 </head>
 <body class="crm-body">
 
@@ -526,8 +526,10 @@
           <div class="field"><label for="psm-thr">סף "מתחת לשוק" (%)</label><input type="text" id="psm-thr" inputmode="numeric" dir="ltr"><div class="field-hint">נכס מסומן כשהמחיר נמוך מההערכה לפחות באחוז הזה.</div></div>
           <div class="field"><label for="psm-name">שם לחיפוש (לא חובה)</label><input type="text" id="psm-name" maxlength="90" placeholder="למשל: אשקלון למשקיעים"></div>
         </div>
-        <label class="lw-check"><input type="checkbox" id="psm-mamad"> רק נכסים עם ממ״ד</label>
-        <label class="lw-check" style="margin-bottom:var(--space-sm)"><input type="checkbox" id="psm-active" checked> חיפוש פעיל (נסרק כל יום)</label>
+        <div class="psm-opts">
+          <label class="lw-check"><input type="checkbox" id="psm-mamad"> רק נכסים עם ממ״ד</label>
+          <label class="lw-check"><input type="checkbox" id="psm-active" checked> חיפוש פעיל (נסרק כל יום)</label>
+        </div>
         <p class="cm-upload-prog err" id="psm-err" style="min-height:1.2em"></p>
         <div class="modal-actions">
           <button class="crm-btn" type="submit" id="psm-save">שמירה</button>
